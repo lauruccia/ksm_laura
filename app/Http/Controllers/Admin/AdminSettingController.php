@@ -1,0 +1,122 @@
+<?php
+
+namespace App\Http\Controllers\Admin;
+
+use App\Http\Controllers\Controller;
+use App\Models\AdminPaymentSetting;
+use App\Models\AdminSetting;
+use App\Models\SmtpSetting;
+use Illuminate\Contracts\View\View;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+
+class AdminSettingController extends Controller
+{
+    public function edit(): View
+    {
+        return view('admin.settings.edit', [
+            'settings' => AdminSetting::current(),
+            'payments' => AdminPaymentSetting::firstOrCreate([]),
+            'mail' => SmtpSetting::firstOrCreate(['owner_type' => 'admin']),
+        ]);
+    }
+
+    public function update(Request $request): RedirectResponse
+    {
+        $settings = AdminSetting::current();
+
+        $data = $request->validate([
+            'website_name' => ['required', 'string', 'max:255'],
+            'company_name' => ['nullable', 'string', 'max:255'],
+            'vat_number' => ['nullable', 'string', 'max:32'],
+            'website_url' => ['nullable', 'url', 'max:255'],
+            'website_email' => ['nullable', 'email', 'max:255'],
+            'support_email' => ['nullable', 'email', 'max:255'],
+            'contact_number' => ['nullable', 'string', 'max:50'],
+            'address' => ['nullable', 'string', 'max:255'],
+            'about' => ['nullable', 'string', 'max:1000'],
+            'location_map_embed' => ['nullable', 'string', 'max:2000'],
+            'social_links' => ['nullable', 'array'],
+            'social_links.facebook' => ['nullable', 'url', 'max:255'],
+            'social_links.instagram' => ['nullable', 'url', 'max:255'],
+            'base_shipping_rate' => ['nullable', 'numeric', 'min:0'],
+            'per_kg_rate' => ['nullable', 'numeric', 'min:0'],
+            'site_logo' => ['nullable', 'image', 'max:2048'],
+            'favicon' => ['nullable', 'image', 'max:512'],
+        ]);
+
+        foreach (['site_logo', 'favicon'] as $field) {
+            if ($request->hasFile($field)) {
+                $data[$field] = $request->file($field)->store('brand', 'public');
+            }
+        }
+
+        // Solo le reti con un indirizzo: il piede mostra le icone di quelle.
+        $data['social_links'] = array_map(fn ($url) => $url ?: null, $data['social_links'] ?? []);
+
+        $settings->update($data);
+
+        return back()->with('success', __('Impostazioni salvate.'));
+    }
+
+    /** Le chiavi lasciate vuote non sovrascrivono quelle gia' presenti. */
+    public function updatePayments(Request $request): RedirectResponse
+    {
+        $settings = AdminPaymentSetting::firstOrCreate([]);
+
+        $data = $request->validate([
+            'mode' => ['required', 'in:test,live'],
+            'stripe_test_public_key' => ['nullable', 'string', 'max:255'],
+            'stripe_test_secret_key' => ['nullable', 'string', 'max:255'],
+            'stripe_live_public_key' => ['nullable', 'string', 'max:255'],
+            'stripe_live_secret_key' => ['nullable', 'string', 'max:255'],
+            'paypal_test_client_id' => ['nullable', 'string', 'max:255'],
+            'paypal_test_secret' => ['nullable', 'string', 'max:255'],
+            'paypal_live_client_id' => ['nullable', 'string', 'max:255'],
+            'paypal_live_secret' => ['nullable', 'string', 'max:255'],
+            'kmoney_test_account' => ['nullable', 'string', 'max:255'],
+            'kmoney_live_account' => ['nullable', 'string', 'max:255'],
+            'stripe_webhook_secret' => ['nullable', 'string', 'max:255'],
+            'paypal_webhook_id' => ['nullable', 'string', 'max:255'],
+            'bank_holder' => ['nullable', 'string', 'max:255'],
+            'bank_iban' => ['nullable', 'string', 'max:40'],
+            'bank_bic' => ['nullable', 'string', 'max:20'],
+            'bank_instructions' => ['nullable', 'string', 'max:1000'],
+        ]);
+
+        $settings->fill(array_filter($data, fn ($v) => $v !== null && $v !== ''));
+        $settings->enable_stripe = $request->boolean('enable_stripe');
+        $settings->enable_paypal = $request->boolean('enable_paypal');
+        $settings->enable_kmoney = $request->boolean('enable_kmoney');
+        $settings->enable_bank_transfer = $request->boolean('enable_bank_transfer');
+        // Chi non ha un conto KMoney puo' pagare tutto in euro, tranne dai venditori in debito.
+        $settings->kmoney_euro_fallback = $request->boolean('kmoney_euro_fallback');
+        $settings->save();
+
+        return back()->with('success', __('Impostazioni di pagamento salvate.'));
+    }
+
+    public function updateMail(Request $request): RedirectResponse
+    {
+        $mail = SmtpSetting::firstOrCreate(['owner_type' => 'admin']);
+
+        $data = $request->validate([
+            'mail_mailer' => ['required', 'string', 'max:50'],
+            'mail_host' => ['nullable', 'string', 'max:255'],
+            'mail_port' => ['nullable', 'integer', 'min:1', 'max:65535'],
+            'mail_username' => ['nullable', 'string', 'max:255'],
+            'mail_password' => ['nullable', 'string', 'max:255'],
+            'mail_encryption' => ['nullable', 'string', 'max:20'],
+            'mail_from_address' => ['nullable', 'email', 'max:255'],
+            'mail_from_name' => ['nullable', 'string', 'max:255'],
+            'reply_to_address' => ['nullable', 'email', 'max:255'],
+            'reply_to_name' => ['nullable', 'string', 'max:255'],
+        ]);
+
+        $mail->fill(array_filter($data, fn ($v) => $v !== null && $v !== ''));
+        $mail->is_active = $request->boolean('is_active');
+        $mail->save();
+
+        return back()->with('success', __('Impostazioni di posta salvate.'));
+    }
+}

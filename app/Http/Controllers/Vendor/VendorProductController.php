@@ -1,0 +1,211 @@
+<?php
+
+namespace App\Http\Controllers\Vendor;
+
+use App\Http\Controllers\Controller;
+use App\Models\Product;
+use App\Models\ProductBrand;
+use App\Models\ProductCategory;
+use App\Payments\KMoney\KMoneyPercentages;
+use App\Payments\KMoney\KMoneyShare;
+use App\Support\RichText;
+use Illuminate\Contracts\View\View;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
+
+class VendorProductController extends Controller
+{
+    public function index(Request $request): View
+    {
+        $products = $request->user()->company->products()
+            ->with('category')
+            ->when($request->string('cerca')->toString(), fn ($q, $t) => $q->where('name', 'like', "%$t%"))
+            ->latest()
+            ->paginate(20)
+            ->withQueryString();
+
+        return view('vendor.products.index', ['products' => $products, 'inDebt' => $this->inDebt($request)]);
+    }
+
+    public function create(Request $request): View
+    {
+        return view('vendor.products.form', [
+            'product' => new Product(),
+            'inDebt' => $this->inDebt($request),
+            'categories' => ProductCategory::orderBy('name')->get(),
+            'brands' => ProductBrand::orderBy('name')->get(),
+        ]);
+    }
+
+    public function store(Request $request): RedirectResponse
+    {
+        $data = $this->validated($request);
+        $variants = $data['variants'] ?? [];
+        unset($data['variants']);
+
+        $data = $this->withoutKMoneyChoiceInDebt($request, $data);
+        $data['company_id'] = $request->user()->company->id;
+        $data['slug'] = Str::slug($data['name']).'-'.Str::lower(Str::random(5));
+
+        if ($request->hasFile('featured_image')) {
+            $data['featured_image'] = $request->file('featured_image')->store('products', 'public');
+        }
+
+        $product = Product::create($data);
+        $this->syncVariants($product, $variants);
+        app(KMoneyPercentages::class)->refresh($request->user()->company, [$product->id]);
+
+        return redirect()->route('vendor.products.index')->with('success', __('Prodotto creato.'));
+    }
+
+    public function edit(Request $request, Product $product): View
+    {
+        $this->authorizeProduct($request, $product);
+
+        return view('vendor.products.form', [
+            'product' => $product->load('variants'),
+            'inDebt' => $this->inDebt($request),
+            'categories' => ProductCategory::orderBy('name')->get(),
+            'brands' => ProductBrand::orderBy('name')->get(),
+        ]);
+    }
+
+    public function update(Request $request, Product $product): RedirectResponse
+    {
+        $this->authorizeProduct($request, $product);
+
+        $data = $this->validated($request);
+        $variants = $data['variants'] ?? [];
+        unset($data['variants']);
+
+        if ($request->hasFile('featured_image')) {
+            $data['featured_image'] = $request->file('featured_image')->store('products', 'public');
+        }
+
+        $product->update($this->withoutKMoneyChoiceInDebt($request, $data));
+        $this->syncVariants($product, $variants);
+        app(KMoneyPercentages::class)->refresh($request->user()->company, [$product->id]);
+
+        return back()->with('success', __('Prodotto aggiornato.'));
+    }
+
+    public function destroy(Request $request, Product $product): RedirectResponse
+    {
+        $this->authorizeProduct($request, $product);
+        $product->delete();
+
+        return redirect()->route('vendor.products.index')->with('success', __('Prodotto eliminato.'));
+    }
+
+    public function toggleStatus(Request $request, Product $product): RedirectResponse
+    {
+        $this->authorizeProduct($request, $product);
+        $product->update(['status' => $product->status === 'active' ? 'inactive' : 'active']);
+
+        return back()->with('success', __('Stato aggiornato.'));
+    }
+
+    private function inDebt(Request $request): bool
+    {
+        return (bool) $request->user()->company->paymentSettings?->kmoney_in_debt;
+    }
+
+    /** Con il conto KMoney in debito la quota e' 100 per tutti: la scelta sul prodotto non si tocca. */
+    private function withoutKMoneyChoiceInDebt(Request $request, array $data): array
+    {
+        if ($this->inDebt($request)) {
+            unset($data['kmoney_discount_percent']);
+        }
+
+        return $data;
+    }
+
+    private function validated(Request $request): array
+    {
+        $data = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'category_id' => ['nullable', 'exists:product_categories,id'],
+            'brand_id' => ['nullable', 'exists:product_brands,id'],
+            'sku' => ['nullable', 'string', 'max:100'],
+            'short_description' => ['nullable', 'string', 'max:500'],
+            'description' => ['nullable', 'string', 'max:20000'],
+            'price' => ['required', 'numeric', 'min:0'],
+            'discount_price' => ['nullable', 'numeric', 'min:0', 'lt:price'],
+            // Quota KMoney scelta sul prodotto; vuoto vuol dire automatica, da categoria o contratto.
+            'kmoney_discount_percent' => ['nullable', Rule::in(KMoneyShare::STEPS)],
+            'stock' => ['required', 'integer', 'min:0'],
+            'weight_kg' => ['nullable', 'numeric', 'min:0'],
+            'fixed_shipping_cost' => ['nullable', 'numeric', 'min:0'],
+            'product_type' => ['required', 'in:simple,variable'],
+            'status' => ['required', 'in:active,inactive'],
+            'featured_image' => ['nullable', 'image', 'max:4096'],
+            'variants' => ['nullable', 'array', 'max:50'],
+            'variants.*.id' => ['nullable', 'integer'],
+            'variants.*.type' => ['nullable', 'string', 'max:60'],
+            'variants.*.value' => ['nullable', 'string', 'max:120'],
+            'variants.*.price' => ['nullable', 'numeric', 'min:0'],
+            'variants.*.stock' => ['nullable', 'integer', 'min:0'],
+            'variants.*.sku' => ['nullable', 'string', 'max:100'],
+        ]);
+
+        // L'editor manda HTML: si salva solo la formattazione ammessa.
+        if (array_key_exists('description', $data)) {
+            $data['description'] = RichText::clean($data['description']);
+        }
+
+        return $data;
+    }
+
+    /**
+     * Allinea le varianti al modulo.
+     *
+     * Aggiorna le righe esistenti, crea quelle nuove compilate, elimina
+     * quelle svuotate o tolte. Un prodotto semplice non ne tiene nessuna.
+     * Le righe si cercano solo fra le varianti di questo prodotto.
+     */
+    private function syncVariants(Product $product, array $rows): void
+    {
+        if ($product->product_type !== 'variable') {
+            $product->variants()->delete();
+
+            return;
+        }
+
+        $kept = [];
+
+        foreach ($rows as $row) {
+            if (blank($row['type'] ?? null) && blank($row['value'] ?? null)) {
+                continue;
+            }
+
+            $attributes = [
+                'variant_type' => $row['type'] ?? null,
+                'variant_value' => $row['value'] ?? null,
+                'variant_price' => $row['price'] ?? null,
+                'variant_stock' => $row['stock'] ?? null,
+                'variant_sku' => $row['sku'] ?? null,
+            ];
+
+            $variant = filled($row['id'] ?? null)
+                ? $product->variants()->whereKey($row['id'])->first()
+                : null;
+
+            if ($variant) {
+                $variant->update($attributes);
+            } else {
+                $variant = $product->variants()->create($attributes);
+            }
+
+            $kept[] = $variant->id;
+        }
+
+        $product->variants()->whereNotIn('id', $kept)->delete();
+    }
+
+    private function authorizeProduct(Request $request, Product $product): void
+    {
+        abort_unless($product->company_id === $request->user()->company->id, 403);
+    }
+}

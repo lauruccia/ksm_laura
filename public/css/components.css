@@ -1,0 +1,717 @@
+/* ============ Bottoni ============ */
+.ksm-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    padding: 12px 22px;
+    border: 1px solid transparent;
+    border-radius: var(--ksm-radius);
+    font-family: inherit;
+    font-weight: 600;
+    font-size: .94rem;
+    line-height: 1.2;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background .2s var(--ksm-ease), color .2s var(--ksm-ease),
+                border-color .2s var(--ksm-ease), box-shadow .2s var(--ksm-ease),
+                transform .2s var(--ksm-ease);
+}
+
+.ksm-btn:active { transform: translateY(1px); }
+
+.ksm-btn .ksm-icon:last-child { transition: transform .2s var(--ksm-ease); }
+.ksm-btn:hover .ksm-icon:last-child { transform: translateX(3px); }
+
+.ksm-btn--primary {
+    background: var(--ksm-accent);
+    color: #fff;
+    box-shadow: 0 6px 16px rgba(111, 168, 79, .3);
+}
+
+.ksm-btn--primary:hover {
+    background: var(--ksm-accent-dark);
+    color: #fff;
+    box-shadow: 0 10px 22px rgba(111, 168, 79, .36);
+}
+
+.ksm-btn--dark {
+    background: var(--ksm-dark);
+    color: #fff;
+}
+
+.ksm-btn--dark:hover { background: var(--ksm-dark-deep); color: #fff; }
+
+.ksm-btn--ghost {
+    background: #fff;
+    border-color: var(--ksm-line);
+    color: var(--ksm-ink);
+}
+
+.ksm-btn--ghost:hover {
+    border-color: var(--ksm-accent);
+    color: var(--ksm-accent-dark);
+    box-shadow: var(--ksm-shadow-xs);
+}
+
+.ksm-btn--on-dark {
+    background: rgba(255, 255, 255, .06);
+    border-color: rgba(255, 255, 255, .5);
+    color: #fff;
+    backdrop-filter: blur(6px);
+}
+
+.ksm-btn--on-dark:hover {
+    background: rgba(255, 255, 255, .16);
+    border-color: #fff;
+    color: #fff;
+}
+
+.ksm-btn--block { width: 100%; }
+.ksm-btn--sm { padding: 8px 15px; font-size: .85rem; }
+
+.ksm-btn:disabled,
+.ksm-btn[disabled] {
+    opacity: .5;
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
+/* ============ Schede ============ */
+.ksm-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    background: var(--ksm-surface);
+    border: 1px solid var(--ksm-line);
+    border-radius: var(--ksm-radius-lg);
+    box-shadow: var(--ksm-shadow-xs);
+    overflow: hidden;
+    transition: transform .28s var(--ksm-ease), box-shadow .28s var(--ksm-ease),
+                border-color .28s var(--ksm-ease);
+}
+
+.ksm-card:hover {
+    transform: translateY(-4px);
+    border-color: #D8E3DC;
+    box-shadow: var(--ksm-shadow-md);
+}
+
+.ksm-card__body { padding: 20px; }
+
+.ksm-card__title {
+    font-size: 1.02rem;
+    font-weight: 700;
+    margin: 0 0 4px;
+    color: var(--ksm-ink);
+    line-height: 1.3;
+}
+
+.ksm-card__title a { color: inherit; }
+.ksm-card__title a:hover { color: var(--ksm-accent-dark); }
+
+/* ============ Scheda azienda ============ */
+.ksm-company__cover {
+    position: relative;
+    aspect-ratio: 16 / 9;
+    background: linear-gradient(135deg, #DCE6E4 0%, #EFF4F2 55%, #E7EEEA 100%) center/cover no-repeat;
+}
+
+.ksm-company__cover::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(22, 35, 43, 0) 45%, rgba(22, 35, 43, .18) 100%);
+}
+
+.ksm-card:hover .ksm-company__cover { filter: saturate(1.06); }
+
+.ksm-company__logo {
+    position: absolute;
+    left: 18px;
+    bottom: -28px;
+    z-index: 1;
+    width: 64px;
+    height: 64px;
+    border-radius: var(--ksm-radius);
+    border: 3px solid #fff;
+    background: #fff center/cover no-repeat;
+    box-shadow: var(--ksm-shadow);
+}
+
+.ksm-company__logo--empty {
+    display: grid;
+    place-items: center;
+    background: var(--ksm-accent-soft);
+    color: var(--ksm-accent-dark);
+    font-family: var(--ksm-font-display);
+    font-weight: 800;
+    font-size: 1.55rem;
+    line-height: 1;
+}
+
+.ksm-company__body {
+    padding: 40px 20px 18px;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+
+.ksm-company__head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.ksm-company__city {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 2px 0 0;
+    font-size: .86rem;
+    color: var(--ksm-muted);
+}
+
+.ksm-company__city .ksm-icon { color: var(--ksm-accent); }
+
+.ksm-company__foot {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    margin-top: auto;
+    padding-top: 12px;
+}
+
+.ksm-company__more {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border-radius: var(--ksm-radius-sm);
+    background: var(--ksm-accent-soft);
+    color: var(--ksm-accent-dark);
+    transition: background .2s var(--ksm-ease), color .2s var(--ksm-ease);
+}
+
+.ksm-company__more:hover {
+    background: var(--ksm-accent);
+    color: #fff;
+}
+
+/* ============ Biglietto azienda, negli elenchi ============ */
+/* Proporzioni di una carta di credito: 85,60 x 53,98 mm. Le righe in piu'
+   spariscono quando il biglietto e' stretto, non quando lo e' lo schermo. */
+.ksm-bizcard {
+    container-type: inline-size;
+    aspect-ratio: 85.6 / 53.98;
+    padding: 18px 18px 16px;
+    background:
+        radial-gradient(120% 90% at 100% 0%, var(--ksm-accent-soft) 0%, rgba(255, 255, 255, 0) 60%),
+        var(--ksm-surface);
+}
+
+.ksm-bizcard--banner {
+    border-color: transparent;
+    background:
+        linear-gradient(160deg, rgba(16, 28, 34, .5) 0%, rgba(16, 28, 34, .84) 100%),
+        var(--ksm-bizcard-image) center / cover no-repeat;
+}
+
+.ksm-bizcard__head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+}
+
+.ksm-bizcard__logo {
+    flex: none;
+    width: 44px;
+    height: 44px;
+    border-radius: var(--ksm-radius-sm);
+    border: 1px solid var(--ksm-line);
+    background: #fff center / contain no-repeat;
+}
+
+.ksm-bizcard__logo--empty {
+    display: grid;
+    place-items: center;
+    border-color: transparent;
+    background: var(--ksm-accent-soft);
+    color: var(--ksm-accent-dark);
+    font-family: var(--ksm-font-display);
+    font-weight: 800;
+    font-size: 1.2rem;
+    line-height: 1;
+}
+
+.ksm-bizcard__id { flex: 1; min-width: 0; }
+
+.ksm-bizcard__name {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 700;
+    line-height: 1.25;
+    color: var(--ksm-ink);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.ksm-bizcard__name a { color: inherit; }
+.ksm-bizcard__name a:hover { color: var(--ksm-accent-dark); }
+
+/* Tutto il biglietto porta alla scheda; email, telefono e sito restano cliccabili. */
+.ksm-bizcard__name a::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+}
+
+.ksm-bizcard__meta a,
+.ksm-bizcard__more {
+    position: relative;
+    z-index: 1;
+}
+
+.ksm-bizcard__city {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    min-width: 0;
+    margin: 2px 0 0;
+    font-size: .8rem;
+    color: var(--ksm-muted);
+}
+
+.ksm-bizcard__city span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ksm-bizcard__city .ksm-icon { flex: none; color: var(--ksm-accent); }
+
+/* Doppia classe: `.ksm-meta`, definita piu' sotto, altrimenti vincerebbe. */
+.ksm-bizcard .ksm-bizcard__meta {
+    margin: auto 0 0;
+    padding: 10px 40px 0 0;
+    font-size: .82rem;
+}
+
+.ksm-bizcard .ksm-bizcard__meta li { margin-bottom: 4px; line-height: 1.35; }
+.ksm-bizcard .ksm-bizcard__meta li:last-child { margin-bottom: 0; }
+
+.ksm-bizcard__more {
+    position: absolute;
+    right: 14px;
+    bottom: 14px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border-radius: var(--ksm-radius-sm);
+    background: var(--ksm-accent-soft);
+    color: var(--ksm-accent-dark);
+    transition: background .2s var(--ksm-ease), color .2s var(--ksm-ease);
+}
+
+.ksm-bizcard:hover .ksm-bizcard__more {
+    background: var(--ksm-accent);
+    color: #fff;
+}
+
+.ksm-bizcard--banner .ksm-bizcard__name,
+.ksm-bizcard--banner .ksm-bizcard__name a:hover,
+.ksm-bizcard--banner .ksm-meta li,
+.ksm-bizcard--banner .ksm-meta a { color: #fff; }
+
+.ksm-bizcard--banner .ksm-bizcard__city,
+.ksm-bizcard--banner .ksm-rating__value { color: rgba(255, 255, 255, .8); }
+
+.ksm-bizcard--banner .ksm-bizcard__city .ksm-icon,
+.ksm-bizcard--banner .ksm-meta .ksm-icon { color: #9FE08A; }
+
+.ksm-bizcard--banner .ksm-bizcard__more {
+    background: rgba(255, 255, 255, .16);
+    color: #fff;
+}
+
+/* Soglie misurate sul contenuto della scheda: sotto i 250px quattro righe
+   non stanno piu' nell'altezza, sotto i 210px nemmeno tre. */
+@container (max-width: 250px) {
+    .ksm-bizcard .ksm-bizcard__meta .ksm-bizcard__web { display: none; }
+}
+
+@container (max-width: 210px) {
+    .ksm-bizcard .ksm-bizcard__meta .ksm-bizcard__mail { display: none; }
+}
+
+.ksm-meta {
+    list-style: none;
+    margin: 14px 0 0;
+    padding: 0;
+    font-size: .86rem;
+}
+
+.ksm-meta li {
+    display: flex;
+    gap: 9px;
+    align-items: center;
+    margin-bottom: 7px;
+    color: var(--ksm-body);
+    min-width: 0;
+}
+
+.ksm-meta li > span,
+.ksm-meta li > a {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.ksm-meta .ksm-icon { flex: none; color: var(--ksm-accent); }
+
+/* ============ Valutazione ============ */
+.ksm-rating {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    flex: none;
+    font-size: .78rem;
+    color: var(--ksm-muted);
+}
+
+.ksm-rating__star { color: #DCE3E7; font-size: .95rem; line-height: 1; }
+.ksm-rating__star--on { color: #F0B429; }
+.ksm-rating__value { margin-left: 5px; font-weight: 600; }
+
+/* ============ Scheda prodotto ============ */
+.ksm-product {
+    flex-direction: row;
+    gap: 16px;
+    align-items: center;
+    padding: 16px;
+}
+
+.ksm-product__thumb {
+    width: 92px;
+    height: 82px;
+    flex: 0 0 92px;
+    border-radius: var(--ksm-radius);
+    background: var(--ksm-canvas) center/cover no-repeat;
+    border: 1px solid var(--ksm-line-soft);
+}
+
+.ksm-product__thumb--empty {
+    display: grid;
+    place-items: center;
+    background: var(--ksm-line-soft);
+    color: var(--ksm-muted);
+}
+
+.ksm-product__body { flex: 1; min-width: 0; }
+
+.ksm-product__body .ksm-card__title {
+    font-size: .97rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.ksm-product__company {
+    margin: 0 0 8px;
+    font-size: .82rem;
+    color: var(--ksm-muted);
+}
+
+.ksm-product__price {
+    font-family: var(--ksm-font-display);
+    font-weight: 800;
+    font-size: 1.08rem;
+    color: var(--ksm-ink);
+}
+
+.ksm-product__prices {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 2px 8px;
+}
+
+.ksm-product__old {
+    font-size: .84rem;
+    color: var(--ksm-muted);
+}
+
+.ksm-product__tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 6px;
+}
+
+/* ============ Etichette ============ */
+.ksm-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 11px;
+    border-radius: var(--ksm-radius-pill);
+    font-size: .74rem;
+    font-weight: 600;
+    letter-spacing: .01em;
+    background: var(--ksm-accent-soft);
+    color: var(--ksm-accent-dark);
+}
+
+.ksm-badge--muted {
+    background: var(--ksm-line-soft);
+    color: var(--ksm-body);
+}
+
+/* ============ Moduli ============ */
+.ksm-field { margin-bottom: 18px; }
+
+.ksm-label {
+    display: block;
+    font-size: .82rem;
+    font-weight: 600;
+    color: var(--ksm-dark);
+    margin-bottom: 7px;
+}
+
+.ksm-input,
+.ksm-select,
+.ksm-textarea {
+    width: 100%;
+    padding: 12px 15px;
+    border: 1px solid var(--ksm-line);
+    border-radius: var(--ksm-radius);
+    font: inherit;
+    color: var(--ksm-ink);
+    background: #fff;
+    transition: border-color .18s var(--ksm-ease), box-shadow .18s var(--ksm-ease);
+}
+
+.ksm-input:focus,
+.ksm-select:focus,
+.ksm-textarea:focus {
+    outline: none;
+    border-color: var(--ksm-accent);
+    box-shadow: var(--ksm-ring);
+}
+
+.ksm-error {
+    display: block;
+    margin-top: 6px;
+    font-size: .8rem;
+    color: var(--ksm-danger);
+}
+
+/* ============ Avvisi ============ */
+.ksm-alert {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 13px 17px;
+    border-radius: var(--ksm-radius);
+    margin-bottom: 18px;
+    font-size: .92rem;
+    border: 1px solid transparent;
+}
+
+.ksm-alert--success {
+    background: var(--ksm-accent-soft);
+    border-color: #D3E7C6;
+    color: var(--ksm-accent-dark);
+}
+
+.ksm-alert--error {
+    background: #FDECEC;
+    border-color: #F7CFD1;
+    color: var(--ksm-danger);
+}
+
+/* ============ Tabelle ============ */
+.ksm-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #fff;
+    font-size: .92rem;
+}
+
+.ksm-table th,
+.ksm-table td {
+    padding: 13px 16px;
+    text-align: left;
+    border-bottom: 1px solid var(--ksm-line);
+}
+
+.ksm-table th {
+    font-size: .76rem;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    color: var(--ksm-muted);
+    background: var(--ksm-line-soft);
+}
+
+.ksm-table tbody tr:last-child td { border-bottom: 0; }
+.ksm-table tbody tr:hover { background: var(--ksm-line-soft); }
+
+.ksm-table-wrap {
+    overflow-x: auto;
+    border: 1px solid var(--ksm-line);
+    border-radius: var(--ksm-radius-lg);
+    box-shadow: var(--ksm-shadow-xs);
+}
+
+/* ============ Banner pubblicitari ============ */
+.ksm-banner {
+    display: block;
+    border-radius: var(--ksm-radius-lg);
+    overflow: hidden;
+    box-shadow: var(--ksm-shadow-xs);
+    transition: transform .28s var(--ksm-ease), box-shadow .28s var(--ksm-ease);
+}
+
+.ksm-banner:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--ksm-shadow-md);
+}
+
+/* Circuito banner ------------------------------------------------------- */
+
+.ksm-ad {
+    margin-block: 24px;
+    text-align: center;
+}
+
+.ksm-ad a {
+    display: inline-block;
+    max-width: 100%;
+}
+
+.ksm-ad img {
+    display: block;
+    max-width: 100%;
+    height: auto;
+    border-radius: var(--ksm-radius);
+}
+
+.ksm-ad__label {
+    display: block;
+    margin-top: 4px;
+    font-size: .7rem;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: var(--ksm-muted);
+}
+
+.ksm-ad-popup {
+    max-width: min(92vw, 560px);
+    padding: 14px;
+    border: 0;
+    border-radius: 14px;
+    box-shadow: 0 24px 60px rgba(7, 30, 45, .28);
+}
+
+.ksm-ad-popup::backdrop {
+    background: rgba(7, 30, 45, .55);
+}
+
+.ksm-ad-popup img {
+    display: block;
+    max-width: 100%;
+    height: auto;
+    border-radius: 10px;
+}
+
+.ksm-ad-popup__close {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    margin: 0;
+}
+
+.ksm-ad-popup__close button {
+    width: 34px;
+    height: 34px;
+    border: 0;
+    border-radius: 50%;
+    background: #fff;
+    font-size: 1.4rem;
+    line-height: 1;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, .2);
+}
+
+/* Scheda azienda: descrizione, orari, galleria ---------------------------- */
+
+.ksm-richtext { margin-top: 16px; }
+.ksm-richtext > :first-child { margin-top: 0; }
+.ksm-richtext > :last-child { margin-bottom: 0; }
+.ksm-richtext a { text-decoration: underline; }
+
+.ksm-company__extras {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+    gap: 24px;
+    align-items: start;
+    margin-bottom: 28px;
+}
+
+.ksm-company__extras > :only-child { grid-column: 1 / -1; }
+
+.ksm-company__hours,
+.ksm-company__gallery { padding: 20px; }
+
+.ksm-company__hours h2,
+.ksm-company__gallery h2 { margin: 0 0 12px; font-size: 1.15rem; }
+
+.ksm-company__hours table { width: 100%; border-collapse: collapse; }
+
+.ksm-company__hours th,
+.ksm-company__hours td {
+    padding: 7px 0;
+    border-bottom: 1px solid var(--ksm-line);
+    font-weight: 400;
+    text-align: left;
+}
+
+.ksm-company__hours tr:last-child th,
+.ksm-company__hours tr:last-child td { border-bottom: 0; }
+
+.ksm-company__hours td { text-align: right; white-space: nowrap; }
+
+.ksm-company__gallery ul {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 10px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.ksm-company__gallery img {
+    display: block;
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    object-fit: cover;
+    border-radius: 8px;
+}
+
+@media (max-width: 760px) {
+    .ksm-company__extras { grid-template-columns: 1fr; }
+}
+
+/* Scheda azienda: mappa OpenStreetMap ------------------------------------ */
+
+.ksm-company__map { padding: 20px; margin-bottom: 28px; }
+.ksm-company__map h2 { margin: 0 0 12px; font-size: 1.15rem; }
+.ksm-company__map p { margin: 10px 0 0; font-size: .9rem; }
+
+.ksm-company__mapcanvas {
+    position: relative;
+    z-index: 0;
+    height: 320px;
+    border-radius: 10px;
+}
