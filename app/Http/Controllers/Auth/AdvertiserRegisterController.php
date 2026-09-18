@@ -64,6 +64,11 @@ class AdvertiserRegisterController extends Controller
         event(new Registered($user));
         Auth::login($user);
 
+        if (! $user->sendVerificationCode()) {
+            return redirect()->route('verification.show')
+                ->with('error', __("Account creato, ma la mail con il codice non e' partita: chiedine un altro qui sotto."));
+        }
+
         return redirect()->route('verification.show')
             ->with('success', __('Ti abbiamo inviato un codice di verifica.'));
     }

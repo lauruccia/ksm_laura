@@ -6,8 +6,10 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use App\Mail\VerificationCode;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Mail;
 
 class User extends Authenticatable
 {
@@ -122,6 +124,31 @@ class User extends Authenticatable
     public function typeLabel(): string
     {
         return self::TYPES[$this->user_type] ?? (string) $this->user_type;
+    }
+
+    /**
+     * Genera un codice di verifica nuovo e prova a mandarlo per email.
+     *
+     * Se la posta non parte l'account resta buono e il codice e' salvato:
+     * dalla pagina di verifica se ne chiede un altro. Torna false cosi'
+     * chi registra non promette una mail che non e' partita.
+     */
+    public function sendVerificationCode(): bool
+    {
+        $this->forceFill([
+            'verification_code' => (string) random_int(100000, 999999),
+            'verification_code_expires_at' => now()->addMinutes(30),
+        ])->save();
+
+        try {
+            Mail::to($this->email)->send(new VerificationCode($this->verification_code));
+        } catch (\Throwable $e) {
+            report($e);
+
+            return false;
+        }
+
+        return true;
     }
 
     /**

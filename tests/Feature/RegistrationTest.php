@@ -2,9 +2,11 @@
 
 namespace Tests\Feature;
 
+use App\Mail\VerificationCode;
 use App\Models\Plan;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Mail;
 use Tests\TestCase;
 
 /**
@@ -90,6 +92,47 @@ class RegistrationTest extends TestCase
 
         $this->assertSame('vendor', User::where('email', 'mario@example.test')->value('user_type'));
         $this->assertAuthenticated();
+    }
+
+    public function test_la_registrazione_manda_il_codice_di_verifica(): void
+    {
+        Mail::fake();
+        $this->plan();
+
+        $this->post(route('register.vendor.store'), $this->account(['piano' => 'vetrina']))
+            ->assertRedirect(route('verification.show'))
+            ->assertSessionHas('success');
+
+        $user = User::where('email', 'mario@example.test')->firstOrFail();
+        $this->assertMatchesRegularExpression('/^\d{6}$/', $user->verification_code);
+        $this->assertTrue($user->verification_code_expires_at->isFuture());
+
+        Mail::assertSent(VerificationCode::class, fn ($mail) => $mail->hasTo('mario@example.test'));
+    }
+
+    public function test_anche_il_privato_riceve_il_codice(): void
+    {
+        Mail::fake();
+
+        $this->post(route('register.buyer.store'), $this->account())
+            ->assertRedirect(route('verification.show'));
+
+        Mail::assertSent(VerificationCode::class, fn ($mail) => $mail->hasTo('mario@example.test'));
+    }
+
+    public function test_se_la_posta_non_parte_lo_dice(): void
+    {
+        // La posta rotta non deve buttare via l'account: il codice resta
+        // salvato e il messaggio invita a chiederne un altro.
+        Mail::shouldReceive('to')->andThrow(new \RuntimeException('smtp giu'));
+        $this->plan();
+
+        $this->post(route('register.vendor.store'), $this->account(['piano' => 'vetrina']))
+            ->assertRedirect(route('verification.show'))
+            ->assertSessionHas('error');
+
+        $user = User::where('email', 'mario@example.test')->firstOrFail();
+        $this->assertMatchesRegularExpression('/^\d{6}$/', $user->verification_code);
     }
 
     public function test_piano_inesistente_rifiutato(): void

@@ -37,6 +37,9 @@ class RegisterController extends Controller
         return view('auth.register-choose');
     }
 
+    /** La mail di verifica dell'ultima registrazione e' partita? */
+    private bool $mailInviata = true;
+
     public function showBuyer(): View
     {
         return view('auth.register-buyer');
@@ -68,12 +71,10 @@ class RegisterController extends Controller
         // rimasto l'ordine. Il codice di verifica resta nella posta e si usa
         // quando fa comodo.
         if ($inline) {
-            return redirect()->to(AuthReturn::url($ritorno, route('home')))
-                ->with('success', __('Account creato. Ti abbiamo inviato un codice di verifica per email: puoi intanto completare l\'ordine.'));
+            return $this->conEsito(redirect()->to(AuthReturn::url($ritorno, route('home'))), __('Account creato. Ti abbiamo inviato un codice di verifica per email: puoi intanto completare l\'ordine.'));
         }
 
-        return redirect()->route('verification.show')
-            ->with('success', __('Ti abbiamo inviato un codice di verifica.'));
+        return $this->conEsito(redirect()->route('verification.show'), __('Ti abbiamo inviato un codice di verifica.'));
     }
 
     public function storeVendor(Request $request): RedirectResponse
@@ -90,8 +91,7 @@ class RegisterController extends Controller
             $request->session()->put('piano_scelto', $data['piano']);
         }
 
-        return redirect()->route('verification.show')
-            ->with('success', __('Ti abbiamo inviato un codice di verifica: dopo la conferma crei il profilo della tua azienda.'));
+        return $this->conEsito(redirect()->route('verification.show'), __('Ti abbiamo inviato un codice di verifica: dopo la conferma crei il profilo della tua azienda.'));
     }
 
     private function accountRules(): array
@@ -104,12 +104,30 @@ class RegisterController extends Controller
         ];
     }
 
+    /**
+     * Il messaggio di fine registrazione dice la verita': se la mail non e'
+     * partita si avvisa, invece di lasciare l'utente ad aspettare un codice
+     * che non arrivera'.
+     */
+    private function conEsito(RedirectResponse $redirect, string $inviata): RedirectResponse
+    {
+        if ($this->mailInviata) {
+            return $redirect->with('success', $inviata);
+        }
+
+        return $redirect->with('error', __("Account creato, ma la mail con il codice non e' partita: chiedine un altro qui sotto."));
+    }
+
     private function register(Request $request, array $attributes): User
     {
         $user = User::create($attributes);
 
         event(new Registered($user));
         Auth::login($user);
+
+        // Il codice parte qui: senza, la pagina di verifica chiede un numero
+        // che non e' mai stato spedito.
+        $this->mailInviata = $user->sendVerificationCode();
 
         return $user;
     }

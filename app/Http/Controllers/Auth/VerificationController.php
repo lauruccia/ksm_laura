@@ -3,11 +3,9 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
-use App\Mail\VerificationCode;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Mail;
 
 class VerificationController extends Controller
 {
@@ -56,14 +54,9 @@ class VerificationController extends Controller
 
     public function resend(Request $request): RedirectResponse
     {
-        $user = $request->user();
-
-        $user->forceFill([
-            'verification_code' => (string) random_int(100000, 999999),
-            'verification_code_expires_at' => now()->addMinutes(30),
-        ])->save();
-
-        Mail::to($user->email)->send(new VerificationCode($user->verification_code));
+        if (! $request->user()->sendVerificationCode()) {
+            return back()->with('error', __('Non siamo riusciti a inviare la mail. Riprova tra poco.'));
+        }
 
         return back()->with('success', __('Nuovo codice inviato.'));
     }
