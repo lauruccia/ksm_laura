@@ -82,17 +82,23 @@ class ProductController extends Controller
                 $category->visible_count = (int) ($counts[$category->id] ?? 0) + $category->children->sum('visible_count');
             });
 
+        // I blocchi della vetrina restano ai siti dei domini: sul sito principale
+        // il catalogo apre da solo, come la directory delle aziende.
+        $onDomain = (bool) $this->tenant->domain();
         $featured = $this->tenant->content()->featured();
-        $featuredProducts = $featured['enabled'] ? $this->featured($visible, $featured['sort'], $featured['count']) : collect();
+        $featuredProducts = $onDomain && $featured['enabled']
+            ? $this->featured($visible, $featured['sort'], $featured['count'])
+            : collect();
 
         $this->markBestsellers($visible, $products->getCollection()->concat($featuredProducts));
 
         return view('pages.products.index', [
             'products' => $products,
             'categories' => $categories,
-            'railCategories' => $this->railCategories($categories, $counts),
+            'railCategories' => $onDomain ? $this->railCategories($categories, $counts) : collect(),
             'featuredProducts' => $featuredProducts,
             'currentCategory' => $categoryId ? ProductCategory::find($categoryId) : null,
+            'onDomain' => $onDomain,
             'catalogTotal' => $counts->sum(),
             // Sui domini solo le marche dei prodotti che ci sono: le altre porterebbero a zero risultati.
             'brands' => ProductBrand::query()

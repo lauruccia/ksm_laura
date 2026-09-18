@@ -6,7 +6,7 @@
 
 .ksm-shop {
     display: grid;
-    grid-template-columns: 264px minmax(0, 1fr);
+    grid-template-columns: 280px minmax(0, 1fr);
     gap: 28px;
     align-items: start;
 }
@@ -389,8 +389,9 @@
     .ksm-colswitch [data-shop-cols="4"] { display: none; }
 }
 
-/* Sotto i 980px i filtri escono da sinistra come pannello. */
-@media (min-width: 0px) {
+/* Fino ai 991px, come nella directory aziende, la barra laterale sparisce
+   ed esce da sinistra come pannello dal bottone Filtri. */
+@media (max-width: 991px) {
     .ksm-shop { grid-template-columns: 1fr; }
 
     .ksm-shop__filters-btn { display: inline-flex; }

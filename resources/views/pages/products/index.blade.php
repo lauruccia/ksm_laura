@@ -37,29 +37,33 @@
             'prezzo_desc' => __('site.shop_sort_price_desc'),
             'nome' => __('site.shop_sort_name'),
         ];
-    @endphp
 
-    @include('pages.products.partials.storefront')
-
-    @php
         // Il catalogo con i filtri si puo' spegnere per dominio, ma resta se si sta gia' filtrando.
         $catalog = $tenant->content()->catalog();
     @endphp
 
-    @if ($catalog['enabled'] || request()->hasAny(['categoria', 'cerca', 'marca', 'offerta', 'page']))
-    <section class="ksm-section ksm-section--tight ksm-store-catalog" id="catalogo">
-        <div class="ksm-container">
-            <div class="ksm-section-head ksm-shop__head">
-                <div>
-                    <h2>{{ $currentCategory?->name ?? $catalog['title'] ?? __('storefront.catalog') }}</h2>
-                    <p>{{ __('site.shop_products_count', ['count' => $products->total()]) }}</p>
+    {{-- Apertura, vantaggi, riquadri e vetrina sono il sito di un dominio: li
+         sceglie in Amministrazione, Domini. Sul sito principale il catalogo
+         apre da solo, come la directory delle aziende. --}}
+    @if ($onDomain)
+        @include('pages.products.partials.storefront')
+    @endif
+
+    {{-- Stessa impostazione della directory aziende: categorie a sinistra;
+         ricerca, banner e griglia a destra. --}}
+    @if (! $onDomain || $catalog['enabled'] || request()->hasAny(['categoria', 'cerca', 'marca', 'offerta', 'page']))
+    <section class="ksm-section ksm-store-catalog" id="catalogo">
+        {{-- A tutta larghezza come la directory; sui domini resta nella colonna
+             dei blocchi che gli stanno sopra. --}}
+        <div class="ksm-container @unless ($onDomain) ksm-directory__container @endunless">
+            @if ($onDomain)
+                <div class="ksm-section-head ksm-shop__head">
+                    <div>
+                        <h2>{{ $currentCategory?->name ?? $catalog['title'] ?? __('storefront.catalog') }}</h2>
+                        <p>{{ __('site.shop_products_count', ['count' => $products->total()]) }}</p>
+                    </div>
                 </div>
-                <div class="ksm-store-search" role="search">
-                    <x-icon name="search" :size="20" />
-                    <input class="ksm-input" type="search" id="cerca" name="cerca" form="ksm-shop-form" value="{{ request('cerca') }}" placeholder="{{ __('storefront.search') }}" aria-label="{{ __('site.shop_search_label') }}">
-                    <button class="ksm-btn ksm-btn--primary" type="submit" form="ksm-shop-form">{{ __('storefront.search_button') }}</button>
-                </div>
-            </div>
+            @endif
 
             <div class="ksm-shop" data-shop>
                 <aside class="ksm-shop__side" id="ksm-shop-side" aria-label="{{ __('site.shop_filters') }}">
@@ -104,11 +108,9 @@
                         </ul>
                     </nav>
 
+                    {{-- Il modulo raccoglie anche i campi della scheda di ricerca e della
+                         barra strumenti: una sola richiesta, nessun filtro perso. --}}
                     <form class="ksm-shop__form" id="ksm-shop-form" method="GET" action="{{ route('products.index') }}">
-                        @if ($currentCategory)
-                            <input type="hidden" name="categoria" value="{{ $currentCategory->id }}">
-                        @endif
-
                         <fieldset class="ksm-shop__block">
                             <legend class="ksm-shop__block-title">{{ __('site.shop_price') }}</legend>
                             <div class="ksm-shop__price">
@@ -161,7 +163,53 @@
 
                 <div class="ksm-shop__backdrop" data-shop-filters-toggle></div>
 
-                <div class="ksm-shop__main">
+                <div class="ksm-shop__main ksm-directory__main">
+                    {{-- Non e' un <form>: i campi appartengono a quello dei filtri, cosi'
+                         una nuova ricerca non perde prezzo, marca e opzioni. --}}
+                    <div class="ksm-card ksm-directory__search" role="search">
+                        <div class="ksm-field ksm-directory__query">
+                            <label class="ksm-label" for="cerca">{{ __('site.search_submit') }}</label>
+                            <input class="ksm-input" id="cerca" name="cerca" type="search" form="ksm-shop-form"
+                                   value="{{ request('cerca') }}" placeholder="{{ __('storefront.search') }}"
+                                   aria-label="{{ __('site.shop_search_label') }}">
+                        </div>
+                        <div class="ksm-field">
+                            <label class="ksm-label" for="ordina">{{ __('site.shop_sort') }}</label>
+                            <select class="ksm-select" id="ordina" name="ordina" form="ksm-shop-form" data-shop-autosubmit>
+                                @foreach ($sortOptions as $value => $label)
+                                    <option value="{{ $value }}" @selected(request()->string('ordina')->toString() === (string) $value)>{{ $label }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        {{-- Nascosta accanto al menu, ma inviata lo stesso: una nuova ricerca resta nella categoria. --}}
+                        <div class="ksm-field ksm-directory__category">
+                            <label class="ksm-label" for="categoria">{{ __('site.search_category') }}</label>
+                            <select class="ksm-select" id="categoria" name="categoria" form="ksm-shop-form">
+                                <option value="">{{ __('site.shop_all_products') }}</option>
+                                {{-- Una categoria senza prodotti non e' in elenco: se e' quella scelta
+                                     ci va lo stesso, altrimenti cercare la toglierebbe dall'indirizzo. --}}
+                                @if ($currentCategory && ! $categories->contains(fn ($category) => $category->visible_count && ($category->id === $currentCategory->id || $category->children->contains(fn ($child) => $child->visible_count && $child->id === $currentCategory->id))))
+                                    <option value="{{ $currentCategory->id }}" selected>{{ $currentCategory->name }}</option>
+                                @endif
+                                @foreach ($categories as $category)
+                                    @continue(! $category->visible_count)
+                                    <option value="{{ $category->id }}" @selected($currentCategory?->id === $category->id)>{{ $category->name }}</option>
+                                    @foreach ($category->children as $child)
+                                        @continue(! $child->visible_count)
+                                        <option value="{{ $child->id }}" @selected($currentCategory?->id === $child->id)>&nbsp;&nbsp;{{ $child->name }}</option>
+                                    @endforeach
+                                @endforeach
+                            </select>
+                        </div>
+                        <button class="ksm-btn ksm-btn--primary" type="submit" form="ksm-shop-form">
+                            <x-icon name="search" :size="18" />
+                            {{ __('site.search_submit') }}
+                        </button>
+                    </div>
+
+                    <x-ad-slot placement="products_above_products"
+                               :category="request()->integer('categoria') ?: null" />
+
                     <div class="ksm-shop__toolbar">
                         <button class="ksm-btn ksm-btn--ghost ksm-btn--sm ksm-shop__filters-btn" type="button"
                                 data-shop-filters-toggle aria-controls="ksm-shop-side" aria-expanded="false">
@@ -180,15 +228,6 @@
 
                         <div class="ksm-shop__controls">
                             <label class="ksm-shop__control">
-                                <span>{{ __('site.shop_sort') }}</span>
-                                <select name="ordina" form="ksm-shop-form" data-shop-autosubmit>
-                                    @foreach ($sortOptions as $value => $label)
-                                        <option value="{{ $value }}" @selected(request()->string('ordina')->toString() === (string) $value)>{{ $label }}</option>
-                                    @endforeach
-                                </select>
-                            </label>
-
-                            <label class="ksm-shop__control">
                                 <span>{{ __('site.shop_per_page') }}</span>
                                 <select name="per_pagina" form="ksm-shop-form" data-shop-autosubmit>
                                     @foreach ($perPageOptions as $option)
@@ -203,7 +242,7 @@
                                     <x-icon name="list" :size="18" />
                                 </button>
                                 @foreach ([2, 3, 4, 5, 6] as $cols)
-                                    <button type="button" data-shop-cols="{{ $cols }}" aria-pressed="{{ $cols === 6 ? 'true' : 'false' }}"
+                                    <button type="button" data-shop-cols="{{ $cols }}" aria-pressed="{{ $cols === 4 ? 'true' : 'false' }}"
                                             title="{{ __('site.shop_view_cols', ['count' => $cols]) }}"
                                             aria-label="{{ __('site.shop_view_cols', ['count' => $cols]) }}">
                                         <span class="ksm-colswitch__bars" aria-hidden="true">@for ($i = 0; $i < $cols; $i++)<i></i>@endfor</span>
@@ -227,8 +266,6 @@
                         </ul>
                     @endif
 
-                    <x-ad-slot placement="products_above_products" />
-
                     @if ($products->isEmpty())
                         <div class="ksm-card ksm-shop__empty">
                             <p>{{ __('site.no_results') }}</p>
@@ -237,7 +274,8 @@
                             @endif
                         </div>
                     @else
-                        <div class="ksm-shop__grid" data-shop-grid data-cols="6">
+                        {{-- Quattro schede per riga come in directory; chi vuole cambia dalla barra. --}}
+                        <div class="ksm-shop__grid" data-shop-grid data-cols="4">
                             @foreach ($products as $product)
                                 <x-product-card :product="$product" :storefront="true" />
                             @endforeach

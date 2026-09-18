@@ -1,8 +1,11 @@
 @php
     /*
-     * Blocchi in cima allo shop. Testi, immagine, vantaggi, categorie e
-     * prodotti in evidenza li sceglie il dominio (Amministrazione, Domini);
-     * sul sito principale valgono quelli delle traduzioni.
+     * Blocchi in cima allo shop dei domini: testi, immagine, vantaggi,
+     * categorie e prodotti in evidenza li sceglie il dominio
+     * (Amministrazione, Domini); i testi di partenza sono le traduzioni.
+     *
+     * Sul sito principale non si vedono: li' il catalogo apre da solo, con
+     * l'impostazione della directory delle aziende.
      */
     $site = $tenant->content();
     $hero = $site->hero();

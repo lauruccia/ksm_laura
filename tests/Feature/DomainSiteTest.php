@@ -151,9 +151,13 @@ class DomainSiteTest extends TestCase
 
     public function test_senza_contenuti_il_sito_principale_non_cambia(): void
     {
+        // I blocchi della vetrina sono dei domini: il sito principale apre il
+        // catalogo con l'impostazione della directory delle aziende.
         $this->get('http://localhost/prodotti')
             ->assertOk()
-            ->assertSee(__('storefront.hero_title'))
+            ->assertSee('ksm-directory__search', false)
+            ->assertDontSee(__('storefront.hero_title'))
+            ->assertDontSee('ksm-store-hero', false)
             ->assertDontSee('ksm-footer--site', false)
             ->assertDontSee('ksm-store-featured', false);
     }
