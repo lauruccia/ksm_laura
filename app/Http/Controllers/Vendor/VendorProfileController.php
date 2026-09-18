@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Vendor;
 
 use App\Http\Controllers\Controller;
 use App\Models\CompanyCategory;
+use App\Support\Images\ImageStore;
 use App\Support\Maps\CompanyLocation;
 use App\Support\RichText;
 use Illuminate\Contracts\View\View;
@@ -22,7 +23,7 @@ class VendorProfileController extends Controller
         ]);
     }
 
-    public function update(Request $request, CompanyLocation $location): RedirectResponse
+    public function update(Request $request, CompanyLocation $location, ImageStore $images): RedirectResponse
     {
         $company = $request->user()->company;
 
@@ -41,13 +42,16 @@ class VendorProfileController extends Controller
             'company_description' => ['nullable', 'string', 'max:10000'],
             'base_shipping_rate' => ['nullable', 'numeric', 'min:0'],
             'per_kg_rate' => ['nullable', 'numeric', 'min:0'],
-            'logo' => ['nullable', 'image', 'max:2048'],
-            'banner' => ['nullable', 'image', 'max:4096'],
+            'logo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:12288'],
+            'banner' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:12288'],
         ]);
+
+        $replaced = [];
 
         foreach (['logo', 'banner'] as $field) {
             if ($request->hasFile($field)) {
-                $data[$field] = $request->file($field)->store("companies/$company->id", 'public');
+                $data[$field] = $images->store($request->file($field), "companies/$company->id", $field, $field);
+                $replaced[] = $company->$field;
             }
         }
 
@@ -56,6 +60,7 @@ class VendorProfileController extends Controller
         $data = array_merge($data, $location->coordinates($company, $data));
 
         $company->update($data);
+        $images->delete($replaced);
 
         return back()->with('success', __('Profilo aggiornato.'));
     }

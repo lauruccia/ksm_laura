@@ -111,6 +111,16 @@ class Company extends Model
         return $this->plan_id !== null;
     }
 
+    /**
+     * Ha una pagina pubblica tutta sua? La concede la vetrina completa
+     * (Ecommerce e Vetrina); biglietto e anagrafica restano solo una
+     * scheda nella directory, senza link e senza banner.
+     */
+    public function hasPage(): bool
+    {
+        return $this->allows(PlanCapabilities::SHOWCASE);
+    }
+
     public function scopeActive($query)
     {
         // Qualificata: la directory unisce `plans`, che ha la stessa colonna.
@@ -128,6 +138,15 @@ class Company extends Model
         return $query->whereIn(
             'companies.plan_id',
             Plan::query()->whereJsonContains('capabilities', PlanCapabilities::DIRECTORY)->select('plans.id')
+        );
+    }
+
+    /** Solo le aziende con una pagina pubblica: serve alla sitemap. */
+    public function scopeWithPage($query)
+    {
+        return $query->whereIn(
+            'companies.plan_id',
+            Plan::query()->whereJsonContains('capabilities', PlanCapabilities::SHOWCASE)->select('plans.id')
         );
     }
 

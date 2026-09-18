@@ -1,3 +1,7 @@
+{{-- I domini della rete hanno un piede tutto loro, senza dati ne' pagine di KSM. --}}
+@if ($tenant->isNetworkSite())
+    @include('partials.footer-site')
+@else
 @php
     // Dati del gestore del sito: si modificano da Amministrazione, Impostazioni.
     $siteName = $settings->website_name ?? $tenant->brandName();
@@ -115,3 +119,4 @@
         </div>
     </div>
 </footer>
+@endif

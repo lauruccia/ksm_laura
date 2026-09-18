@@ -1,0 +1,400 @@
+/* ==========================================================================
+   Minisito dell'azienda: apertura, menu interno, colonne, riquadri.
+   Caricato solo dalla pagina dell'azienda, che e' la sola a usarlo.
+   ========================================================================== */
+
+.ksm-mini {
+    display: block;
+    padding-bottom: 56px;
+    background: var(--ksm-canvas);
+}
+
+/* ---------- Apertura ---------- */
+.ksm-mini__hero {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    /* Alta come un banner vero: l'immagine e' il primo biglietto da visita. */
+    min-height: 360px;
+    padding: 0;
+    background: var(--ksm-hero-image) center / cover no-repeat, var(--ksm-dark);
+}
+
+.ksm-mini__hero--plain {
+    background: var(--ksm-bands), var(--ksm-stripes), var(--ksm-gradient-brand);
+}
+
+/* Il velo scuro serve solo a tenere leggibile il testo, che sta in basso:
+   in alto il banner resta scoperto, sotto si chiude quanto basta. */
+.ksm-mini__hero::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg,
+        rgba(7, 54, 77, .12) 0%,
+        rgba(7, 54, 77, .3) 38%,
+        rgba(7, 54, 77, .72) 78%,
+        rgba(7, 54, 77, .86) 100%);
+}
+
+.ksm-mini__heroinner {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: flex-end;
+    gap: 22px;
+    padding-top: 54px;
+    padding-bottom: 34px;
+    color: #fff;
+}
+
+.ksm-mini__crumbs {
+    position: relative;
+    z-index: 1;
+    padding-top: 18px;
+    font-size: .85rem;
+    color: rgba(255, 255, 255, .72);
+}
+
+.ksm-mini__crumbs a { color: rgba(255, 255, 255, .9); }
+.ksm-mini__crumbs a:hover { color: #fff; text-decoration: underline; }
+
+.ksm-mini__logo {
+    flex: none;
+    width: 112px;
+    height: 112px;
+    border-radius: var(--ksm-radius-lg);
+    border: 4px solid #fff;
+    background: #fff center / contain no-repeat;
+    box-shadow: var(--ksm-shadow-md);
+}
+
+.ksm-mini__logo--empty {
+    display: grid;
+    place-items: center;
+    background: var(--ksm-accent-soft);
+    color: var(--ksm-accent-dark);
+    font-family: var(--ksm-font-display);
+    font-weight: 800;
+    font-size: 2.6rem;
+    line-height: 1;
+}
+
+.ksm-mini__ident { flex: 1; min-width: 0; }
+
+.ksm-mini__name {
+    margin: 0;
+    font-size: 2.1rem;
+    line-height: 1.15;
+    color: #fff;
+    text-shadow: 0 2px 14px rgba(7, 54, 77, .55);
+}
+
+.ksm-mini__sub {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 16px;
+    margin: 10px 0 0;
+    font-size: .92rem;
+    color: rgba(255, 255, 255, .88);
+    text-shadow: 0 1px 10px rgba(7, 54, 77, .5);
+}
+
+/* `.ksm-icon` e' display:block: senza questo l'icona andrebbe a capo
+   e categoria e citta' occuperebbero due righe ciascuna. */
+.ksm-mini__sub > span {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+}
+
+.ksm-mini__sub .ksm-icon { color: var(--ksm-accent-light); }
+.ksm-mini__sub .ksm-rating__value { color: rgba(255, 255, 255, .85); }
+
+.ksm-mini__open {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 4px 12px;
+    border-radius: var(--ksm-radius-pill);
+    background: rgba(255, 255, 255, .16);
+    font-size: .84rem;
+    font-weight: 600;
+}
+
+.ksm-mini__open::before {
+    content: "";
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #9FE08A;
+}
+
+.ksm-mini__open--closed::before { background: #F0A8A8; }
+
+/* ---------- Azioni rapide ---------- */
+.ksm-mini__actions {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding-bottom: 30px;
+}
+
+.ksm-mini__actions .ksm-btn--ghost {
+    border-color: rgba(255, 255, 255, .45);
+    background: rgba(255, 255, 255, .1);
+    color: #fff;
+}
+
+.ksm-mini__actions .ksm-btn--ghost:hover {
+    border-color: #fff;
+    background: rgba(255, 255, 255, .2);
+    color: #fff;
+}
+
+/* ---------- Menu interno ---------- */
+.ksm-mini__nav {
+    position: sticky;
+    top: 0;
+    z-index: 6;
+    background: var(--ksm-surface);
+    border-bottom: 1px solid var(--ksm-line);
+    box-shadow: var(--ksm-shadow-xs);
+}
+
+.ksm-mini__nav ul {
+    display: flex;
+    gap: 4px;
+    margin: 0;
+    padding: 0;
+    overflow-x: auto;
+    list-style: none;
+    scrollbar-width: thin;
+}
+
+.ksm-mini__nav a {
+    display: inline-block;
+    padding: 15px 14px;
+    border-bottom: 2px solid transparent;
+    color: var(--ksm-body);
+    font-size: .92rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.ksm-mini__nav a:hover { color: var(--ksm-accent-dark); }
+
+.ksm-mini__nav a.is-current {
+    border-bottom-color: var(--ksm-accent);
+    color: var(--ksm-accent-dark);
+}
+
+/* ---------- Colonne ---------- */
+.ksm-mini__layout {
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+    gap: 28px;
+    align-items: start;
+    padding-top: 32px;
+}
+
+.ksm-mini__main { display: flex; flex-direction: column; gap: 28px; min-width: 0; }
+.ksm-mini__side { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
+
+/* La colonna di fianco segue la lettura, ma solo se ci sta in altezza. */
+@media (min-width: 981px) and (min-height: 700px) {
+    .ksm-mini__side { position: sticky; top: 68px; }
+}
+
+/* Lo stacco serve al menu appiccicoso: senza, il titolo finisce sotto. */
+.ksm-mini__block {
+    scroll-margin-top: 72px;
+    padding: 24px;
+}
+
+.ksm-mini__block > h2 {
+    margin: 0 0 16px;
+    font-size: 1.3rem;
+}
+
+.ksm-mini__panel { padding: 20px; }
+
+.ksm-mini__panel > h2 {
+    margin: 0 0 14px;
+    font-size: 1.1rem;
+}
+
+/* ---------- Contatti di fianco ---------- */
+.ksm-mini__contacts {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.ksm-mini__contacts li {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--ksm-line-soft);
+    font-size: .92rem;
+    line-height: 1.4;
+}
+
+.ksm-mini__contacts li:last-child { border-bottom: 0; padding-bottom: 0; }
+.ksm-mini__contacts li:first-child { padding-top: 0; }
+.ksm-mini__contacts .ksm-icon { flex: none; margin-top: 2px; color: var(--ksm-accent); }
+.ksm-mini__contacts a { color: var(--ksm-ink); word-break: break-word; }
+.ksm-mini__contacts a:hover { color: var(--ksm-accent-dark); }
+
+/* ---------- Orari ---------- */
+.ksm-mini__hours { width: 100%; border-collapse: collapse; }
+
+.ksm-mini__hours th,
+.ksm-mini__hours td {
+    padding: 8px 0;
+    border-bottom: 1px solid var(--ksm-line-soft);
+    font-size: .9rem;
+    font-weight: 500;
+    text-align: left;
+    color: var(--ksm-body);
+}
+
+.ksm-mini__hours td { text-align: right; white-space: nowrap; }
+.ksm-mini__hours tr:last-child th,
+.ksm-mini__hours tr:last-child td { border-bottom: 0; }
+
+.ksm-mini__hours tr.is-today th,
+.ksm-mini__hours tr.is-today td { color: var(--ksm-ink); font-weight: 700; }
+
+/* ---------- Galleria ---------- */
+.ksm-mini__gallery {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 12px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.ksm-mini__gallery img {
+    display: block;
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    border-radius: var(--ksm-radius-sm);
+    object-fit: cover;
+    background: var(--ksm-line-soft);
+    transition: transform .25s var(--ksm-ease);
+}
+
+.ksm-mini__gallery a:hover img { transform: scale(1.03); }
+
+/* Immagine a schermo intero: <dialog> nativo, niente librerie. */
+.ksm-lightbox {
+    max-width: min(94vw, 1100px);
+    max-height: 92vh;
+    padding: 0;
+    border: 0;
+    border-radius: var(--ksm-radius);
+    background: transparent;
+}
+
+.ksm-lightbox::backdrop { background: rgba(7, 54, 77, .82); }
+.ksm-lightbox img { display: block; max-width: 100%; max-height: 92vh; border-radius: var(--ksm-radius); }
+
+.ksm-lightbox__close {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    display: grid;
+    place-items: center;
+    width: 38px;
+    height: 38px;
+    border: 0;
+    border-radius: 50%;
+    background: rgba(7, 54, 77, .6);
+    color: #fff;
+    cursor: pointer;
+}
+
+/* ---------- Mappa ---------- */
+.ksm-mini__mapcanvas {
+    /* Leaflet alza i suoi riquadri: senza questo passano sopra il menu. */
+    position: relative;
+    z-index: 0;
+    height: 260px;
+    border-radius: var(--ksm-radius-sm);
+    background: var(--ksm-line-soft);
+}
+
+.ksm-mini__maplinks { margin: 12px 0 0; font-size: .88rem; }
+
+/* ---------- Recensioni ---------- */
+.ksm-mini__reviews {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 22px;
+}
+
+.ksm-mini__review {
+    padding: 16px;
+    border: 1px solid var(--ksm-line);
+    border-radius: var(--ksm-radius);
+    background: var(--ksm-surface);
+}
+
+.ksm-mini__review header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.ksm-mini__review time { font-size: .82rem; color: var(--ksm-muted); }
+.ksm-mini__review p { margin: 8px 0 0; }
+
+.ksm-mini__score {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.ksm-mini__scorenum {
+    font-family: var(--ksm-font-display);
+    font-size: 2.2rem;
+    font-weight: 800;
+    line-height: 1;
+    color: var(--ksm-ink);
+}
+
+/* ---------- Moduli ---------- */
+.ksm-mini__form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 16px; }
+.ksm-mini__form .ksm-field--wide { grid-column: 1 / -1; }
+.ksm-mini__form button { grid-column: 1 / -1; justify-self: start; }
+
+/* ---------- Schermi stretti ---------- */
+@media (max-width: 980px) {
+    .ksm-mini__layout { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 720px) {
+    .ksm-mini__heroinner {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 14px;
+        padding-top: 30px;
+    }
+
+    .ksm-mini__logo { width: 84px; height: 84px; }
+    .ksm-mini__name { font-size: 1.6rem; }
+    .ksm-mini__actions .ksm-btn { flex: 1 1 calc(50% - 5px); }
+    .ksm-mini__form { grid-template-columns: 1fr; }
+    .ksm-mini__block { padding: 18px; }
+}

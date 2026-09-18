@@ -128,6 +128,50 @@ class KMoneyCheckoutTest extends TestCase
         ]);
     }
 
+    public function test_il_pagamento_non_scala_lo_stock_non_gestito(): void
+    {
+        $product = $this->inCart(20, 0);
+        $product->update(['stock' => null]);
+        $this->checkout()->assertRedirect('https://stripe.test/paga');
+        $order = Order::firstOrFail();
+        $this->get(route('checkout.return', $order))->assertRedirect(route('checkout.success', $order));
+        $this->assertNull($product->fresh()->stock);
+        $this->assertTrue($product->fresh()->isInStock());
+    }
+
+    public function test_ordine_con_due_varianti_conserva_prezzi_quote_e_scala_solo_la_variante_gestita(): void
+    {
+        $product = $this->inCart(20, 50);
+        $product->update(['product_type' => 'variable', 'stock' => 0]);
+        $small = $product->variants()->create(['variant_type' => 'Formato', 'variant_value' => '250 g', 'variant_price' => 5, 'variant_stock' => 3]);
+        $large = $product->variants()->create(['variant_type' => 'Formato', 'variant_value' => '500 g', 'variant_price' => 9, 'variant_stock' => null]);
+        $this->withSession(['cart' => collect([$small, $large])->mapWithKeys(fn ($variant) => [$product->id.':'.$variant->id => [
+            'product_id' => $product->id, 'variant_id' => $variant->id, 'company_id' => $this->company->id,
+            'name' => $product->name, 'slug' => $product->slug, 'price' => 1, 'quantity' => 2,
+        ]])->all()]);
+        $this->checkout()->assertRedirect('https://kmoney.test/paga');
+        $order = Order::firstOrFail();
+        $this->assertEquals(28, $order->subtotal);
+        $this->assertEquals(14, $order->kmoney_total);
+        $this->assertEquals(14, $order->items->sum('kmoney_amount'));
+        $this->assertEquals(5, $order->items->firstWhere('product_variant_id', $small->id)->product_price);
+        $this->assertStringContainsString('250 g', $order->items->firstWhere('product_variant_id', $small->id)->product_name);
+        $this->get(route('checkout.return', $order))->assertRedirect('https://stripe.test/paga');
+        $this->get(route('checkout.return', $order))->assertRedirect(route('checkout.success', $order));
+        $this->get(route('checkout.return', $order))->assertRedirect(route('checkout.success', $order));
+        $this->assertSame(1, (int) $small->fresh()->variant_stock);
+        $this->assertNull($large->fresh()->variant_stock);
+        $this->assertSame(0, $product->fresh()->stock);
+    }
+
+    public function test_checkout_rifiuta_giacenza_diventata_insufficiente(): void
+    {
+        $product = $this->inCart(20, 0);
+        $product->update(['stock' => 0]);
+        $this->checkout()->assertSessionHasErrors('quantita');
+        $this->assertSame(0, Order::count());
+    }
+
     public function test_si_paga_prima_la_quota_kmoney_poi_la_parte_in_euro(): void
     {
         $product = $this->inCart(20, 50);
@@ -247,5 +291,23 @@ class KMoneyCheckoutTest extends TestCase
             ->assertOk()
             ->assertSee('10,00 KY')
             ->assertSee('50% in KMoney');
+    }
+    public function test_la_cassa_salva_l_indirizzo_solo_se_richiesto(): void
+    {
+        $this->inCart(20, 0);
+        $this->checkout(['billing_state' => 'RM'])->assertRedirect('https://stripe.test/paga');
+        $this->assertNull($this->buyer->fresh()->billing_address);
+
+        $this->inCart(20, 0);
+        $this->checkout(['billing_state' => 'RM', 'salva_dati' => '1'])->assertRedirect('https://stripe.test/paga');
+
+        $buyer = $this->buyer->fresh();
+        $this->assertSame('Via Roma 1', $buyer->billing_address);
+        $this->assertSame('RM', $buyer->billing_state);
+        $this->assertSame('RM', Order::latest('id')->first()->billing_state);
+
+        // Il prossimo ordine parte gia' compilato.
+        $this->inCart(20, 0);
+        $this->get(route('checkout.show'))->assertOk()->assertSee('value="Via Roma 1"', false);
     }
 }

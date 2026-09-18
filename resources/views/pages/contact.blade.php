@@ -32,13 +32,13 @@
             <aside class="ksm-card" style="padding: 24px; height: fit-content;">
                 <h2>{{ __('site.contacts') }}</h2>
                 <ul class="ksm-meta">
-                    @if ($settings->address)<li>{{ $settings->address }}</li>@endif
-                    @if ($settings->contact_number)<li>{{ $settings->contact_number }}</li>@endif
-                    @if ($settings->website_email)<li>{{ $settings->website_email }}</li>@endif
+                    @if ($contacts['address'])<li>{{ $contacts['address'] }}</li>@endif
+                    @if ($contacts['phone'])<li>{{ $contacts['phone'] }}</li>@endif
+                    @if ($contacts['email'])<li>{{ $contacts['email'] }}</li>@endif
                 </ul>
 
-                @if ($settings->location_map_embed)
-                    <div style="margin-top: 16px;">{!! $settings->location_map_embed !!}</div>
+                @if ($contacts['map'])
+                    <div style="margin-top: 16px;">{!! $contacts['map'] !!}</div>
                 @endif
             </aside>
         </div>

@@ -51,6 +51,8 @@ return [
     'search_all_regions' => 'All regions',
     'search_category' => 'Category',
     'search_all_categories' => 'All categories',
+    'search_all_in_category' => 'All in :name',
+    'directory_categories' => 'Categories',
     'search_submit' => 'Search',
 
     'featured_companies' => 'Featured companies',
@@ -79,6 +81,11 @@ return [
     'usp_presence_text' => 'A trusted environment',
 
     'no_results' => 'No results.',
+    'pagination_label' => 'Pagination',
+    'pagination_prev' => 'Previous',
+    'pagination_next' => 'Next',
+    'directory_loading' => 'Loading more companies…',
+    'directory_retry' => 'Show more companies',
     'add_to_cart' => 'Add',
     'kmoney_share' => ':percent% KMoney',
 

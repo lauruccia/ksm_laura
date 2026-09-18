@@ -18,9 +18,11 @@
 
                 <div style="margin-top: 18px; display: flex; gap: 10px; flex-wrap: wrap;">
                     <a class="ksm-btn ksm-btn--primary" href="{{ route('vendor.dashboard') }}">Vai all'area azienda</a>
-                    <a class="ksm-btn ksm-btn--ghost" href="{{ route('companies.show', $subscription->company->slug) }}">
-                        Vedi la vetrina
-                    </a>
+                    @if ($subscription->company->hasPage())
+                        <a class="ksm-btn ksm-btn--ghost" href="{{ route('companies.show', $subscription->company->slug) }}">
+                            Vedi la vetrina
+                        </a>
+                    @endif
                 </div>
             </div>
         </div>

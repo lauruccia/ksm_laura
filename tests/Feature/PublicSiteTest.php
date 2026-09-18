@@ -145,8 +145,16 @@ class PublicSiteTest extends TestCase
 
     public function test_la_sitemap_e_un_indice_di_file_con_le_sole_pagine_pubbliche(): void
     {
-        $this->listedCompany('Caseificio Rossi');
-        $this->listedCompany('Azienda Spenta', ['is_active' => false]);
+        // Nella sitemap solo chi ha una pagina: serve la vetrina completa.
+        $vetrina = Plan::create([
+            'name' => 'Vetrina', 'slug' => 'vetrina', 'price' => 1200, 'priority' => 30,
+            'duration_days' => 365, 'is_active' => true,
+            'capabilities' => [PlanCapabilities::DIRECTORY, PlanCapabilities::CONTACT_CARD, PlanCapabilities::SHOWCASE],
+        ]);
+
+        $this->listedCompany('Caseificio Rossi', ['plan_id' => $vetrina->id]);
+        $this->listedCompany('Azienda Spenta', ['plan_id' => $vetrina->id, 'is_active' => false]);
+        $this->listedCompany('Solo Anagrafica');
 
         $firstFile = route('sitemap.section', ['section' => 'aziende', 'page' => 1]);
 
@@ -157,7 +165,8 @@ class PublicSiteTest extends TestCase
         $this->get($firstFile)
             ->assertOk()
             ->assertSee(route('companies.show', 'caseificio-rossi'), false)
-            ->assertDontSee(route('companies.show', 'azienda-spenta'), false);
+            ->assertDontSee(route('companies.show', 'azienda-spenta'), false)
+            ->assertDontSee(route('companies.show', 'solo-anagrafica'), false);
 
         // Una sola azienda sta tutta nel primo file: il secondo non esiste.
         $this->get(route('sitemap.section', ['section' => 'aziende', 'page' => 2]))->assertNotFound();

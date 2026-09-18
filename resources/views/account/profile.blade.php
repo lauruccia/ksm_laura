@@ -1,6 +1,6 @@
 @extends('layouts.panel')
 
-@section('title', 'Dati e indirizzo · KSM')
+@section('title', 'Dati e indirizzo · '.$tenant->brandName())
 @section('role', 'Il mio account')
 @section('crumb', 'Dati e indirizzo')
 @section('nav')@include('account.nav')@endsection

@@ -1,0 +1,25 @@
+/* Spazi piu' compatti nella home; le schede prodotto usano gli stili dello shop. */
+.ksm-home .ksm-section { padding: 36px 0; }
+.ksm-home .ksm-section--after-search { padding-top: 24px; }
+.ksm-home .ksm-section-head { margin-bottom: 20px; }
+.ksm-home .ksm-searchbar { margin-top: 24px; }
+.ksm-home .ksm-step { padding: 18px 20px; }
+
+/* Otto prodotti: righe complete da quattro, oppure da due sui dispositivi piccoli. */
+.ksm-home .ksm-home__products { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+
+@media (max-width: 1000px) {
+    .ksm-home .ksm-home__products { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 700px) {
+    .ksm-home .ksm-section { padding: 24px 0; }
+    .ksm-home .ksm-section-head { gap: 12px; margin-bottom: 16px; }
+    .ksm-home .ksm-steps { gap: 12px; }
+    .ksm-home .ksm-step { padding: 16px; }
+}
+
+/* Sui telefoni piu' stretti una colonna mantiene leggibili prezzi ed etichette. */
+@media (max-width: 350px) {
+    .ksm-home .ksm-home__products { grid-template-columns: minmax(0, 1fr); }
+}

@@ -21,17 +21,27 @@ class ResolveTenant
 {
     public function handle(Request $request, Closure $next): Response
     {
-        $host = $this->normaliseHost(
-            $request->header('X-Forwarded-Host') ?? $request->getHost()
-        );
+        $this->apply($request);
+
+        return $next($request);
+    }
+
+    /**
+     * Imposta il contesto per l'host della richiesta. Pubblico perche' lo
+     * usano anche le pagine di errore di un indirizzo inesistente, che non
+     * passano dai middleware delle rotte.
+     */
+    public function apply(Request $request): void
+    {
+        // getHost() tiene conto di X-Forwarded-Host solo se arriva dal proxy
+        // fidato (TrustPlatformProxies): da altri l'header non conta.
+        $host = $this->normaliseHost($request->getHost());
 
         $context = app(TenantContext::class);
         $context->reset();
 
         if (in_array($host, config('ksm.platform_hosts'), true)) {
-            $context->reset();
-
-            return $next($request);
+            return;
         }
 
         $company = Company::query()
@@ -42,7 +52,7 @@ class ResolveTenant
         if ($company) {
             $context->useCompany($company);
 
-            return $next($request);
+            return;
         }
 
         $domain = Domain::query()
@@ -53,8 +63,6 @@ class ResolveTenant
         if ($domain) {
             $context->useDomain($domain);
         }
-
-        return $next($request);
     }
 
     private function normaliseHost(string $host): string

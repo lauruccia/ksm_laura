@@ -64,7 +64,7 @@ class SubscriptionFlowTest extends TestCase
         $this->companyFor($user);
 
         $this->get(route('plans.index'))->assertOk()->assertSee($plan->name);
-        $this->get(route('register', ['piano' => $plan->slug]))->assertOk()->assertSee($plan->name);
+        $this->get(route('register.vendor', ['piano' => $plan->slug]))->assertOk()->assertSee($plan->name);
 
         $this->actingAs($user)->get(route('onboarding.create'))->assertRedirect(route('subscription.index'));
         $this->actingAs($user)->get(route('subscription.index'))->assertOk()->assertSee($plan->name);

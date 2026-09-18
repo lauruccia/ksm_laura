@@ -13,6 +13,12 @@
     $siteSubline = $siteSubline ?? $presentation['subline'] ?? ($isShopHeader ? __('header.shop_subline') : __('site.claim_tagline'));
     $logoUrl = $logoUrl ?? $presentation['logo'] ?? ($tenant->brandLogo() ? asset('storage/'.$tenant->brandLogo()) : null);
 
+    // Un dominio della rete puo' scrivere il proprio menu e non mostra le pagine CMS di KSM.
+    $networkSite = $tenant->isNetworkSite();
+    $leftMenu = $leftMenu ?? $tenant->content()->menu('left');
+    $rightMenu = $rightMenu ?? $tenant->content()->menu('right')
+        ?? ($networkSite ? [['label' => __('site.nav_contact'), 'url' => route('contact'), 'active' => request()->routeIs('contact')]] : null);
+
     $leftMenu = $leftMenu ?? ($isShopHeader ? [
         ['label' => __('site.nav_home'), 'url' => route('home'), 'active' => request()->routeIs('home')],
         ['label' => __('site.nav_products'), 'url' => route('products.index'), 'active' => request()->routeIs('products.*')],
@@ -82,6 +88,14 @@
                 <x-icon name="search" :size="20" />
             </button>
 
+            {{-- Il numero conta i pezzi di tutti i carrelli: i venditori si scelgono nel carrello. --}}
+            <a href="{{ route('cart.index') }}" class="brand-header__icon-btn brand-header__cart"
+               aria-label="{{ __('site.cart') }} ({{ $cartCount }}){{ $cartVendors > 1 ? ' · '.$cartVendors.' venditori' : '' }}"
+               title="{{ __('site.cart') }}{{ $cartVendors > 1 ? ' · '.$cartVendors.' venditori' : '' }}">
+                <x-icon name="cart" :size="22" />
+                <span class="brand-header__cart-count" aria-hidden="true">{{ $cartCount }}</span>
+            </a>
+
             @guest
                 <a href="{{ route('login') }}" class="brand-header__soft-btn">{{ __('site.sign_in') }}</a>
             @endguest
@@ -96,10 +110,12 @@
                 @endif
             @endauth
 
-            <a href="{{ $isShopHeader ? route('cart.index') : route('register') }}" class="brand-header__register-btn" aria-label="{{ $isShopHeader ? __('site.cart') : __('site.register_company') }}">
-                <x-icon :name="$isShopHeader ? 'cart' : 'building'" :size="20" />
-                <span>{{ $isShopHeader ? __('site.cart').' ('.$cartCount.')' : __('site.register_company') }}</span>
-            </a>
+            @unless ($isShopHeader || $networkSite)
+                <a href="{{ route('register.vendor') }}" class="brand-header__register-btn" aria-label="{{ __('site.register_company') }}">
+                    <x-icon name="building" :size="20" />
+                    <span>{{ __('site.register_company') }}</span>
+                </a>
+            @endunless
 
             <div class="brand-header__lang">
                 <select onchange="location.href = this.value;" aria-label="{{ __('site.language') }}">
@@ -125,7 +141,9 @@
 
         @guest
             <a href="{{ route('login') }}">{{ __('site.sign_in') }}</a>
-            <a href="{{ route('register') }}">{{ __('site.register_company') }}</a>
+            @unless ($networkSite)
+                <a href="{{ route('register.vendor') }}">{{ __('site.register_company') }}</a>
+            @endunless
         @endguest
 
         @auth
@@ -148,5 +166,4 @@
         </form>
     </div>
 </header>
-
 

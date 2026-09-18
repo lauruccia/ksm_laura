@@ -58,15 +58,21 @@ class CompanyShowcaseTest extends TestCase
             ->assertSee('storage/companies/1/galleria/bus.jpg', false);
     }
 
-    public function test_senza_le_voci_del_piano_restano_nascoste(): void
+    public function test_senza_la_galleria_nel_piano_resta_nascosta(): void
     {
-        $company = $this->company([PlanCapabilities::DIRECTORY, PlanCapabilities::CONTACT_CARD]);
+        $company = $this->company([PlanCapabilities::DIRECTORY, PlanCapabilities::CONTACT_CARD, PlanCapabilities::SHOWCASE]);
 
         $this->get(route('companies.show', $company->slug))
             ->assertOk()
-            ->assertDontSee('Orari di apertura')
-            ->assertDontSee('galleria/bus.jpg', false)
-            ->assertDontSee('dal 1968');
+            ->assertSee('Orari di apertura')
+            ->assertDontSee('galleria/bus.jpg', false);
+    }
+
+    public function test_senza_vetrina_completa_la_pagina_non_esiste(): void
+    {
+        $company = $this->company([PlanCapabilities::DIRECTORY, PlanCapabilities::CONTACT_CARD]);
+
+        $this->get(route('companies.show', $company->slug))->assertNotFound();
     }
 
     public function test_il_testo_semplice_va_a_capo_e_resta_testo(): void

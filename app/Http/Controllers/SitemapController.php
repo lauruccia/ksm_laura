@@ -6,6 +6,7 @@ use App\Models\CmsPage;
 use App\Models\Company;
 use App\Models\Product;
 use App\Support\PlanCapabilities;
+use App\Support\TenantContext;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -97,9 +98,13 @@ class SitemapController extends Controller
             ['loc' => route('home'), 'priority' => '1.0'],
             ['loc' => route('companies.index'), 'priority' => '0.9'],
             ['loc' => route('products.index'), 'priority' => '0.9'],
-            ['loc' => route('plans.index'), 'priority' => '0.7'],
             ['loc' => route('contact'), 'priority' => '0.5'],
         ];
+
+        // I piani sono di KSM: un dominio della rete non li mette in mappa.
+        if (! app(TenantContext::class)->isNetworkSite()) {
+            array_splice($urls, 3, 0, [['loc' => route('plans.index'), 'priority' => '0.7']]);
+        }
 
         $cms = CmsPage::query()
             ->published()
@@ -138,16 +143,19 @@ class SitemapController extends Controller
 
     private function companies(): Builder
     {
-        return Company::query()
+        // Solo chi ha una pagina: biglietto e anagrafica stanno nella directory.
+        return app(TenantContext::class)->scope()->companies(Company::query()
             ->active()
-            ->whereHas('plan', fn ($q) => $q->whereJsonContains('capabilities', PlanCapabilities::DIRECTORY));
+            ->inDirectory()
+            ->withPage());
     }
 
     private function products(): Builder
     {
-        return Product::query()
+        // Come nello shop: sui domini solo i prodotti del dominio.
+        return app(TenantContext::class)->scope()->products(Product::query()
             ->active()
-            ->whereHas('company', fn ($q) => $q->active());
+            ->whereHas('company', fn ($q) => $q->active()->selling()));
     }
 
     private function key(Request $request, string $suffix): string

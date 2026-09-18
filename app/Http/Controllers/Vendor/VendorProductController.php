@@ -8,6 +8,7 @@ use App\Models\ProductBrand;
 use App\Models\ProductCategory;
 use App\Payments\KMoney\KMoneyPercentages;
 use App\Payments\KMoney\KMoneyShare;
+use App\Support\Images\ImageStore;
 use App\Support\RichText;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -50,7 +51,7 @@ class VendorProductController extends Controller
         $data['slug'] = Str::slug($data['name']).'-'.Str::lower(Str::random(5));
 
         if ($request->hasFile('featured_image')) {
-            $data['featured_image'] = $request->file('featured_image')->store('products', 'public');
+            $data['featured_image'] = app(ImageStore::class)->store($request->file('featured_image'), 'products', 'product', 'featured_image');
         }
 
         $product = Product::create($data);
@@ -80,11 +81,15 @@ class VendorProductController extends Controller
         $variants = $data['variants'] ?? [];
         unset($data['variants']);
 
+        $replaced = null;
+
         if ($request->hasFile('featured_image')) {
-            $data['featured_image'] = $request->file('featured_image')->store('products', 'public');
+            $data['featured_image'] = app(ImageStore::class)->store($request->file('featured_image'), 'products', 'product', 'featured_image');
+            $replaced = $product->featured_image;
         }
 
         $product->update($this->withoutKMoneyChoiceInDebt($request, $data));
+        app(ImageStore::class)->delete($replaced);
         $this->syncVariants($product, $variants);
         app(KMoneyPercentages::class)->refresh($request->user()->company, [$product->id]);
 
@@ -135,12 +140,12 @@ class VendorProductController extends Controller
             'discount_price' => ['nullable', 'numeric', 'min:0', 'lt:price'],
             // Quota KMoney scelta sul prodotto; vuoto vuol dire automatica, da categoria o contratto.
             'kmoney_discount_percent' => ['nullable', Rule::in(KMoneyShare::STEPS)],
-            'stock' => ['required', 'integer', 'min:0'],
+            'stock' => ['nullable', 'integer', 'min:0'],
             'weight_kg' => ['nullable', 'numeric', 'min:0'],
             'fixed_shipping_cost' => ['nullable', 'numeric', 'min:0'],
             'product_type' => ['required', 'in:simple,variable'],
             'status' => ['required', 'in:active,inactive'],
-            'featured_image' => ['nullable', 'image', 'max:4096'],
+            'featured_image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp,gif', 'max:12288'],
             'variants' => ['nullable', 'array', 'max:50'],
             'variants.*.id' => ['nullable', 'integer'],
             'variants.*.type' => ['nullable', 'string', 'max:60'],
@@ -149,6 +154,15 @@ class VendorProductController extends Controller
             'variants.*.stock' => ['nullable', 'integer', 'min:0'],
             'variants.*.sku' => ['nullable', 'string', 'max:100'],
         ]);
+
+        if ($data['product_type'] === 'variable') {
+            $rows = collect($data['variants'] ?? [])->filter(fn ($row) => filled($row['type'] ?? null) || filled($row['value'] ?? null));
+            if ($rows->isEmpty() || $rows->contains(fn ($row) => blank($row['type'] ?? null) || blank($row['value'] ?? null))) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'variants' => 'Inserisci almeno una variante e compila tipo e valore per ogni riga utilizzata.',
+                ]);
+            }
+        }
 
         // L'editor manda HTML: si salva solo la formattazione ammessa.
         if (array_key_exists('description', $data)) {

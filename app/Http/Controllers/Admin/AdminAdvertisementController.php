@@ -9,11 +9,11 @@ use App\Models\CompanyCategory;
 use App\Models\Domain;
 use App\Support\Ads\AdContext;
 use App\Support\Ads\Placements;
+use App\Support\Images\ImageStore;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 
 /**
@@ -78,7 +78,7 @@ class AdminAdvertisementController extends Controller
         $advertisement->update($this->attributes($request, $data));
 
         if ($previousImage && $previousImage !== $advertisement->img) {
-            Storage::disk('public')->delete($previousImage);
+            app(ImageStore::class)->delete($previousImage);
         }
 
         return back()->with('success', __('Campagna aggiornata.'));
@@ -87,7 +87,7 @@ class AdminAdvertisementController extends Controller
     public function destroy(Advertisement $advertisement): RedirectResponse
     {
         if ($advertisement->img) {
-            Storage::disk('public')->delete($advertisement->img);
+            app(ImageStore::class)->delete($advertisement->img);
         }
 
         $advertisement->delete();
@@ -103,7 +103,7 @@ class AdminAdvertisementController extends Controller
             'advertiser_id' => ['nullable', 'exists:advertisers,id'],
             'name' => ['required', 'string', 'max:255'],
             'link' => ['required', 'url:http,https', 'max:2000'],
-            'image' => [$campaign?->img ? 'nullable' : 'required', 'image', 'mimes:jpg,jpeg,png,webp,gif', 'max:4096'],
+            'image' => [$campaign?->img ? 'nullable' : 'required', 'image', 'mimes:jpg,jpeg,png,webp,gif', 'max:12288'],
             'locations' => ['required', 'array', 'min:1'],
             'locations.*' => [Rule::in(array_keys(Placements::all()))],
             'billing' => ['required', Rule::in(array_keys(Advertisement::BILLING))],
@@ -149,7 +149,7 @@ class AdminAdvertisementController extends Controller
         }
 
         if ($request->hasFile('image')) {
-            $attributes['img'] = $request->file('image')->store('advertisements', 'public');
+            $attributes['img'] = app(ImageStore::class)->store($request->file('image'), 'advertisements', 'advertisement');
         }
 
         return $attributes;

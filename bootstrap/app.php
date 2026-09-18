@@ -3,6 +3,7 @@
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Http\Middleware\TrustProxies;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Support\Facades\Route;
 
@@ -24,6 +25,15 @@ return Application::configure(basePath: dirname(__DIR__))
         },
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // Dietro Caddy: https, dominio e IP veri solo dal proxy della macchina.
+        // Senza, link, moduli e ritorni dai pagamenti uscirebbero in http.
+        $middleware->replace(TrustProxies::class, App\Http\Middleware\TrustPlatformProxies::class);
+
+        // Prima della sessione: www.dominio passa subito all'indirizzo senza www.
+        $middleware->web(prepend: [
+            App\Http\Middleware\RedirectWww::class,
+        ]);
+
         $middleware->web(append: [
             App\Http\Middleware\ResolveTenant::class,
             App\Http\Middleware\SetLocale::class,

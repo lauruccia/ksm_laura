@@ -14,7 +14,7 @@
         <ul class="ksm-meta">
             <li>Azienda: {{ $product->company?->name }}</li>
             <li>Prezzo: {{ \App\Support\Money::format($product->price) }}</li>
-            <li>Disponibilità: {{ $product->stock }}</li>
+            <li>Giacenza: {{ $product->product_type === 'variable' ? 'Per variante' : ($product->stock ?? 'Non gestita') }}</li>
             <li>Tipo: {{ $product->product_type }}</li>
             <li>Stato: {{ $product->status }}</li>
         </ul>
@@ -28,6 +28,7 @@
                         <td>{{ $variant->variant_type }}</td>
                         <td>{{ $variant->variant_value }}</td>
                         <td>{{ $variant->variant_price }}</td>
+                        <td>Giacenza: {{ filled($variant->variant_stock) ? $variant->variant_stock : 'Non gestita' }}</td>
                     </tr>
                 @endforeach
                 </tbody>

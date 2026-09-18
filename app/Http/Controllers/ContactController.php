@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Mail\ContactMessage;
 use App\Models\AdminSetting;
 use App\Models\Company;
+use App\Support\TenantContext;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -12,18 +13,34 @@ use Illuminate\Support\Facades\Mail;
 
 class ContactController extends Controller
 {
-    public function show(): View
+    public function show(TenantContext $tenant): View
     {
-        return view('pages.contact', ['settings' => AdminSetting::current()]);
+        $settings = AdminSetting::current();
+        $domain = $tenant->domain();
+
+        // Su un dominio della rete i recapiti sono i suoi, non quelli di KSM.
+        return view('pages.contact', ['contacts' => $domain ? [
+            'address' => collect([$domain->address, $domain->city])->filter()->implode(', '),
+            'phone' => $domain->phone,
+            'email' => $domain->email,
+            'map' => null,
+        ] : [
+            'address' => $settings->address,
+            'phone' => $settings->contact_number,
+            'email' => $settings->website_email,
+            'map' => $settings->location_map_embed,
+        ]]);
     }
 
-    public function send(Request $request): RedirectResponse
+    public function send(Request $request, TenantContext $tenant): RedirectResponse
     {
         $data = $this->validated($request);
-        $settings = AdminSetting::current();
 
-        if ($settings->website_email) {
-            Mail::to($settings->website_email)->send(new ContactMessage($data));
+        // Il messaggio va a chi gestisce il sito: l'email del dominio, se c'e', altrimenti KSM.
+        $recipient = $tenant->domain()?->email ?: AdminSetting::current()->website_email;
+
+        if ($recipient) {
+            Mail::to($recipient)->send(new ContactMessage($data));
         }
 
         return back()->with('success', __('Messaggio inviato.'));
@@ -31,6 +48,9 @@ class ContactController extends Controller
 
     public function sendToCompany(Request $request, Company $company): RedirectResponse
     {
+        // Il modulo sta sulla pagina dell'azienda: senza pagina non c'e'.
+        abort_unless($company->hasPage(), 404);
+
         $data = $this->validated($request);
 
         if ($company->email) {

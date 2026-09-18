@@ -7,7 +7,7 @@
         <div class="ksm-container" style="max-width: 620px;">
             <form class="ksm-card" style="padding: 28px;" method="POST" action="{{ route('advertiser.register.store') }}">
                 @csrf
-                <h1 style="font-size: 1.6rem;">Pubblicità su KSM</h1>
+                <h1 style="font-size: 1.6rem;">Pubblicità su {{ $tenant->brandName() }}</h1>
                 <p class="ksm-muted">
                     Crea il tuo accesso da inserzionista. Le campagne le concordi con noi e le attiviamo
                     noi; qui troverai visualizzazioni, clic e scadenze.

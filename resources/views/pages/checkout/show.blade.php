@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('layouts.checkout')
 
 @section('title', 'Pagamento')
 
@@ -8,145 +8,312 @@
         $ky = fn ($value) => number_format((float) $value, 2, ',', '.').' KY';
         $blocked = ($split->hasEuro() && empty($methods))
             || ($split->hasKmoney() && ! $kmoneyAvailable && ! $euroFallback);
+        $total = $subtotal + $shipping;
+        $pieces = (int) $items->sum('quantity');
+
+        $countries = ['Italia', 'San Marino', 'Città del Vaticano', 'Svizzera', 'Austria', 'Belgio', 'Croazia',
+            'Francia', 'Germania', 'Grecia', 'Irlanda', 'Lussemburgo', 'Malta', 'Paesi Bassi', 'Polonia',
+            'Portogallo', 'Regno Unito', 'Slovenia', 'Spagna'];
+        $country = old('billing_country', $defaults['billing_country'] ?? null) ?: 'Italia';
+        if (! in_array($country, $countries, true)) {
+            array_unshift($countries, $country);
+        }
+
+        $chosenMethod = old('method', $methods[0] ?? null);
+        $kmoneyChoice = old('pagamento_kmoney', 'conto');
     @endphp
 
-    <section class="ksm-section">
-        <div class="ksm-container ksm-grid ksm-grid--2">
-            <form class="ksm-card" style="padding: 22px;" method="POST" action="{{ route('checkout.process') }}">
-                @csrf
-                <h2>Dati di fatturazione</h2>
+    <div class="ksm-co" data-checkout>
+        {{-- Su telefono il riepilogo sta chiuso in cima, con il totale sempre in vista. --}}
+        <button class="ksm-co-toggle" type="button" data-summary-toggle aria-controls="riepilogo" aria-expanded="true">
+            <span class="ksm-co-toggle__label">
+                <x-icon name="cart" :size="19" />
+                <span data-summary-label>Nascondi riepilogo ordine</span>
+                <svg class="ksm-co-toggle__chevron" width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M2 4l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>
+            </span>
+            <strong>{{ $money($total) }}</strong>
+        </button>
 
-                {{-- Precompilati con l'indirizzo salvato nell'account, che
-                     resta modificabile: l'ordine conserva cio' che si scrive qui. --}}
-                @php($defaults = auth()->user()->billingDefaults())
+        <main class="ksm-co-main">
+            <div class="ksm-co-main__inner">
+                <nav class="ksm-co-crumbs" aria-label="Passaggi">
+                    <a href="{{ route('cart.index') }}">Carrello</a>
+                    <span aria-hidden="true">›</span>
+                    <span @class(['is-current' => auth()->guest()])>Account</span>
+                    <span aria-hidden="true">›</span>
+                    <span @class(['is-current' => auth()->check()])>Consegna e pagamento</span>
+                </nav>
 
-                @foreach ([
-                    'billing_name' => 'Nome e cognome',
-                    'billing_email' => 'Email',
-                    'billing_phone' => 'Telefono',
-                    'billing_address' => 'Indirizzo',
-                    'billing_city' => 'Città',
-                    'billing_zip' => 'CAP',
-                    'billing_country' => 'Paese',
-                ] as $field => $label)
-                    <div class="ksm-field">
-                        <label class="ksm-label" for="{{ $field }}">{{ $label }}</label>
-                        <input class="ksm-input" id="{{ $field }}" name="{{ $field }}"
-                               value="{{ old($field, $defaults[$field] ?? '') }}">
-                        @error($field)<span class="ksm-error">{{ $message }}</span>@enderror
-                    </div>
-                @endforeach
-
-                {{-- La quota KMoney si paga per prima, sul sito KMoney. --}}
-                @if ($split->hasKmoney())
-                    <fieldset class="ksm-field" style="border: 1px solid var(--ksm-line); border-radius: var(--ksm-radius); padding: 14px;">
-                        <legend class="ksm-label" style="padding: 0 6px;">KMoney</legend>
-
-                        <label style="display: flex; gap: 8px; align-items: flex-start; margin-bottom: 8px;">
-                            <input type="radio" name="pagamento_kmoney" value="conto"
-                                   @checked(old('pagamento_kmoney', 'conto') === 'conto')>
-                            <span>
-                                Ho un conto KMoney: pago {{ $ky($split->kmoney()) }} in KMoney
-                                @if ($split->hasEuro()) e subito dopo {{ $money($split->euro()) }} in euro @endif.
-                            </span>
-                        </label>
-
-                        @if ($euroFallback)
-                            <label style="display: flex; gap: 8px; align-items: flex-start;">
-                                <input type="radio" name="pagamento_kmoney" value="euro"
-                                       @checked(old('pagamento_kmoney') === 'euro')>
-                                <span>Non ho un conto KMoney: pago tutto in euro.</span>
-                            </label>
-                        @elseif ($split->vendorInDebt)
-                            <small class="ksm-muted">Questo venditore accetta questi prodotti solo in KMoney.</small>
-                        @endif
-
-                        @unless ($kmoneyAvailable)
-                            <p class="ksm-alert ksm-alert--error" style="margin: 10px 0 0;">
-                                Il venditore non ha ancora collegato il suo conto KMoney.
-                            </p>
-                        @endunless
-
-                        @error('pagamento_kmoney')<span class="ksm-error">{{ $message }}</span>@enderror
-                    </fieldset>
+                @if (session('success'))
+                    <div class="ksm-co-alert ksm-co-alert--success">{{ session('success') }}</div>
+                @endif
+                @if (session('error'))
+                    <div class="ksm-co-alert ksm-co-alert--error">{{ session('error') }}</div>
                 @endif
 
-                <div class="ksm-field">
-                    <label class="ksm-label" for="method">{{ $split->hasKmoney() ? 'Pagamento della parte in euro' : 'Metodo di pagamento' }}</label>
+                @guest
+                    @include('pages.checkout.partials.guest')
+                @else
+                    <form method="POST" action="{{ route('logout') }}" id="checkout-logout" hidden>@csrf</form>
 
-                    @if (empty($methods))
-                        <p class="ksm-alert ksm-alert--error">
-                            Questa azienda non ha ancora attivato un metodo di pagamento in euro.
-                        </p>
-                    @else
-                        <select class="ksm-select" id="method" name="method">
-                            @foreach ($methods as $method)
-                                <option value="{{ $method }}" @selected(old('method') === $method)>
-                                    {{ \App\Payments\GatewayManager::label($method) }}
-                                </option>
-                            @endforeach
-                        </select>
-                        <small class="ksm-muted">
-                            @if ($split->hasKmoney() && ! $split->hasEuro())
-                                Tutto l'ordine si paga in KMoney: il metodo in euro serve solo se scegli di pagare tutto in euro.
+                    <form method="POST" action="{{ route('checkout.process') }}" novalidate>
+                        @csrf
+
+                        <section class="ksm-co-section">
+                            <div class="ksm-co-section__head">
+                                <h2>Contatto</h2>
+                                <p>{{ auth()->user()->name }} · <button type="submit" form="checkout-logout" class="ksm-co-link">Esci</button></p>
+                            </div>
+
+                            <div class="ksm-co-stack">
+                                <x-checkout.field name="billing_email" type="email" label="Email per la conferma d'ordine"
+                                                  :value="old('billing_email', $defaults['billing_email'] ?? '')" autocomplete="email" required />
+                            </div>
+                        </section>
+
+                        <section class="ksm-co-section">
+                            <div class="ksm-co-section__head"><h2>Consegna</h2></div>
+
+                            <div class="ksm-co-stack">
+                                <div @class(['ksm-co-field', 'ksm-co-field--select', 'has-error' => $errors->has('billing_country')])>
+                                    <select id="billing_country" name="billing_country" autocomplete="country-name">
+                                        @foreach ($countries as $option)
+                                            <option value="{{ $option }}" @selected($country === $option)>{{ $option }}</option>
+                                        @endforeach
+                                    </select>
+                                    <label for="billing_country">Paese</label>
+                                    @error('billing_country')<p class="ksm-co-field__error">{{ $message }}</p>@enderror
+                                </div>
+
+                                <x-checkout.field name="billing_name" label="Nome e cognome"
+                                                  :value="old('billing_name', $defaults['billing_name'] ?? '')" autocomplete="name" required />
+
+                                <x-checkout.field name="billing_address" label="Indirizzo e numero civico"
+                                                  :value="old('billing_address', $defaults['billing_address'] ?? '')" autocomplete="street-address" required />
+
+                                <div class="ksm-co-row ksm-co-row--3">
+                                    <x-checkout.field name="billing_zip" label="CAP" inputmode="numeric"
+                                                      :value="old('billing_zip', $defaults['billing_zip'] ?? '')" autocomplete="postal-code" required />
+                                    <x-checkout.field name="billing_city" label="Città"
+                                                      :value="old('billing_city', $defaults['billing_city'] ?? '')" autocomplete="address-level2" required />
+                                    <x-checkout.field name="billing_state" label="Provincia" maxlength="120"
+                                                      :value="old('billing_state', $defaults['billing_state'] ?? '')" autocomplete="address-level1" />
+                                </div>
+
+                                <x-checkout.field name="billing_phone" type="tel" label="Telefono, per il corriere (facoltativo)"
+                                                  :value="old('billing_phone', $defaults['billing_phone'] ?? '')" autocomplete="tel" />
+
+                                <label class="ksm-co-check">
+                                    <input type="checkbox" name="salva_dati" value="1" @checked(session()->hasOldInput() ? old('salva_dati') : true)>
+                                    Salva questi dati per la prossima volta
+                                </label>
+
+                                <details class="ksm-co-notes" @if (old('notes')) open @endif>
+                                    <summary>Aggiungi una nota per il venditore</summary>
+                                    <div class="ksm-co-field ksm-co-field--textarea">
+                                        <textarea id="notes" name="notes" rows="3" maxlength="1000" placeholder=" ">{{ old('notes') }}</textarea>
+                                        <label for="notes">Orari di consegna, citofono, richieste…</label>
+                                    </div>
+                                    @error('notes')<p class="ksm-co-field__error">{{ $message }}</p>@enderror
+                                </details>
+                            </div>
+                        </section>
+
+                        <section class="ksm-co-section">
+                            <div class="ksm-co-section__head"><h2>Spedizione</h2></div>
+
+                            <div class="ksm-co-options">
+                                <div class="ksm-co-option is-static">
+                                    <span class="ksm-co-option__text">
+                                        <strong>Spedizione standard</strong>
+                                        <small>A cura di {{ $company->name }}</small>
+                                    </span>
+                                    <strong>{{ $shipping > 0 ? $money($shipping) : 'Gratis' }}</strong>
+                                </div>
+                            </div>
+                        </section>
+
+                        {{-- La quota KMoney si paga per prima, sul sito KMoney. --}}
+                        @if ($split->hasKmoney())
+                            <section class="ksm-co-section">
+                                <div class="ksm-co-section__head"><h2>KMoney</h2></div>
+
+                                <div class="ksm-co-options">
+                                    <label class="ksm-co-option">
+                                        <input type="radio" name="pagamento_kmoney" value="conto" @checked($kmoneyChoice === 'conto')>
+                                        <span class="ksm-co-option__text">
+                                            <strong>Ho un conto KMoney</strong>
+                                            <small>
+                                                Pago {{ $ky($split->kmoney()) }} in KMoney
+                                                @if ($split->hasEuro()) e subito dopo {{ $money($split->euro()) }} in euro @endif
+                                            </small>
+                                        </span>
+                                        <strong>{{ $ky($split->kmoney()) }}</strong>
+                                    </label>
+
+                                    @if ($euroFallback)
+                                        <label class="ksm-co-option">
+                                            <input type="radio" name="pagamento_kmoney" value="euro" @checked($kmoneyChoice === 'euro')>
+                                            <span class="ksm-co-option__text">
+                                                <strong>Non ho un conto KMoney</strong>
+                                                <small>Pago tutto in euro</small>
+                                            </span>
+                                            <strong>{{ $money($total) }}</strong>
+                                        </label>
+                                    @endif
+                                </div>
+
+                                @if (! $euroFallback && $split->vendorInDebt)
+                                    <p class="ksm-co-note">Questo venditore accetta questi prodotti solo in KMoney.</p>
+                                @endif
+
+                                @unless ($kmoneyAvailable)
+                                    <div class="ksm-co-alert ksm-co-alert--error">Il venditore non ha ancora collegato il suo conto KMoney.</div>
+                                @endunless
+
+                                @error('pagamento_kmoney')<p class="ksm-co-field__error">{{ $message }}</p>@enderror
+                            </section>
+                        @endif
+
+                        <section class="ksm-co-section">
+                            <div class="ksm-co-section__head">
+                                <h2>Pagamento</h2>
+                            </div>
+                            <p class="ksm-co-note ksm-co-note--secure">
+                                <x-icon name="shield" :size="16" />
+                                {{ $split->hasKmoney() ? 'La parte in euro si paga' : 'Il pagamento si completa' }} sul sito sicuro del gestore, poi torni qui.
+                            </p>
+
+                            @if (empty($methods))
+                                <div class="ksm-co-alert ksm-co-alert--error">Questa azienda non ha ancora attivato un metodo di pagamento in euro.</div>
                             @else
-                                Il pagamento si completa sul sito del gestore, poi torni qui.
+                                <div class="ksm-co-options">
+                                    @foreach ($methods as $method)
+                                        <label class="ksm-co-option">
+                                            <input type="radio" name="method" value="{{ $method }}" @checked($chosenMethod === $method)>
+                                            <span class="ksm-co-option__text">
+                                                <strong>{{ \App\Payments\GatewayManager::label($method) }}</strong>
+                                            </span>
+                                            <span class="ksm-co-option__detail">
+                                                Dopo "Paga ora" ti portiamo su {{ match ($method) { 'stripe' => 'Stripe', 'paypal' => 'PayPal', default => \App\Payments\GatewayManager::label($method) } }}
+                                                per completare l'acquisto in sicurezza.
+                                            </span>
+                                        </label>
+                                    @endforeach
+                                </div>
+
+                                @if ($split->hasKmoney() && ! $split->hasEuro())
+                                    <p class="ksm-co-note">Tutto l'ordine si paga in KMoney: il metodo in euro serve solo se scegli di pagare tutto in euro.</p>
+                                @endif
                             @endif
-                        </small>
-                    @endif
 
-                    @error('method')<span class="ksm-error">{{ $message }}</span>@enderror
-                </div>
+                            @error('method')<p class="ksm-co-field__error">{{ $message }}</p>@enderror
+                        </section>
 
-                <button class="ksm-btn ksm-btn--primary ksm-btn--block" type="submit" @disabled($blocked)>
-                    Vai al pagamento
-                </button>
-            </form>
+                        <div class="ksm-co-actions">
+                            <button class="ksm-co-btn ksm-co-btn--pay" type="submit" @disabled($blocked)>Paga ora</button>
+                            <a class="ksm-co-back" href="{{ route('cart.index') }}">‹ Torna al carrello</a>
+                        </div>
+                    </form>
+                @endguest
 
-            <aside class="ksm-card" style="padding: 22px; height: fit-content;">
-                <h2>Riepilogo</h2>
-                <p class="ksm-muted">Venditore: {{ $company->name }}</p>
+                <footer class="ksm-co-footer">
+                    <span>© {{ date('Y') }} {{ $tenant->brandName() }}</span>
+                    <a href="{{ route('contact') }}">Assistenza</a>
+                    <a href="{{ route('orders.track') }}">Traccia un ordine</a>
+                </footer>
+            </div>
+        </main>
 
-                <ul style="list-style: none; padding: 0; margin: 0 0 16px;">
+        <aside class="ksm-co-summary" id="riepilogo" aria-label="Riepilogo ordine">
+            <div class="ksm-co-summary__inner">
+                <h2 class="ksm-co-visually-hidden">Riepilogo</h2>
+
+                <ul class="ksm-co-lines">
                     @foreach ($items as $item)
-                        @php($percent = $split->percentFor((int) $item['product_id']))
-                        <li style="display: flex; justify-content: space-between; gap: 12px; padding: 6px 0; border-bottom: 1px solid var(--ksm-line);">
-                            <span>
-                                {{ $item['name'] }} &times; {{ $item['quantity'] }}
+                        @php
+                            $percent = $split->percentFor((int) $item['product_id']);
+                            $image = filled($item['image'] ?? null) && \Illuminate\Support\Facades\Storage::disk('public')->exists($item['image'])
+                                ? asset('storage/'.$item['image'])
+                                : null;
+                        @endphp
+                        <li class="ksm-co-line">
+                            <span class="ksm-co-line__thumb">
+                                @if ($image)
+                                    <img src="{{ $image }}" alt="">
+                                @else
+                                    <span aria-hidden="true">{{ mb_substr($item['name'], 0, 1) }}</span>
+                                @endif
+                                <span class="ksm-co-line__qty" aria-label="Quantità">{{ $item['quantity'] }}</span>
+                            </span>
+                            <span class="ksm-co-line__name">
+                                {{ $item['name'] }}
                                 @if ($percent > 0)
-                                    <br><small class="ksm-muted">{{ $percent }}% in KMoney</small>
+                                    <small>{{ $percent }}% in KMoney</small>
                                 @endif
                             </span>
-                            <span>{{ $money($item['price'] * $item['quantity']) }}</span>
+                            <span class="ksm-co-line__price">{{ $money($item['price'] * $item['quantity']) }}</span>
                         </li>
                     @endforeach
                 </ul>
 
-                <p style="display: flex; justify-content: space-between;">
-                    <span>Totale merce</span><span>{{ $money($subtotal) }}</span>
-                </p>
-                <p style="display: flex; justify-content: space-between;">
-                    <span>
-                        Spedizione
-                        @if ($split->shippingPercent > 0)
-                            <br><small class="ksm-muted">{{ $split->shippingPercent }}% in KMoney, la quota più bassa del carrello</small>
-                        @endif
-                    </span>
-                    <span>{{ $money($shipping) }}</span>
-                </p>
-                <p class="ksm-product__price" style="display: flex; justify-content: space-between; font-size: 1.2rem;">
-                    <span>Totale</span><span>{{ $money($subtotal + $shipping) }}</span>
-                </p>
+                <dl class="ksm-co-totals">
+                    <div>
+                        <dt>Subtotale · {{ $pieces }} {{ $pieces === 1 ? 'articolo' : 'articoli' }}</dt>
+                        <dd>{{ $money($subtotal) }}</dd>
+                    </div>
+                    <div>
+                        <dt>
+                            Spedizione
+                            @if ($split->shippingPercent > 0)
+                                <small>{{ $split->shippingPercent }}% in KMoney, la quota più bassa del carrello</small>
+                            @endif
+                        </dt>
+                        <dd>{{ $shipping > 0 ? $money($shipping) : 'Gratis' }}</dd>
+                    </div>
+                    <div class="ksm-co-totals__grand">
+                        <dt>Totale</dt>
+                        <dd><small>{{ config('ksm.currency') }}</small> {{ $money($total) }}</dd>
+                    </div>
+                    @if ($split->hasKmoney())
+                        <div class="ksm-co-totals__split">
+                            <dt>di cui in KMoney</dt>
+                            <dd>{{ $ky($split->kmoney()) }}</dd>
+                        </div>
+                        <div class="ksm-co-totals__split">
+                            <dt>di cui in euro</dt>
+                            <dd>{{ $money($split->euro()) }}</dd>
+                        </div>
+                    @endif
+                </dl>
 
-                @if ($split->hasKmoney())
-                    <p style="display: flex; justify-content: space-between; margin-bottom: 4px;">
-                        <span>In KMoney</span><strong>{{ $ky($split->kmoney()) }}</strong>
-                    </p>
-                    <p style="display: flex; justify-content: space-between; margin-top: 0;">
-                        <span>In euro</span><strong>{{ $money($split->euro()) }}</strong>
-                    </p>
-                @endif
-            </aside>
-        </div>
-    </section>
+                <p class="ksm-co-seller">
+                    <x-icon name="building" :size="16" />
+                    Venduto e spedito da <a href="{{ route('companies.show', $company->slug) }}">{{ $company->name }}</a>
+                </p>
+            </div>
+        </aside>
+    </div>
+
+    <script>
+        // Riepilogo a comparsa su telefono. Senza script resta aperto.
+        (function () {
+            var root = document.querySelector('[data-checkout]');
+            var toggle = root && root.querySelector('[data-summary-toggle]');
+            if (!toggle) return;
+            var label = toggle.querySelector('[data-summary-label]');
+            var mobile = window.matchMedia('(max-width: 999px)');
+
+            function set(open) {
+                root.classList.toggle('is-summary-closed', !open);
+                toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+                label.textContent = open ? 'Nascondi riepilogo ordine' : 'Mostra riepilogo ordine';
+            }
+
+            set(!mobile.matches);
+            toggle.addEventListener('click', function () {
+                set(root.classList.contains('is-summary-closed'));
+            });
+        })();
+    </script>
 @endsection

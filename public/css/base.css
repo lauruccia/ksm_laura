@@ -159,3 +159,6 @@ img {
         transform: none;
     }
 }
+
+/* Un fieldset non si restringe sotto il suo contenuto: con una tabella dentro uscirebbe dal modulo. */
+fieldset { min-width: 0; }

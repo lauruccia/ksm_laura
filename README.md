@@ -53,6 +53,26 @@ Cosa cambia passando al nuovo schema:
 
 ## Struttura
 
+### Disponibilità e varianti dei prodotti
+
+La giacenza vuota (`NULL`) indica stock non gestito: il prodotto è disponibile e
+il pagamento non decrementa la giacenza. Zero indica esaurito; un numero positivo
+limita le quantità acquistabili. Nei prodotti **Con varianti** queste regole si
+applicano alla singola variante; il prezzo vuoto eredita il prezzo del prodotto.
+Ogni variante scelta rimane distinta nel carrello e nell'ordine.
+
+Per correggere un database importato prima di questa modifica, dopo le migrazioni:
+
+```bash
+php artisan legacy:restore-stock
+php artisan legacy:restore-stock --apply
+```
+
+Il comando legge il dump originale, ripristina gli stock `NULL` convertiti in zero
+e normalizza il vecchio tipo `variant` in `variable`. Verifica ID, slug, azienda e
+data di modifica; non sovrascrive i prodotti modificati dopo l'importazione.
+
+
 | Cartella | Contenuto |
 |---|---|
 | `app/Models` | 21 modelli, uno per entita |
@@ -243,6 +263,20 @@ https:// {
     reverse_proxy 127.0.0.1:8000
 }
 ```
+
+Dietro Caddy l'app riceve richieste in http: `https`, dominio e IP veri
+arrivano negli `X-Forwarded-*`, accettati solo dagli indirizzi in
+`KSM_TRUSTED_PROXIES` (di default la macchina stessa, vedi
+`App\Http\Middleware\TrustPlatformProxies`). Da altri indirizzi gli header
+si ignorano. `www.dominio` rimanda con un 301 a `dominio`
+(`RedirectWww`), tranne le aziende con `force_www`.
+
+### DNS del cliente
+
+- A `@` e A `www` verso l'IP del server (oppure CNAME `www` verso il dominio);
+- nessun AAAA che punti altrove: Let's Encrypt proverebbe l'IPv6;
+- con Cloudflare record "solo DNS", non in proxy;
+- un eventuale CAA deve ammettere `letsencrypt.org`; gli MX non si toccano.
 
 **cPanel.** Il certificato lo emette AutoSSL, ma solo per domini che
 cPanel conosce: ogni dominio va aggiunto come alias. La parte che manca e'

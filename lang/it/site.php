@@ -51,6 +51,8 @@ return [
     'search_all_regions' => 'Tutte le regioni',
     'search_category' => 'Categoria',
     'search_all_categories' => 'Tutte le categorie',
+    'search_all_in_category' => 'Tutto in :name',
+    'directory_categories' => 'Categorie',
     'search_submit' => 'Cerca',
 
     'featured_companies' => 'Aziende in evidenza',
@@ -79,6 +81,11 @@ return [
     'usp_presence_text' => 'Un ambiente affidabile',
 
     'no_results' => 'Nessun risultato.',
+    'pagination_label' => 'Paginazione',
+    'pagination_prev' => 'Precedente',
+    'pagination_next' => 'Successiva',
+    'directory_loading' => 'Carico altre aziende…',
+    'directory_retry' => 'Mostra altre aziende',
     'add_to_cart' => 'Aggiungi',
     'kmoney_share' => ':percent% KMoney',
 

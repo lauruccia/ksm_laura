@@ -11,9 +11,36 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="robots" content="noindex">
-    <title>@yield('title') · {{ config('ksm.brand_name') }}</title>
+    @php
+        /*
+         * Sul dominio della rete l'errore porta il suo nome e i suoi colori.
+         * Il contesto c'e' gia' se l'errore nasce in una pagina; per un indirizzo
+         * inesistente si ricava dall'host, ma mai per gli errori del server,
+         * che possono nascere proprio dal database.
+         */
+        $errorBrand = config('ksm.brand_name');
+        $errorColors = '';
+
+        try {
+            $errorTenant = app(\App\Support\TenantContext::class);
+            $clientError = isset($exception) && method_exists($exception, 'getStatusCode') && $exception->getStatusCode() < 500;
+
+            if ($clientError && ! $errorTenant->domain() && ! $errorTenant->company()) {
+                app(\App\Http\Middleware\ResolveTenant::class)->apply(request());
+            }
+
+            $errorBrand = $errorTenant->brandName();
+            $errorColors = $errorTenant->content()->cssVariables();
+        } catch (\Throwable $e) {
+            // Nessun contesto: resta il marchio della piattaforma.
+        }
+    @endphp
+    <title>@yield('title') · {{ $errorBrand }}</title>
 
     <link rel="stylesheet" href="{{ asset('css/tokens.css') }}">
+    @if ($errorColors)
+        <style>:root{ {{ $errorColors }} }</style>
+    @endif
     <link rel="stylesheet" href="{{ asset('css/base.css') }}">
     <link rel="stylesheet" href="{{ asset('css/components.css') }}">
 
@@ -72,7 +99,7 @@
 </head>
 <body class="ksm-error-page">
     <main class="ksm-error">
-        <a class="ksm-error__brand" href="{{ url('/') }}">{{ config('ksm.brand_name') }}</a>
+        <a class="ksm-error__brand" href="{{ url('/') }}">{{ $errorBrand }}</a>
 
         <p class="ksm-error__code">@yield('code')</p>
         <h1>@yield('title')</h1>

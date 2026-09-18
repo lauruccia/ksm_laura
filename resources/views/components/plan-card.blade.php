@@ -6,7 +6,7 @@
     <p class="ksm-product__price" style="font-size: 1.8rem;">
         {{ $plan->isFree() ? 'Gratis' : \App\Support\Money::format($plan->price) }}
         @unless ($plan->isFree())
-            <small class="ksm-muted">{{ match (true) {
+            <small class="ksm-muted" style="display: inline-block; font-size: .95rem; line-height: 1.2; white-space: nowrap;">{{ match (true) {
                 $plan->isLifetime() => 'una tantum',
                 $plan->duration_days == 365 => '/ anno',
                 default => '/ '.$plan->duration_days.' giorni',

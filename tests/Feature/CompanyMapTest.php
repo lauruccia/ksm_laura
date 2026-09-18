@@ -45,7 +45,7 @@ class CompanyMapTest extends TestCase
 
         return Company::create($attributes + [
             'user_id' => $owner->id,
-            'plan_id' => $this->plan([PlanCapabilities::DIRECTORY, PlanCapabilities::CONTACT_CARD, PlanCapabilities::SHOP])->id,
+            'plan_id' => $this->plan([PlanCapabilities::DIRECTORY, PlanCapabilities::CONTACT_CARD, PlanCapabilities::SHOWCASE, PlanCapabilities::SHOP])->id,
             'name' => 'Decina Bus',
             'slug' => 'decina-bus-'.uniqid(),
             'is_active' => true,

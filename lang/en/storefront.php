@@ -1,0 +1,28 @@
+<?php
+
+return [
+    'choose_variant' => 'Choose an option',
+    'hero_title' => 'The joy of choosing,',
+    'hero_accent' => 'all in one shop.',
+    'hero_description' => 'Discover products from businesses in our network. Explore categories, find offers and bring home something special.',
+    'browse' => 'Shop now',
+    'categories' => 'Our categories',
+    'vendors' => 'Businesses in our network',
+    'vendors_detail' => 'Discover who sells your products',
+    'selection' => 'Categories to explore',
+    'selection_detail' => 'Find something for you',
+    'kmoney' => 'Shop with KMoney',
+    'kmoney_detail' => 'On eligible products',
+    'offers' => 'Discover our offers',
+    'offers_detail' => 'All promotions in one place',
+    'catalog' => 'Discover our products',
+    'search' => 'Search for a product…',
+    'search_button' => 'Search',
+    'sale' => 'Offer',
+    'quantity' => 'Quantity',
+    'featured_title' => 'Best sellers',
+    'featured_subtitle' => 'Our customers'' favourites',
+    'bestseller' => 'Best seller',
+    'new' => 'New',
+    'reviews' => ':count reviews',
+];

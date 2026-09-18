@@ -23,7 +23,7 @@
                                    href="{{ route('subscription.index') }}">Scegli</a>
                             @else
                                 <a class="ksm-btn ksm-btn--primary ksm-btn--block"
-                                   href="{{ route('register', ['piano' => $plan->slug]) }}">
+                                   href="{{ route('register.vendor', ['piano' => $plan->slug]) }}">
                                     {{ __('site.register_company') }}
                                 </a>
                             @endauth

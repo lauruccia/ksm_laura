@@ -47,10 +47,14 @@ class CheckoutController extends Controller
             return redirect()->route('cart.index');
         }
 
+        $this->cart->refresh();
         $company = Company::with('paymentSettings')->findOrFail($this->cart->companyId());
         $shipping = $this->shippingFor($company);
 
         return view('pages.checkout.show', [
+            // Da ospiti la cassa mostra accesso e registrazione al posto dei
+            // dati di fatturazione: l'indirizzo salvato, se c'e', arriva dopo.
+            'defaults' => auth()->user()?->billingDefaults() ?? [],
             'items' => $this->cart->items(),
             'subtotal' => $this->cart->subtotal(),
             'shipping' => $shipping,
@@ -69,6 +73,7 @@ class CheckoutController extends Controller
         }
 
         $company = Company::with('paymentSettings')->findOrFail($this->cart->companyId());
+        $this->cart->refresh();
         $items = $this->cart->items();
         $shipping = $this->shippingFor($company);
         $methods = $this->gateways->availableFor($company->paymentSettings);
@@ -80,9 +85,11 @@ class CheckoutController extends Controller
             'billing_phone' => ['nullable', 'string', 'max:50'],
             'billing_address' => ['required', 'string', 'max:500'],
             'billing_city' => ['required', 'string', 'max:120'],
+            'billing_state' => ['nullable', 'string', 'max:120'],
             'billing_zip' => ['required', 'string', 'max:20'],
             'billing_country' => ['required', 'string', 'max:120'],
             'notes' => ['nullable', 'string', 'max:1000'],
+            'salva_dati' => ['nullable', 'boolean'],
             'method' => ['nullable', 'string', Rule::in($methods)],
             'pagamento_kmoney' => [Rule::requiredIf($split->hasKmoney()), 'nullable', Rule::in(['conto', 'euro'])],
         ]);
@@ -107,7 +114,15 @@ class CheckoutController extends Controller
             throw ValidationException::withMessages(['method' => __('Scegli come pagare la parte in euro.')]);
         }
 
-        $order = $this->createOrder($data, $company, $items, $shipping, $split);
+        // Come nelle casse piu' usate: l'indirizzo si salva nell'account solo se
+        // l'acquirente lo chiede, e il prossimo ordine parte gia' compilato.
+        if ($request->boolean('salva_dati')) {
+            $request->user()->update(collect($data)->only([
+                'billing_address', 'billing_city', 'billing_state', 'billing_zip', 'billing_country',
+            ])->all());
+        }
+
+        $order = $this->createOrder(collect($data)->except('salva_dati')->all(), $company, $items, $shipping, $split);
         $first = $order->pendingPayment();
 
         try {
@@ -308,12 +323,13 @@ class CheckoutController extends Controller
                 OrderItem::create([
                     'order_id' => $order->id,
                     'product_id' => $item['product_id'],
+                    'product_variant_id' => $item['variant_id'] ?? null,
                     'product_name' => $item['name'],
                     'product_price' => $item['price'],
                     'quantity' => $item['quantity'],
                     'subtotal' => $item['price'] * $item['quantity'],
                     'kmoney_percent' => $split->percentFor((int) $item['product_id']),
-                    'kmoney_amount' => $split->kmoneyFor((int) $item['product_id']),
+                    'kmoney_amount' => intdiv(\App\Payments\KMoney\KMoneySplitter::cents($item['price'] * $item['quantity']) * $split->percentFor((int) $item['product_id']), 100) / 100,
                 ]);
             }
 

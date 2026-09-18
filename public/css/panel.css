@@ -746,3 +746,13 @@
     border: 1px solid var(--ksm-line);
     border-radius: var(--ksm-radius);
 }
+
+/* Elenco aziende: i dati importati hanno telefoni e nomi lunghissimi,
+   quindi le colonne vanno a capo invece di allargare la tabella. */
+.ksm-table--companies .ksm-table__name { min-width: 160px; max-width: 260px; }
+.ksm-table--companies .ksm-table__email { max-width: 240px; overflow-wrap: anywhere; }
+.ksm-table--companies .ksm-table__phone { min-width: 120px; max-width: 200px; overflow-wrap: anywhere; }
+.ksm-table--companies .ksm-badge { white-space: nowrap; }
+/* Senza un minimo, email e telefoni vanno a capo lettera per lettera: la tabella scorre di lato. */
+.ksm-table--companies .ksm-table__email { min-width: 190px; }
+.ksm-table--companies .ksm-table__phone { white-space: nowrap; }

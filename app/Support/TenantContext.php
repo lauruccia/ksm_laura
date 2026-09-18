@@ -4,6 +4,8 @@ namespace App\Support;
 
 use App\Models\Company;
 use App\Models\Domain;
+use App\Support\Sites\SiteContent;
+use App\Support\Sites\SiteScope;
 
 /**
  * Contesto del dominio corrente, condiviso con le viste.
@@ -15,6 +17,10 @@ class TenantContext
 
     private ?Domain $domain = null;
 
+    private ?SiteScope $scope = null;
+
+    private ?SiteContent $content = null;
+
     public function useCompany(Company $company): void
     {
         $this->company = $company;
@@ -24,6 +30,7 @@ class TenantContext
     public function useDomain(Domain $domain): void
     {
         $this->domain = $domain;
+        $this->brandMail($domain->name);
         $this->share();
     }
 
@@ -31,6 +38,7 @@ class TenantContext
     {
         $this->company = null;
         $this->domain = null;
+        $this->brandMail(null);
         $this->share();
     }
 
@@ -49,6 +57,12 @@ class TenantContext
         return $this->company !== null;
     }
 
+    /** Un dominio della rete: deve sembrare un sito a se', senza il marchio KSM. */
+    public function isNetworkSite(): bool
+    {
+        return $this->domain !== null;
+    }
+
     /** Nome mostrato nell'intestazione. */
     public function brandName(): string
     {
@@ -64,24 +78,43 @@ class TenantContext
             ?? null;
     }
 
-    /** Filtri impliciti da applicare agli elenchi di aziende. */
-    public function listingFilters(): array
+    /** Prodotti e aziende visibili sul dominio corrente. */
+    public function scope(): SiteScope
     {
-        $filters = [];
+        return $this->scope ??= new SiteScope($this->domain);
+    }
 
-        if ($this->domain?->filtersByCategory()) {
-            $filters['category'] = $this->domain->company_category_id;
-        }
+    /** Testi, immagini, menu e piede del dominio, con i valori predefiniti del sito. */
+    public function content(): SiteContent
+    {
+        return $this->content ??= new SiteContent($this->domain);
+    }
 
-        if ($this->domain?->filtersByCity()) {
-            $filters['city'] = $this->domain->city;
-        }
+    /**
+     * Le email partite da un dominio della rete portano il suo nome: mittente,
+     * intestazione e piede del modello di Laravel leggono app.name e
+     * mail.from.name. L'indirizzo del mittente resta quello della piattaforma,
+     * l'unico autorizzato a spedire (SPF, DKIM). Con null tornano i valori
+     * originali, cosi' la richiesta dopo non eredita il nome.
+     *
+     * @var array{app: mixed, from: mixed}|null
+     */
+    private ?array $originalMailBrand = null;
 
-        return array_filter($filters);
+    private function brandMail(?string $name): void
+    {
+        $this->originalMailBrand ??= ['app' => config('app.name'), 'from' => config('mail.from.name')];
+
+        config([
+            'app.name' => $name ?? $this->originalMailBrand['app'],
+            'mail.from.name' => $name ?? $this->originalMailBrand['from'],
+        ]);
     }
 
     private function share(): void
     {
+        $this->scope = null;
+        $this->content = null;
         view()->share('tenant', $this);
     }
 }

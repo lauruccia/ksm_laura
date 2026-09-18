@@ -77,4 +77,25 @@ class CompanyDirectoryFilterTest extends TestCase
             ->assertSee('Bonifiche Sicure')
             ->assertDontSee('Edilnord Costruzioni');
     }
+
+    public function test_il_menu_laterale_apre_il_ramo_scelto_e_conserva_la_ricerca(): void
+    {
+        $root = CompanyCategory::create(['name' => 'Costruire e Abitare', 'slug' => 'costruire-e-abitare']);
+        $leaf = CompanyCategory::create(['name' => 'Imprese Edili', 'slug' => 'imprese-edili', 'parent_id' => $root->id]);
+        $other = CompanyCategory::create(['name' => 'Ristoranti', 'slug' => 'ristoranti']);
+
+        $this->company('Edilnord Costruzioni', $leaf);
+
+        $html = $this->get(route('companies.index', ['categoria' => $leaf->id, 'cerca' => 'edil']))
+            ->assertOk()
+            ->assertSeeInOrder(['Costruire e Abitare', 'Tutto in Costruire e Abitare', 'Imprese Edili', 'Ristoranti'])
+            ->getContent();
+
+        // Il ramo della categoria scelta e' aperto, gli altri no.
+        $this->assertMatchesRegularExpression('/<details class="ksm-dirnav__group"\s+open\s*>\s*<summary[^>]*>\s*<span>Costruire e Abitare/', $html);
+
+        // La voce attiva e' segnata e i link cambiano solo la categoria.
+        $this->assertMatchesRegularExpression('/is-current[^>]*href="[^"]*categoria='.$leaf->id.'[^"]*"\s+aria-current="page"/', $html);
+        $this->assertStringContainsString(e(route('companies.index', ['cerca' => 'edil', 'categoria' => $other->id])), $html);
+    }
 }

@@ -34,7 +34,7 @@
     <p class="ksm-muted">{{ number_format($companies->total(), 0, ',', '.') }} aziende</p>
 
     <div class="ksm-table-wrap">
-        <table class="ksm-table">
+        <table class="ksm-table ksm-table--companies">
             <thead>
             <tr>
                 <th aria-label="Logo"></th>
@@ -54,14 +54,14 @@
                         <span class="ksm-thumb"
                               @if ($company->logo) style="background-image: url('{{ asset('storage/'.$company->logo) }}')" @endif></span>
                     </td>
-                    <td>
+                    <td class="ksm-table__name">
                         <strong>{{ $company->name }}</strong>
                         @if ($company->city)
                             <br><small class="ksm-muted">{{ $company->city }}</small>
                         @endif
                     </td>
-                    <td>{{ $company->email ?: '—' }}</td>
-                    <td style="white-space: nowrap;">{{ $company->phone ?: '—' }}</td>
+                    <td class="ksm-table__email">{{ $company->email ?: '—' }}</td>
+                    <td class="ksm-table__phone">{{ $company->phone ?: '—' }}</td>
                     <td>
                         @if ($company->plan)
                             <span class="ksm-badge">{{ $company->plan->name }}</span>
@@ -76,8 +76,10 @@
                     </td>
                     <td style="white-space: nowrap;">{{ $company->created_at?->format('d/m/Y') }}</td>
                     <td style="text-align: right; white-space: nowrap;">
-                        <a class="ksm-btn ksm-btn--ghost ksm-btn--sm" target="_blank" rel="noopener"
-                           href="{{ route('companies.show', ['company' => $company->slug]) }}">Vedi</a>
+                        @if ($company->hasPage())
+                            <a class="ksm-btn ksm-btn--ghost ksm-btn--sm" target="_blank" rel="noopener"
+                               href="{{ route('companies.show', ['company' => $company->slug]) }}">Vedi</a>
+                        @endif
                         @can(\App\Support\Permissions::COMPANIES_MANAGE)
                             <a class="ksm-btn ksm-btn--ghost ksm-btn--sm"
                                href="{{ route('admin.companies.edit', $company) }}">Modifica</a>

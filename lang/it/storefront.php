@@ -1,0 +1,28 @@
+<?php
+
+return [
+    'choose_variant' => 'Scegli una variante',
+    'hero_title' => 'Il piacere di scegliere,',
+    'hero_accent' => 'tutto in un solo shop.',
+    'hero_description' => 'Scopri i prodotti delle aziende del circuito. Esplora le categorie, trova le tue offerte e porta a casa qualcosa di speciale.',
+    'browse' => 'Acquista ora',
+    'categories' => 'Le nostre categorie',
+    'vendors' => 'Le aziende del circuito',
+    'vendors_detail' => 'Scopri chi vende i tuoi prodotti',
+    'selection' => 'Tante categorie da esplorare',
+    'selection_detail' => 'Trova quello che fa per te',
+    'kmoney' => 'Acquista con KMoney',
+    'kmoney_detail' => 'Sui prodotti che lo prevedono',
+    'offers' => 'Offerte da scoprire',
+    'offers_detail' => 'Tutte le promozioni in un posto',
+    'catalog' => 'Scopri i prodotti',
+    'search' => 'Cerca un prodotto…',
+    'search_button' => 'Cerca',
+    'sale' => 'Offerta',
+    'quantity' => 'Quantità',
+    'featured_title' => 'I più venduti',
+    'featured_subtitle' => 'Le specialità più amate dai nostri clienti',
+    'bestseller' => 'Più venduto',
+    'new' => 'Novità',
+    'reviews' => ':count recensioni',
+];

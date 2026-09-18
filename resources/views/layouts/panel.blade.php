@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>@yield('title', 'KSM')</title>
+    <title>@yield('title', $tenant->brandName())</title>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Montserrat:wght@600;700;800&display=swap" rel="stylesheet">
@@ -54,7 +54,13 @@
                 <span></span>
             </label>
 
-            <span class="ksm-panel__crumb">@hasSection('crumb')@yield('crumb')@else@yield('role')@endif</span>
+            <span class="ksm-panel__crumb">
+                @hasSection('crumb')
+                    @yield('crumb')
+                @else
+                    @yield('role')
+                @endif
+            </span>
 
             <div class="ksm-panel__topactions">
                 <a class="ksm-btn ksm-btn--ghost ksm-btn--sm" href="{{ route('home') }}">Vai al sito</a>

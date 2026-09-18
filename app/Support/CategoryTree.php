@@ -23,10 +23,35 @@ final class CategoryTree
     /** @var array<int, list<int>> */
     private array $children = [];
 
-    /** @param  class-string<Model>  $model */
+    /**
+     * L'albero di una tabella, letto una volta sola per richiesta.
+     *
+     * Filtro del dominio, riquadri, menu e banner lo chiedono piu' volte
+     * nella stessa pagina. Resta nel contenitore dell'applicazione, che
+     * nasce a ogni richiesta, e si butta quando una categoria cambia.
+     *
+     * @param  class-string<Model>  $model
+     */
     public static function of(string $model): self
     {
-        return new self($model::query()->get(['id', 'name', 'parent_id']));
+        $key = self::containerKey($model);
+
+        if (! app()->bound($key)) {
+            app()->instance($key, new self($model::query()->get(['id', 'name', 'parent_id'])));
+        }
+
+        return app($key);
+    }
+
+    /** @param  class-string<Model>  $model */
+    public static function forget(string $model): void
+    {
+        app()->forgetInstance(self::containerKey($model));
+    }
+
+    private static function containerKey(string $model): string
+    {
+        return 'category-tree:'.$model;
     }
 
     /** @param  iterable<object>  $rows  righe con id, name e parent_id */
@@ -99,6 +124,26 @@ final class CategoryTree
         }
 
         return $found;
+    }
+
+    /**
+     * Le figlie dirette in ordine di nome; senza argomento le categorie principali.
+     *
+     * Una categoria la cui madre non esiste piu' conta come principale,
+     * cosi' non sparisce dal menu.
+     *
+     * @return array<int, string>
+     */
+    public function children(?int $id = null): array
+    {
+        $ids = $id === null
+            ? array_keys(array_filter($this->parents, fn (?int $parent) => $parent === null || ! isset($this->names[$parent])))
+            : array_filter($this->children[$id] ?? [], fn (int $child) => $child !== $id);
+
+        $children = array_intersect_key($this->names, array_flip($ids));
+        asort($children, SORT_NATURAL | SORT_FLAG_CASE);
+
+        return $children;
     }
 
     /** Quanti livelli occupa il ramo che parte da qui: 1 se non ha sottocategorie. */

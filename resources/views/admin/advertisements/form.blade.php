@@ -63,9 +63,11 @@
                         <img src="{{ asset('storage/'.$campaign->img) }}" alt=""
                              style="display: block; max-width: 100%; max-height: 90px; margin-bottom: 8px; border-radius: 6px;">
                     @endif
+                    @include('partials.image-editor-assets')
                     <input class="ksm-input" id="image" name="image" type="file"
-                           accept="image/jpeg,image/png,image/webp,image/gif" @required(! $campaign->img)>
-                    <small class="ksm-muted">JPG, PNG, WebP o GIF, massimo 4 MB.</small>
+                           accept="image/jpeg,image/png,image/webp,image/gif" @required(! $campaign->img)
+                           data-image-editor data-ratios="free,8:1,3:1,16:9,1:1" data-max="2000x2000">
+                    <small class="ksm-muted">JPG, PNG, WebP o GIF. Le GIF animate restano intere, le altre si possono ritagliare.</small>
                     @error('image')<span class="ksm-error">{{ $message }}</span>@enderror
                 </div>
             </div>

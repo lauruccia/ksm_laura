@@ -9,6 +9,6 @@
 {{ $data['message'] }}
 
 <x-mail::subcopy>
-Messaggio inviato dal modulo di contatto di KSM.
+Messaggio inviato dal modulo di contatto di {{ $siteName }}.
 </x-mail::subcopy>
 </x-mail::message>

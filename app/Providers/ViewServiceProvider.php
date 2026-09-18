@@ -21,7 +21,9 @@ class ViewServiceProvider extends ServiceProvider
                 'settings' => AdminSetting::current(),
                 'headerPages' => Navigation::pages('header'),
                 'footerPages' => Navigation::pages('footer'),
-                'cartCount' => app(Cart::class)->count(),
+                'cartCount' => app(Cart::class)->totalCount(),
+                // Di quanti venditori sono i carrelli aperti: oltre uno lo si dice.
+                'cartVendors' => app(Cart::class)->parked()->count() + (app(Cart::class)->isEmpty() ? 0 : 1),
             ]);
         });
     }

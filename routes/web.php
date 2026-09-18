@@ -71,17 +71,25 @@ Route::prefix('carrello')->name('cart.')->group(function () {
     Route::patch('/aggiorna/{product:slug}', [CartController::class, 'update'])->name('update');
     Route::delete('/rimuovi/{product:slug}', [CartController::class, 'remove'])->name('remove');
     Route::delete('/svuota', [CartController::class, 'clear'])->name('clear');
+    // Carrelli in attesa: uno per venditore, si riaprono senza perdere nulla.
+    Route::post('/apri/{company}', [CartController::class, 'open'])->name('open');
+    Route::delete('/in-attesa/{company}', [CartController::class, 'discard'])->name('discard');
 });
 
-Route::middleware('auth')->prefix('pagamento')->name('checkout.')->group(function () {
+Route::prefix('pagamento')->name('checkout.')->group(function () {
+    // La cassa si apre anche da ospiti: l'accesso o la registrazione si fanno
+    // qui dentro, con il riepilogo dell'ordine sotto gli occhi.
     Route::get('/', [CheckoutController::class, 'show'])->name('show');
-    Route::post('/', [CheckoutController::class, 'process'])->name('process');
-    // Il gateway rimanda qui: l'esito viene richiesto al gateway stesso.
-    Route::get('/rientro/{order}', [CheckoutController::class, 'returnFromGateway'])->name('return');
-    // Nuovo tentativo sulla parte che manca, per esempio l'euro dopo i KY gia' pagati.
-    Route::post('/riprova/{order}', [CheckoutController::class, 'retry'])->name('retry');
-    Route::get('/esito/{order}', [CheckoutController::class, 'success'])->name('success');
-    Route::get('/annullato/{order}', [CheckoutController::class, 'cancelled'])->name('cancelled');
+
+    Route::middleware('auth')->group(function () {
+        Route::post('/', [CheckoutController::class, 'process'])->name('process');
+        // Il gateway rimanda qui: l'esito viene richiesto al gateway stesso.
+        Route::get('/rientro/{order}', [CheckoutController::class, 'returnFromGateway'])->name('return');
+        // Nuovo tentativo sulla parte che manca, per esempio l'euro dopo i KY gia' pagati.
+        Route::post('/riprova/{order}', [CheckoutController::class, 'retry'])->name('retry');
+        Route::get('/esito/{order}', [CheckoutController::class, 'success'])->name('success');
+        Route::get('/annullato/{order}', [CheckoutController::class, 'cancelled'])->name('cancelled');
+    });
 });
 
 /*
@@ -94,8 +102,13 @@ Route::middleware('guest')->group(function () {
     Route::get('/accedi', [LoginController::class, 'show'])->name('login');
     Route::post('/accedi', [LoginController::class, 'store'])->name('login.store');
 
-    Route::get('/registrati', [RegisterController::class, 'show'])->name('register');
-    Route::post('/registrati', [RegisterController::class, 'store'])->name('register.store');
+    // Due registrazioni distinte: il privato compra, l'azienda si iscrive al
+    // marketplace con un piano. /registrati fa scegliere fra le due.
+    Route::get('/registrati', [RegisterController::class, 'choose'])->name('register');
+    Route::get('/registrati/privato', [RegisterController::class, 'showBuyer'])->name('register.buyer');
+    Route::post('/registrati/privato', [RegisterController::class, 'storeBuyer'])->name('register.buyer.store');
+    Route::get('/registrati/azienda', [RegisterController::class, 'showVendor'])->name('register.vendor');
+    Route::post('/registrati/azienda', [RegisterController::class, 'storeVendor'])->name('register.vendor.store');
 
     Route::get('/inserzionisti/registrati', [AdvertiserRegisterController::class, 'show'])->name('advertiser.register');
     Route::post('/inserzionisti/registrati', [AdvertiserRegisterController::class, 'store'])->name('advertiser.register.store');

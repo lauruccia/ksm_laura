@@ -92,9 +92,8 @@ class PlanCapabilityGateTest extends TestCase
         ]);
         $completa->update(['company_description' => 'Descrizione da mostrare']);
 
-        $this->get(route('companies.show', $essenziale->slug))
-            ->assertOk()
-            ->assertDontSee('Descrizione da non mostrare');
+        // Senza vetrina completa l'azienda non ha proprio una pagina.
+        $this->get(route('companies.show', $essenziale->slug))->assertNotFound();
 
         $this->get(route('companies.show', $completa->slug))
             ->assertOk()

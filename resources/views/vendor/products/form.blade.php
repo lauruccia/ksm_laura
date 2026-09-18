@@ -74,9 +74,10 @@
                        value="{{ old('discount_price', $product->discount_price) }}">
             </div>
             <div class="ksm-field">
-                <label class="ksm-label" for="stock">Disponibilità</label>
-                <input class="ksm-input" id="stock" name="stock" type="number"
-                       value="{{ old('stock', $product->stock ?? 0) }}" required>
+                <label class="ksm-label" for="stock">Giacenza (facoltativa)</label>
+                <input class="ksm-input" id="stock" name="stock" type="number" min="0"
+                       value="{{ old('stock', $product->stock) }}" placeholder="Stock non gestito">
+                <small class="ksm-muted">Vuoto = disponibile senza gestione stock. 0 = esaurito. Per i prodotti con varianti vale la giacenza di ciascuna variante.</small>
             </div>
         </div>
 
@@ -147,7 +148,9 @@
             <p class="ksm-muted" style="font-size: .85rem; margin-top: 0;">
                 Una riga per variante, per esempio Taglia e M. Per togliere una variante svuota tipo e valore.
                 Le varianti valgono solo se il tipo del prodotto è "Con varianti".
+                Prezzo vuoto = prezzo del prodotto. Disponibilità vuota = stock non gestito; 0 = variante esaurita.
             </p>
+            @error('variants')<p class="ksm-error">{{ $message }}</p>@enderror
 
             <div class="ksm-table-wrap">
                 <table class="ksm-table">
@@ -193,7 +196,15 @@
 
         <div class="ksm-field">
             <label class="ksm-label" for="featured_image">Immagine principale</label>
-            <input class="ksm-input" id="featured_image" name="featured_image" type="file">
+            @if ($product->featured_image)
+                <img class="ksm-image-current" src="{{ asset('storage/'.$product->featured_image) }}" alt="">
+            @endif
+            @include('partials.image-editor-assets')
+            <input class="ksm-input" id="featured_image" name="featured_image" type="file"
+                   accept="image/jpeg,image/png,image/webp,image/gif"
+                   data-image-editor data-ratios="1:1,4:3,free" data-max="1600x1600">
+            <small class="ksm-muted">Nel catalogo le foto sono quadrate. Dopo la scelta puoi ritagliare, spostare e ruotare: il file viene alleggerito prima dell'invio.</small>
+            @error('featured_image')<span class="ksm-error">{{ $message }}</span>@enderror
         </div>
 
         <button class="ksm-btn ksm-btn--primary" type="submit">Salva</button>

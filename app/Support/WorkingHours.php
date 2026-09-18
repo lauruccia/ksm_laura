@@ -2,6 +2,9 @@
 
 namespace App\Support;
 
+use Carbon\CarbonImmutable;
+use Carbon\CarbonInterface;
+
 /**
  * Orari di apertura di un'azienda.
  *
@@ -12,6 +15,9 @@ namespace App\Support;
  */
 final class WorkingHours
 {
+    /** Gli orari sono quelli dei negozi italiani, non l'ora del server. */
+    public const TIMEZONE = 'Europe/Rome';
+
     public const DAYS = [
         'Monday' => 'Lunedì',
         'Tuesday' => 'Martedì',
@@ -65,5 +71,27 @@ final class WorkingHours
         }
 
         return $hours;
+    }
+
+    /**
+     * Aperto adesso?
+     *
+     * Il confronto e' fra stringhe "HH:MM", che si ordinano da sole. La
+     * validazione vuole la chiusura dopo l'apertura, quindi un orario a
+     * cavallo della mezzanotte non esiste e non serve trattarlo.
+     */
+    public static function status(array $hours, ?CarbonInterface $now = null): array
+    {
+        $now ??= CarbonImmutable::now(config('ksm.timezone', self::TIMEZONE));
+
+        $day = $now->format('l');
+        $today = $hours[$day] ?? null;
+        $time = $now->format('H:i');
+
+        return [
+            'day' => $day,
+            'today' => $today,
+            'open' => (bool) $today && $time >= $today['start'] && $time < $today['end'],
+        ];
     }
 }

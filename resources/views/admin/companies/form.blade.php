@@ -14,7 +14,7 @@
     <div class="ksm-panel__head">
         <h1>{{ $company->exists ? $company->name : 'Nuova azienda' }}</h1>
         <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-            @if ($company->exists)
+            @if ($company->exists && $company->hasPage())
                 <a class="ksm-btn ksm-btn--ghost" target="_blank" rel="noopener"
                    href="{{ route('companies.show', ['company' => $company->slug]) }}">Vedi la scheda pubblica</a>
             @endif
@@ -302,10 +302,12 @@
                     </ul>
                 @endif
 
+                @include('partials.image-editor-assets')
                 <input class="ksm-input" id="gallery" name="gallery[]" type="file" multiple
-                       accept="image/jpeg,image/png,image/webp">
+                       accept="image/jpeg,image/png,image/webp"
+                       data-image-editor data-ratios="4:3,1:1,free" data-max="1600x1600">
                 <small class="ksm-muted">
-                    Fino a {{ $galleryMax }} foto, 5 MB ciascuna. Ora ce ne sono {{ count($gallery) }}.
+                    Fino a {{ $galleryMax }} foto. Ora ce ne sono {{ count($gallery) }}. Ogni foto si ritaglia prima dell'invio.
                 </small>
                 @error('gallery')<span class="ksm-error">{{ $message }}</span>@enderror
                 @error('gallery.*')<span class="ksm-error">{{ $message }}</span>@enderror
@@ -318,8 +320,9 @@
                         <span class="ksm-thumb ksm-thumb--lg"
                               style="background-image: url('{{ asset('storage/'.$company->logo) }}')"></span>
                     @endif
-                    <input class="ksm-input" id="logo" name="logo" type="file" accept="image/jpeg,image/png,image/webp">
-                    <small class="ksm-muted">JPG, PNG o WebP, massimo 2 MB.</small>
+                    <input class="ksm-input" id="logo" name="logo" type="file" accept="image/jpeg,image/png,image/webp"
+                           data-image-editor data-ratios="1:1,free" data-max="800x800">
+                    <small class="ksm-muted">JPG, PNG o WebP. Si salva in WebP, massimo 800 px.</small>
                     @error('logo')<span class="ksm-error">{{ $message }}</span>@enderror
                 </div>
 
@@ -329,8 +332,9 @@
                         <span class="ksm-thumb ksm-thumb--wide"
                               style="background-image: url('{{ asset('storage/'.$company->banner) }}')"></span>
                     @endif
-                    <input class="ksm-input" id="banner" name="banner" type="file" accept="image/jpeg,image/png,image/webp">
-                    <small class="ksm-muted">JPG, PNG o WebP, massimo 4 MB.</small>
+                    <input class="ksm-input" id="banner" name="banner" type="file" accept="image/jpeg,image/png,image/webp"
+                           data-image-editor data-ratios="16:9,free" data-max="2000x1200">
+                    <small class="ksm-muted">JPG, PNG o WebP, formato 16:9. Si salva in WebP.</small>
                     @error('banner')<span class="ksm-error">{{ $message }}</span>@enderror
                 </div>
             </div>

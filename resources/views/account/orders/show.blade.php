@@ -97,7 +97,7 @@
                 @endforeach
             </ul>
 
-            @if ($order->company)
+            @if ($order->company?->hasPage())
                 <a class="ksm-btn ksm-btn--ghost ksm-btn--sm" style="margin-top: 14px;"
                    href="{{ route('companies.show', $order->company->slug) }}">Vai all'azienda</a>
             @endif

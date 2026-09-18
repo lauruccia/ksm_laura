@@ -2,6 +2,9 @@
 
 @section('title', $page->meta_title ?: $page->title)
 @section('meta_description', $page->meta_description)
+@if ($page->canonical_url)
+    @section('canonical', $page->canonical_url)
+@endif
 
 @section('content')
     <section class="ksm-section">

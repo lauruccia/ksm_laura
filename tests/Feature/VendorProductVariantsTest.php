@@ -63,6 +63,85 @@ class VendorProductVariantsTest extends TestCase
         ], $overrides);
     }
 
+    public function test_ripristino_stock_originale_preciso_e_ripetibile(): void
+    {
+        $path = tempnam(sys_get_temp_dir(), 'stock-dump');
+        $rows = [];
+        foreach (['unmanaged', 'sold', 'edited', 'positive'] as $slug) {
+            $product = Product::create($this->payload(['company_id' => $this->company->id, 'slug' => $slug, 'product_type' => 'variant', 'stock' => $slug === 'positive' ? 4 : 0]));
+            \Illuminate\Support\Facades\DB::table('products')->where('id', $product->id)->update(['updated_at' => $slug === 'edited' ? '2026-09-16 12:00:00' : '2025-12-01 10:00:00']);
+            $stock = $slug === 'sold' ? '0' : 'NULL';
+            $rows[] = "({$product->id}, {$this->company->id}, '{$slug}', {$stock}, 'variant', '2025-12-01 10:00:00')";
+        }
+        file_put_contents($path, "INSERT INTO `products` (`id`, `company_id`, `slug`, `stock`, `product_type`, `updated_at`) VALUES\n".implode(",\n", $rows).";\n");
+        try {
+            $this->artisan('legacy:restore-stock', ['file' => $path])->expectsOutputToContain('Prodotti da ripristinare: 1')->assertSuccessful();
+            $this->assertSame(0, Product::where('slug', 'unmanaged')->first()->stock);
+            $this->artisan('legacy:restore-stock', ['file' => $path, '--apply' => true])->expectsOutputToContain('Prodotti ripristinati: 1')->assertSuccessful();
+            $this->artisan('legacy:restore-stock', ['file' => $path, '--apply' => true])->expectsOutputToContain('Prodotti ripristinati: 0')->assertSuccessful();
+            $this->assertNull(Product::where('slug', 'unmanaged')->first()->stock);
+            $this->assertSame('variable', Product::where('slug', 'unmanaged')->first()->product_type);
+            $this->assertSame('variable', Product::where('slug', 'positive')->first()->product_type);
+            $this->assertSame('variant', Product::where('slug', 'edited')->first()->product_type);
+            $this->assertSame(0, Product::where('slug', 'sold')->first()->stock);
+            $this->assertSame(0, Product::where('slug', 'edited')->first()->stock);
+            $this->assertSame(4, Product::where('slug', 'positive')->first()->stock);
+        } finally {
+            unlink($path);
+        }
+    }
+
+    public function test_stock_non_gestito_disponibile_in_catalogo_e_carrello_ma_zero_esaurito(): void
+    {
+        $this->actingAs($this->vendor)->post(route('vendor.products.store'), $this->payload([
+            'product_type' => 'simple', 'stock' => '',
+        ]))->assertSessionHasNoErrors();
+        $product = $this->company->products()->firstOrFail();
+        $this->assertNull($product->stock);
+        $this->assertTrue($product->isInStock());
+        $this->get(route('products.index', ['disponibili' => 1]))->assertSee($product->name);
+        $this->post(route('cart.add', $product->slug), ['quantita' => 12])->assertSessionHasNoErrors();
+        $this->assertSame(12, session('cart')[$product->id]['quantity']);
+        $product->update(['stock' => 0]);
+        $this->assertFalse($product->fresh()->isInStock());
+        $this->get(route('products.index', ['disponibili' => 1]))->assertDontSee($product->name);
+        $this->post(route('cart.add', $product->slug))->assertSessionHas('error');
+    }
+
+    public function test_varianti_separate_nel_carrello_con_prezzi_e_limiti_di_giacenza(): void
+    {
+        $product = Product::create($this->payload(['company_id' => $this->company->id, 'slug' => 'variabile', 'stock' => 0]));
+        $small = $product->variants()->create(['variant_type' => 'Formato', 'variant_value' => '250 g', 'variant_price' => 4, 'variant_stock' => 2]);
+        $large = $product->variants()->create(['variant_type' => 'Formato', 'variant_value' => '500 g', 'variant_price' => 7, 'variant_stock' => null]);
+        $sold = $product->variants()->create(['variant_type' => 'Formato', 'variant_value' => '1 kg', 'variant_stock' => '0']);
+        $this->get(route('products.show', $product->slug))->assertOk()->assertSee('250 g')->assertSee('500 g')->assertSee('name="variant_id"', false);
+        $this->get(route('products.index', ['disponibili' => 1]))->assertSee($product->name);
+        $this->post(route('cart.add', $product->slug))->assertSessionHasErrors('variant_id');
+        $this->post(route('cart.add', $product->slug), ['variant_id' => $small->id, 'quantita' => 2])->assertSessionHasNoErrors();
+        $this->post(route('cart.add', $product->slug), ['variant_id' => $small->id])->assertSessionHasErrors('quantita');
+        $this->post(route('cart.add', $product->slug), ['variant_id' => $sold->id])->assertSessionHasErrors('quantita');
+        $this->post(route('cart.add', $product->slug), ['variant_id' => $large->id, 'quantita' => 9])->assertSessionHasNoErrors();
+        $cart = session('cart');
+        $this->assertCount(2, $cart);
+        $this->assertEquals(4, $cart[$product->id.':'.$small->id]['price']);
+        $this->assertEquals(7, $cart[$product->id.':'.$large->id]['price']);
+        $this->patch(route('cart.update', $product->slug), ['variant_id' => $small->id, 'quantita' => 3])->assertSessionHasErrors('quantita');
+        $this->patch(route('cart.update', $product->slug), ['variant_id' => $large->id, 'quantita' => 8])->assertSessionHasNoErrors();
+        $this->delete(route('cart.remove', $product->slug), ['variant_id' => $small->id])->assertSessionHasNoErrors();
+        $this->assertCount(1, session('cart'));
+        $this->assertSame(8, session('cart')[$product->id.':'.$large->id]['quantity']);
+    }
+
+    public function test_non_accetta_varianti_di_altri_prodotti_o_prodotti_variabili_vuoti(): void
+    {
+        $product = Product::create($this->payload(['company_id' => $this->company->id, 'slug' => 'variabile']));
+        $other = Product::create($this->payload(['company_id' => $this->company->id, 'slug' => 'altro']));
+        $product->variants()->create(['variant_type' => 'Taglia', 'variant_value' => 'M']);
+        $foreign = $other->variants()->create(['variant_type' => 'Taglia', 'variant_value' => 'L']);
+        $this->post(route('cart.add', $product->slug), ['variant_id' => $foreign->id])->assertNotFound();
+        $this->actingAs($this->vendor)->post(route('vendor.products.store'), $this->payload())->assertSessionHasErrors('variants');
+    }
+
     public function test_crea_il_prodotto_con_le_varianti_compilate_e_salta_le_righe_vuote(): void
     {
         $this->actingAs($this->vendor)

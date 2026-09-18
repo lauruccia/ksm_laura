@@ -67,6 +67,11 @@ if (shop) {
         shop.querySelectorAll('[aria-controls="ksm-shop-side"]').forEach((button) => {
             button.setAttribute('aria-expanded', String(open));
         });
+        if (open) {
+            shop.querySelector('.ksm-shop__close')?.focus();
+        } else {
+            shop.querySelector('[aria-controls="ksm-shop-side"]')?.focus();
+        }
     };
 
     syncCols();
@@ -91,6 +96,18 @@ if (shop) {
     });
 
     document.addEventListener('keydown', (event) => {
+        if (event.key === 'Tab' && shop.classList.contains('is-filters-open')) {
+            const controls = [...shop.querySelectorAll('.ksm-shop__side a[href], .ksm-shop__side button, .ksm-shop__side input:not([type="hidden"]), .ksm-shop__side select')].filter((element) => !element.disabled);
+            const first = controls[0];
+            const last = controls[controls.length - 1];
+            if (event.shiftKey && document.activeElement === first) {
+                event.preventDefault();
+                last?.focus();
+            } else if (!event.shiftKey && document.activeElement === last) {
+                event.preventDefault();
+                first?.focus();
+            }
+        }
         if (event.key === 'Escape' && shop.classList.contains('is-filters-open')) {
             setFiltersOpen(false);
         }
@@ -103,4 +120,74 @@ if (shop) {
             select.form.requestSubmit ? select.form.requestSubmit() : select.form.submit();
         }
     });
+}
+
+// Directory aziende: le pagine successive arrivano man mano che si scorre.
+// Il server risponde con le sole schede; senza JavaScript resta la paginazione.
+const directoryGrid = document.querySelector('[data-directory-grid]');
+const directoryMore = document.querySelector('[data-directory-more]');
+
+if (directoryGrid && directoryMore && 'IntersectionObserver' in window) {
+    // Il link alla pagina successiva viaggia in fondo alle schede.
+    const takeNext = (root) => {
+        const link = root.querySelector('[data-directory-next]');
+        link?.remove();
+
+        return link?.getAttribute('href') || null;
+    };
+
+    let next = takeNext(directoryGrid);
+    let loading = false;
+
+    const observer = new IntersectionObserver((entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+            loadNext();
+        }
+    }, { rootMargin: '0px 0px 900px 0px' });
+
+    const loadNext = async () => {
+        if (loading || !next) {
+            return;
+        }
+
+        loading = true;
+        directoryMore.classList.remove('is-failed');
+        directoryMore.classList.add('is-loading');
+
+        try {
+            const response = await fetch(next, {
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                cache: 'no-store',
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+
+            const template = document.createElement('template');
+            template.innerHTML = await response.text();
+            next = takeNext(template.content);
+            directoryGrid.append(template.content);
+        } catch (error) {
+            // Resta la stessa pagina da chiedere: il bottone riprova.
+            directoryMore.classList.add('is-failed');
+        } finally {
+            loading = false;
+            directoryMore.classList.remove('is-loading');
+        }
+
+        // Osservare di nuovo fa ripartire il controllo: se il fondo e' ancora
+        // in vista, per esempio su uno schermo alto, arriva subito un'altra pagina.
+        observer.unobserve(directoryMore);
+
+        if (next && !directoryMore.classList.contains('is-failed')) {
+            observer.observe(directoryMore);
+        }
+    };
+
+    if (next) {
+        directoryMore.classList.add('is-live');
+        directoryMore.querySelector('[data-directory-retry]')?.addEventListener('click', loadNext);
+        observer.observe(directoryMore);
+    }
 }

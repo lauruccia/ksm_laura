@@ -201,57 +201,97 @@
 }
 
 /* ============ Biglietto azienda, negli elenchi ============ */
-/* Proporzioni di una carta di credito: 85,60 x 53,98 mm. Le righe in piu'
-   spariscono quando il biglietto e' stretto, non quando lo e' lo schermo. */
+/* Alto quanto il suo contenuto: a pareggiare le schede di una stessa riga
+   ci pensa la griglia, senza lasciare un vuoto in fondo al biglietto. */
 .ksm-bizcard {
-    container-type: inline-size;
-    aspect-ratio: 85.6 / 53.98;
-    padding: 18px 18px 16px;
-    background:
-        radial-gradient(120% 90% at 100% 0%, var(--ksm-accent-soft) 0%, rgba(255, 255, 255, 0) 60%),
-        var(--ksm-surface);
-}
-
-.ksm-bizcard--banner {
-    border-color: transparent;
-    background:
-        linear-gradient(160deg, rgba(16, 28, 34, .5) 0%, rgba(16, 28, 34, .84) 100%),
-        var(--ksm-bizcard-image) center / cover no-repeat;
-}
-
-.ksm-bizcard__head {
-    display: flex;
-    align-items: center;
-    gap: 12px;
     min-width: 0;
+    padding-bottom: 16px;
+}
+
+/* Angolo un filo piu' morbido delle altre schede e ombra a due strati:
+   una riga stretta che appoggia il biglietto, un alone largo e leggero. */
+.ksm-card.ksm-bizcard {
+    border-radius: 20px;
+    border-color: var(--ksm-line-soft);
+    box-shadow: 0 1px 2px rgba(7, 54, 77, .05), 0 10px 26px rgba(7, 54, 77, .07);
+}
+
+.ksm-card.ksm-bizcard:hover {
+    border-color: #D8E3DC;
+    box-shadow: 0 2px 6px rgba(7, 54, 77, .06), 0 20px 44px rgba(7, 54, 77, .13);
+}
+
+/* Senza contatti non ci sono righe accanto a cui mettere l'icona del settore. */
+.ksm-bizcard:not(:has(.ksm-bizcard__meta)) { padding-bottom: 46px; }
+
+/* Con una riga sola l'icona arriva all'altezza del luogo: gli fa posto anche lui. */
+.ksm-bizcard:has(.ksm-bizcard__meta li:only-child) .ksm-bizcard__place { padding-right: 42px; }
+
+.ksm-bizcard__cover {
+    flex: none;
+    /* Nella directory il biglietto e' largo al massimo ~400px, accanto al
+       menu: un banner 16:9 lo slancia senza diventare mezza scheda. Niente
+       formato carta forzato: l'altezza in piu' finirebbe tutta nel banner.
+       Il tetto vale per i biglietti a tutta larghezza sui telefoni. */
+    aspect-ratio: 16 / 9;
+    max-height: 210px;
+    background: var(--ksm-line-soft) center / cover no-repeat;
+    transition: filter .28s var(--ksm-ease);
+}
+
+.ksm-bizcard__cover--plain {
+    background: var(--ksm-bands), var(--ksm-stripes), var(--ksm-gradient-brand);
+}
+
+.ksm-card:hover .ksm-bizcard__cover { filter: saturate(1.06); }
+
+.ksm-bizcard__top {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 10px;
+    margin-top: -24px;
+    padding: 0 16px;
 }
 
 .ksm-bizcard__logo {
     flex: none;
-    width: 44px;
-    height: 44px;
-    border-radius: var(--ksm-radius-sm);
-    border: 1px solid var(--ksm-line);
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    border: 3px solid #fff;
+    box-shadow: var(--ksm-shadow);
     background: #fff center / contain no-repeat;
 }
 
 .ksm-bizcard__logo--empty {
     display: grid;
     place-items: center;
-    border-color: transparent;
     background: var(--ksm-accent-soft);
     color: var(--ksm-accent-dark);
     font-family: var(--ksm-font-display);
     font-weight: 800;
-    font-size: 1.2rem;
+    font-size: 1.35rem;
     line-height: 1;
 }
 
-.ksm-bizcard__id { flex: 1; min-width: 0; }
+.ksm-bizcard__rating {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding-bottom: 2px;
+    font-size: .8rem;
+    color: var(--ksm-muted);
+}
+
+.ksm-bizcard__id {
+    min-width: 0;
+    padding: 8px 16px 0;
+}
 
 .ksm-bizcard__name {
     margin: 0;
-    font-size: 1rem;
+    font-size: 1.02rem;
     font-weight: 700;
     line-height: 1.25;
     color: var(--ksm-ink);
@@ -270,79 +310,61 @@
     inset: 0;
 }
 
-.ksm-bizcard__meta a,
-.ksm-bizcard__more {
-    position: relative;
-    z-index: 1;
-}
+.ksm-bizcard__meta a { position: relative; z-index: 1; }
 
-.ksm-bizcard__city {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    min-width: 0;
-    margin: 2px 0 0;
-    font-size: .8rem;
+.ksm-bizcard__place {
+    margin: 3px 0 0;
+    font-size: .86rem;
     color: var(--ksm-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
-
-.ksm-bizcard__city span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.ksm-bizcard__city .ksm-icon { flex: none; color: var(--ksm-accent); }
 
 /* Doppia classe: `.ksm-meta`, definita piu' sotto, altrimenti vincerebbe. */
 .ksm-bizcard .ksm-bizcard__meta {
-    margin: auto 0 0;
-    padding: 10px 40px 0 0;
-    font-size: .82rem;
+    margin: 10px 0 0;
+    padding: 0 16px;
+    font-size: .875rem;
 }
 
-.ksm-bizcard .ksm-bizcard__meta li { margin-bottom: 4px; line-height: 1.35; }
+/* I contatti sono il contenuto del biglietto: respirano loro lo spazio
+   che il banner non si prende piu'. */
+.ksm-bizcard .ksm-bizcard__meta li { min-width: 0; gap: 8px; margin-bottom: 7px; line-height: 1.4; }
 .ksm-bizcard .ksm-bizcard__meta li:last-child { margin-bottom: 0; }
 
-.ksm-bizcard__more {
+/* L'icona del settore sta accanto alle ultime righe, non sotto: sono loro
+   a farle posto, cosi' il biglietto non porta una fascia vuota in fondo. */
+.ksm-bizcard .ksm-bizcard__meta li:last-child,
+.ksm-bizcard .ksm-bizcard__meta li:nth-last-child(2) { padding-right: 42px; }
+.ksm-bizcard .ksm-bizcard__meta .ksm-icon { flex: none; color: var(--ksm-accent); }
+
+.ksm-bizcard .ksm-bizcard__meta li > span,
+.ksm-bizcard .ksm-bizcard__meta li > a {
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Il settore dell'azienda, in basso a destra. */
+.ksm-bizcard__sector {
     position: absolute;
-    right: 14px;
-    bottom: 14px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 30px;
-    height: 30px;
-    border-radius: var(--ksm-radius-sm);
+    right: 12px;
+    bottom: 12px;
+    display: grid;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
     background: var(--ksm-accent-soft);
     color: var(--ksm-accent-dark);
     transition: background .2s var(--ksm-ease), color .2s var(--ksm-ease);
 }
 
-.ksm-bizcard:hover .ksm-bizcard__more {
+.ksm-card:hover .ksm-bizcard__sector {
     background: var(--ksm-accent);
     color: #fff;
-}
-
-.ksm-bizcard--banner .ksm-bizcard__name,
-.ksm-bizcard--banner .ksm-bizcard__name a:hover,
-.ksm-bizcard--banner .ksm-meta li,
-.ksm-bizcard--banner .ksm-meta a { color: #fff; }
-
-.ksm-bizcard--banner .ksm-bizcard__city,
-.ksm-bizcard--banner .ksm-rating__value { color: rgba(255, 255, 255, .8); }
-
-.ksm-bizcard--banner .ksm-bizcard__city .ksm-icon,
-.ksm-bizcard--banner .ksm-meta .ksm-icon { color: #9FE08A; }
-
-.ksm-bizcard--banner .ksm-bizcard__more {
-    background: rgba(255, 255, 255, .16);
-    color: #fff;
-}
-
-/* Soglie misurate sul contenuto della scheda: sotto i 250px quattro righe
-   non stanno piu' nell'altezza, sotto i 210px nemmeno tre. */
-@container (max-width: 250px) {
-    .ksm-bizcard .ksm-bizcard__meta .ksm-bizcard__web { display: none; }
-}
-
-@container (max-width: 210px) {
-    .ksm-bizcard .ksm-bizcard__meta .ksm-bizcard__mail { display: none; }
 }
 
 .ksm-meta {
@@ -447,6 +469,13 @@
     flex-wrap: wrap;
     gap: 6px;
     margin-top: 6px;
+}
+
+/* Sul telefono foto, testo e pulsante in riga non ci stanno: il pulsante va sotto, largo. */
+@media (max-width: 560px) {
+    .ksm-product { flex-wrap: wrap; }
+    .ksm-product > form { flex: 1 0 100%; }
+    .ksm-product > form .ksm-btn { width: 100%; justify-content: center; }
 }
 
 /* ============ Etichette ============ */
@@ -564,6 +593,18 @@
     box-shadow: var(--ksm-shadow-xs);
 }
 
+/*
+ * Sul telefono una tabella stretta alla larghezza dello schermo spezza email
+ * e numeri lettera per lettera: meglio una larghezza minima e scorrere di lato
+ * dentro il riquadro, che lo permette gia'.
+ */
+@media (max-width: 760px) {
+    .ksm-table-wrap > .ksm-table { min-width: 620px; }
+    .ksm-table-wrap > .ksm-table th,
+    .ksm-table-wrap > .ksm-table td { padding: 11px 12px; }
+    .ksm-table .ksm-input { min-width: 110px; }
+}
+
 /* ============ Banner pubblicitari ============ */
 .ksm-banner {
     display: block;
@@ -644,74 +685,430 @@
     box-shadow: 0 2px 8px rgba(0, 0, 0, .2);
 }
 
-/* Scheda azienda: descrizione, orari, galleria ---------------------------- */
+/* Testo formattato di descrizioni e pagine ------------------------------ */
 
 .ksm-richtext { margin-top: 16px; }
 .ksm-richtext > :first-child { margin-top: 0; }
 .ksm-richtext > :last-child { margin-bottom: 0; }
 .ksm-richtext a { text-decoration: underline; }
 
-.ksm-company__extras {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
-    gap: 24px;
-    align-items: start;
-    margin-bottom: 28px;
+/* ============ Paginazione ============ */
+.ksm-pagination {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
 }
 
-.ksm-company__extras > :only-child { grid-column: 1 / -1; }
-
-.ksm-company__hours,
-.ksm-company__gallery { padding: 20px; }
-
-.ksm-company__hours h2,
-.ksm-company__gallery h2 { margin: 0 0 12px; font-size: 1.15rem; }
-
-.ksm-company__hours table { width: 100%; border-collapse: collapse; }
-
-.ksm-company__hours th,
-.ksm-company__hours td {
-    padding: 7px 0;
-    border-bottom: 1px solid var(--ksm-line);
-    font-weight: 400;
-    text-align: left;
-}
-
-.ksm-company__hours tr:last-child th,
-.ksm-company__hours tr:last-child td { border-bottom: 0; }
-
-.ksm-company__hours td { text-align: right; white-space: nowrap; }
-
-.ksm-company__gallery ul {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-    gap: 10px;
+.ksm-pagination__pages {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 6px;
     margin: 0;
     padding: 0;
     list-style: none;
 }
 
-.ksm-company__gallery img {
-    display: block;
-    width: 100%;
-    aspect-ratio: 4 / 3;
-    object-fit: cover;
-    border-radius: 8px;
+.ksm-pagination__step,
+.ksm-pagination__page {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-width: 40px;
+    height: 40px;
+    padding: 0 12px;
+    border: 1px solid var(--ksm-line);
+    border-radius: var(--ksm-radius-sm);
+    background: var(--ksm-surface);
+    color: var(--ksm-ink);
+    font-size: .9rem;
+    font-weight: 600;
+    line-height: 1;
+    transition: border-color .2s var(--ksm-ease), color .2s var(--ksm-ease), background .2s var(--ksm-ease);
 }
 
-@media (max-width: 760px) {
-    .ksm-company__extras { grid-template-columns: 1fr; }
+a.ksm-pagination__step:hover,
+a.ksm-pagination__page:hover {
+    border-color: var(--ksm-accent);
+    color: var(--ksm-accent-dark);
 }
 
-/* Scheda azienda: mappa OpenStreetMap ------------------------------------ */
+.ksm-pagination__page.is-current {
+    border-color: var(--ksm-accent);
+    background: var(--ksm-accent);
+    color: #fff;
+}
 
-.ksm-company__map { padding: 20px; margin-bottom: 28px; }
-.ksm-company__map h2 { margin: 0 0 12px; font-size: 1.15rem; }
-.ksm-company__map p { margin: 10px 0 0; font-size: .9rem; }
+.ksm-pagination__step.is-disabled { color: var(--ksm-muted); opacity: .6; }
 
-.ksm-company__mapcanvas {
+.ksm-pagination__gap {
+    display: inline-flex;
+    align-items: center;
+    height: 40px;
+    padding: 0 2px;
+    color: var(--ksm-muted);
+}
+
+.ksm-pagination__back { transform: scaleX(-1); }
+
+/* Sul telefono restano precedente e successiva: i numeri andrebbero a capo. */
+@media (max-width: 560px) {
+    .ksm-pagination__pages { display: none; }
+}
+
+/* ============ Directory aziende: caricamento continuo ============ */
+.ksm-directory__container { max-width: none; }
+
+/* Menu delle categorie a sinistra, ricerca e biglietti a destra. */
+.ksm-directory {
+    display: grid;
+    grid-template-columns: 280px minmax(0, 1fr);
+    gap: 28px;
+    align-items: start;
+}
+
+.ksm-directory__main { min-width: 0; }
+
+.ksm-dirnav {
+    position: sticky;
+    top: 24px;
+    max-height: calc(100vh - 48px);
+    overflow-y: auto;
+    padding: 8px;
+    background: var(--ksm-surface);
+    border: 1px solid var(--ksm-line-soft);
+    border-radius: 20px;
+    box-shadow: 0 1px 2px rgba(7, 54, 77, .05), 0 10px 26px rgba(7, 54, 77, .07);
+    overscroll-behavior: contain;
+}
+
+.ksm-dirnav__title {
+    margin: 0;
+    padding: 12px 12px 8px;
+    font-size: .74rem;
+    font-weight: 700;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--ksm-muted);
+}
+
+.ksm-dirnav__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.ksm-dirnav__list--nested {
+    margin: 2px 0 6px 12px;
+    padding-left: 8px;
+    border-left: 2px solid var(--ksm-line-soft);
+}
+
+.ksm-dirnav__item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 9px 12px;
+    border-radius: var(--ksm-radius);
+    font-size: .92rem;
+    font-weight: 500;
+    line-height: 1.3;
+    color: var(--ksm-ink);
+    cursor: pointer;
+    list-style: none;
+    transition: background .15s var(--ksm-ease), color .15s var(--ksm-ease);
+}
+
+.ksm-dirnav__item::-webkit-details-marker { display: none; }
+
+.ksm-dirnav__item:hover { background: var(--ksm-canvas); color: var(--ksm-accent-dark); }
+
+.ksm-dirnav__list--nested .ksm-dirnav__item {
+    padding-block: 7px;
+    font-size: .875rem;
+    color: var(--ksm-body);
+}
+
+.ksm-dirnav__item.is-current,
+.ksm-dirnav__list--nested .ksm-dirnav__item.is-current {
+    background: var(--ksm-accent-soft);
+    color: var(--ksm-accent-dark);
+    font-weight: 600;
+}
+
+.ksm-dirnav__all { font-weight: 600; }
+
+.ksm-dirnav__group > summary .ksm-icon {
+    flex: none;
+    color: var(--ksm-muted);
+    transition: transform .2s var(--ksm-ease);
+}
+
+.ksm-dirnav__group[open] > summary .ksm-icon { transform: rotate(180deg); }
+
+.ksm-dirnav__item:focus-visible { outline: none; box-shadow: var(--ksm-ring); }
+
+/* Ricerca: la categoria si sceglie dal menu, la tendina serve solo senza. */
+.ksm-directory__search {
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) auto;
+    align-items: end;
+    gap: 16px;
+    margin-bottom: 24px;
+    padding: 16px;
+}
+
+.ksm-directory__search .ksm-field { margin: 0; }
+.ksm-directory__category { display: none; }
+
+.ksm-directory__main > .ksm-ad:first-of-type { margin-top: 0; }
+
+/* Quattro biglietti per riga accanto al menu: stretti e slanciati, non tozzi.
+   Si scende a tre quando quattro starebbero sotto i ~250px l'uno. */
+.ksm-directory__grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+
+@media (max-width: 1439px) {
+    .ksm-directory__grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+@media (max-width: 860px) {
+    .ksm-directory__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 991px) {
+    .ksm-directory { grid-template-columns: minmax(0, 1fr); }
+    .ksm-dirnav { display: none; }
+
+    .ksm-directory__search { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+    .ksm-directory__query { grid-column: 1 / -1; }
+    .ksm-directory__category { display: block; }
+    .ksm-directory__search .ksm-btn { grid-column: 1 / -1; }
+}
+
+@media (max-width: 560px) {
+    .ksm-directory__search { grid-template-columns: minmax(0, 1fr); }
+    .ksm-directory__grid { grid-template-columns: minmax(0, 1fr); }
+}
+
+.ksm-directory__more {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    min-height: 1px;
+    margin-top: 28px;
+}
+
+/* Con il caricamento continuo attivo la paginazione non serve. */
+.ksm-directory__more.is-live [data-directory-pager] { display: none; }
+
+.ksm-directory__status,
+.ksm-directory__retry { display: none; }
+
+.ksm-directory__more.is-loading .ksm-directory__status {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-size: .9rem;
+    color: var(--ksm-muted);
+}
+
+.ksm-directory__more.is-failed .ksm-directory__retry { display: inline-flex; }
+
+.ksm-directory__spinner {
+    width: 18px;
+    height: 18px;
+    border: 2px solid var(--ksm-line);
+    border-top-color: var(--ksm-accent);
+    border-radius: 50%;
+    animation: ksm-spin .8s linear infinite;
+}
+
+@keyframes ksm-spin { to { transform: rotate(360deg); } }
+
+@media (prefers-reduced-motion: reduce) {
+    .ksm-directory__spinner { animation-duration: 2.4s; }
+}
+
+/* ============ Biglietto compatto: biglietto da visita e anagrafica ============ */
+/* Senza pagina dedicata: niente banner ne' formato carta, la scheda e' alta
+   quanto il suo contenuto e non porta da nessuna parte. */
+.ksm-bizcard--compact {
+    padding-top: 14px;
+}
+
+.ksm-bizcard--compact .ksm-bizcard__top {
+    align-items: flex-start;
+    margin-top: 0;
+}
+
+.ksm-bizcard--compact .ksm-bizcard__rating { padding: 2px 0 0; }
+
+.ksm-bizcard--compact .ksm-bizcard__logo--empty {
+    background: var(--ksm-line-soft);
+    color: var(--ksm-ink);
+}
+
+/* Non e' un link: al passaggio del mouse non si solleva. */
+.ksm-bizcard--compact:hover {
+    transform: none;
+    border-color: var(--ksm-line);
+    box-shadow: var(--ksm-shadow-xs);
+}
+
+.ksm-card.ksm-bizcard--compact:hover .ksm-bizcard__sector {
+    background: var(--ksm-accent-soft);
+    color: var(--ksm-accent-dark);
+}
+
+/* ============ Accesso dentro l'acquisto ============ */
+/* Il modulo che compare nel carrello e alla cassa quando si compra da ospiti. */
+.ksm-inline-auth {
+    padding: 24px;
+    height: fit-content;
+}
+
+.ksm-inline-auth:hover {
+    transform: none;
+    border-color: var(--ksm-line);
+    box-shadow: var(--ksm-shadow-xs);
+}
+
+.ksm-inline-auth__title {
+    font-size: 1.25rem;
+    margin: 0 0 6px;
+}
+
+.ksm-inline-auth__lead {
+    margin: 0 0 18px;
+    font-size: .92rem;
+}
+
+.ksm-inline-auth__tabs {
+    display: flex;
+    gap: 6px;
+    padding: 4px;
+    margin-bottom: 20px;
+    background: var(--ksm-line-soft);
+    border-radius: var(--ksm-radius);
+}
+
+.ksm-inline-auth__tab {
+    flex: 1;
+    padding: 9px 12px;
+    border-radius: calc(var(--ksm-radius) - 3px);
+    text-align: center;
+    font-size: .88rem;
+    font-weight: 600;
+    color: var(--ksm-body);
+    text-decoration: none;
+    transition: background .18s var(--ksm-ease), color .18s var(--ksm-ease);
+}
+
+.ksm-inline-auth__tab:hover { color: var(--ksm-dark); }
+
+.ksm-inline-auth__tab.is-active {
+    background: var(--ksm-surface);
+    color: var(--ksm-dark);
+    box-shadow: var(--ksm-shadow-xs);
+}
+
+.ksm-inline-auth__row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+}
+
+.ksm-inline-auth__remember {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 18px;
+    font-size: .9rem;
+}
+
+.ksm-inline-auth__note {
+    margin: 14px 0 0;
+    text-align: center;
+    font-size: .85rem;
+}
+
+@media (max-width: 560px) {
+    .ksm-inline-auth__row { grid-template-columns: 1fr; gap: 0; }
+}
+
+/* Nel carrello il modulo sta sotto la tabella, stretto e centrato. */
+.ksm-cart-auth {
+    max-width: 520px;
+    margin: 28px auto 0;
+}
+
+/* Carrelli per venditore: schede sopra la tabella, quella in corso evidenziata. */
+.ksm-cart-vendors {
+    margin: 0 0 24px;
+    padding: 18px;
+    border: 1px solid var(--ksm-line);
+    border-radius: var(--ksm-radius-lg);
+    background: var(--ksm-surface);
+    box-shadow: var(--ksm-shadow-xs);
+}
+.ksm-cart-vendors__intro { margin: 0 0 14px; color: var(--ksm-body); }
+.ksm-cart-vendors__intro strong { color: var(--ksm-ink); }
+.ksm-cart-vendors__single { margin: -8px 0 18px; color: var(--ksm-body); }
+.ksm-cart-vendors__list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 12px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+.ksm-cart-vendor {
     position: relative;
-    z-index: 0;
-    height: 320px;
-    border-radius: 10px;
+    display: flex;
+    border: 2px solid var(--ksm-line);
+    border-radius: var(--ksm-radius);
+    background: var(--ksm-canvas);
+    transition: border-color .15s var(--ksm-ease), box-shadow .15s var(--ksm-ease);
 }
+.ksm-cart-vendor form:first-child { flex: 1; min-width: 0; }
+.ksm-cart-vendor__main {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    width: 100%;
+    padding: 12px 40px 12px 14px;
+    border: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+.ksm-cart-vendor.is-active .ksm-cart-vendor__main { cursor: default; }
+.ksm-cart-vendor:not(.is-active):hover { border-color: var(--ksm-accent); box-shadow: var(--ksm-shadow); }
+.ksm-cart-vendor__main:focus-visible { outline: none; box-shadow: var(--ksm-ring); border-radius: var(--ksm-radius); }
+.ksm-cart-vendor__state { font-size: .78rem; font-weight: 600; color: var(--ksm-accent-dark); }
+.ksm-cart-vendor__name { color: var(--ksm-ink); font-size: 1.02rem; overflow-wrap: anywhere; }
+.ksm-cart-vendor__meta { font-size: .88rem; color: var(--ksm-muted); }
+.ksm-cart-vendor.is-active { border-color: var(--ksm-accent); background: var(--ksm-accent-soft); }
+.ksm-cart-vendor.is-active .ksm-cart-vendor__state { color: var(--ksm-accent-dark); text-transform: uppercase; letter-spacing: .04em; }
+.ksm-cart-vendor__remove {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 28px;
+    height: 28px;
+    border: 0;
+    border-radius: var(--ksm-radius-pill);
+    background: transparent;
+    color: var(--ksm-muted);
+    font-size: 1.25rem;
+    line-height: 1;
+    cursor: pointer;
+}
+.ksm-cart-vendor__remove:hover { background: #fdecec; color: var(--ksm-danger); }

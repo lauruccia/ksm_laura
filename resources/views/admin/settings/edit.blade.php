@@ -62,7 +62,24 @@
 
             <div class="ksm-field">
                 <label class="ksm-label" for="site_logo">Logo</label>
-                <input class="ksm-input" id="site_logo" name="site_logo" type="file">
+                @if ($settings->site_logo)
+                    <img class="ksm-image-current" src="{{ asset('storage/'.$settings->site_logo) }}" alt="">
+                @endif
+                @include('partials.image-editor-assets')
+                <input class="ksm-input" id="site_logo" name="site_logo" type="file" accept="image/jpeg,image/png,image/webp"
+                       data-image-editor data-ratios="free,3:1,1:1" data-max="1000x500">
+                @error('site_logo')<span class="ksm-error">{{ $message }}</span>@enderror
+            </div>
+
+            <div class="ksm-field">
+                <label class="ksm-label" for="favicon">Icona del sito (favicon)</label>
+                @if ($settings->favicon)
+                    <img class="ksm-image-current" src="{{ asset('storage/'.$settings->favicon) }}" alt="" width="48" height="48">
+                @endif
+                <input class="ksm-input" id="favicon" name="favicon" type="file" accept="image/jpeg,image/png,image/webp"
+                       data-image-editor data-ratios="1:1" data-max="256x256">
+                <small class="ksm-muted">Quadrata: si salva in PNG da 256 px.</small>
+                @error('favicon')<span class="ksm-error">{{ $message }}</span>@enderror
             </div>
 
             <button class="ksm-btn ksm-btn--primary" type="submit">Salva</button>

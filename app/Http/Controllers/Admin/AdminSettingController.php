@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\AdminPaymentSetting;
 use App\Models\AdminSetting;
 use App\Models\SmtpSetting;
+use App\Support\Images\ImageStore;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -41,13 +42,16 @@ class AdminSettingController extends Controller
             'social_links.instagram' => ['nullable', 'url', 'max:255'],
             'base_shipping_rate' => ['nullable', 'numeric', 'min:0'],
             'per_kg_rate' => ['nullable', 'numeric', 'min:0'],
-            'site_logo' => ['nullable', 'image', 'max:2048'],
-            'favicon' => ['nullable', 'image', 'max:512'],
+            'site_logo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:12288'],
+            'favicon' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:4096'],
         ]);
+
+        $replaced = [];
 
         foreach (['site_logo', 'favicon'] as $field) {
             if ($request->hasFile($field)) {
-                $data[$field] = $request->file($field)->store('brand', 'public');
+                $data[$field] = app(ImageStore::class)->store($request->file($field), 'brand', $field, $field);
+                $replaced[] = $settings->$field;
             }
         }
 
@@ -55,6 +59,7 @@ class AdminSettingController extends Controller
         $data['social_links'] = array_map(fn ($url) => $url ?: null, $data['social_links'] ?? []);
 
         $settings->update($data);
+        app(ImageStore::class)->delete($replaced);
 
         return back()->with('success', __('Impostazioni salvate.'));
     }

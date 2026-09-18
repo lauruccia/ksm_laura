@@ -39,12 +39,25 @@
         ];
     @endphp
 
-    <section class="ksm-section ksm-section--tight">
+    @include('pages.products.partials.storefront')
+
+    @php
+        // Il catalogo con i filtri si puo' spegnere per dominio, ma resta se si sta gia' filtrando.
+        $catalog = $tenant->content()->catalog();
+    @endphp
+
+    @if ($catalog['enabled'] || request()->hasAny(['categoria', 'cerca', 'marca', 'offerta', 'page']))
+    <section class="ksm-section ksm-section--tight ksm-store-catalog" id="catalogo">
         <div class="ksm-container">
             <div class="ksm-section-head ksm-shop__head">
                 <div>
-                    <h1>{{ $currentCategory?->name ?? __('site.nav_products') }}</h1>
+                    <h2>{{ $currentCategory?->name ?? $catalog['title'] ?? __('storefront.catalog') }}</h2>
                     <p>{{ __('site.shop_products_count', ['count' => $products->total()]) }}</p>
+                </div>
+                <div class="ksm-store-search" role="search">
+                    <x-icon name="search" :size="20" />
+                    <input class="ksm-input" type="search" id="cerca" name="cerca" form="ksm-shop-form" value="{{ request('cerca') }}" placeholder="{{ __('storefront.search') }}" aria-label="{{ __('site.shop_search_label') }}">
+                    <button class="ksm-btn ksm-btn--primary" type="submit" form="ksm-shop-form">{{ __('storefront.search_button') }}</button>
                 </div>
             </div>
 
@@ -95,11 +108,6 @@
                         @if ($currentCategory)
                             <input type="hidden" name="categoria" value="{{ $currentCategory->id }}">
                         @endif
-
-                        <div class="ksm-shop__block">
-                            <label class="ksm-shop__block-title" for="cerca">{{ __('site.shop_search_label') }}</label>
-                            <input class="ksm-input" type="search" id="cerca" name="cerca" value="{{ request('cerca') }}">
-                        </div>
 
                         <fieldset class="ksm-shop__block">
                             <legend class="ksm-shop__block-title">{{ __('site.shop_price') }}</legend>
@@ -194,8 +202,8 @@
                                         title="{{ __('site.shop_view_list') }}" aria-label="{{ __('site.shop_view_list') }}">
                                     <x-icon name="list" :size="18" />
                                 </button>
-                                @foreach ([2, 3, 4, 5] as $cols)
-                                    <button type="button" data-shop-cols="{{ $cols }}" aria-pressed="{{ $cols === 4 ? 'true' : 'false' }}"
+                                @foreach ([2, 3, 4, 5, 6] as $cols)
+                                    <button type="button" data-shop-cols="{{ $cols }}" aria-pressed="{{ $cols === 6 ? 'true' : 'false' }}"
                                             title="{{ __('site.shop_view_cols', ['count' => $cols]) }}"
                                             aria-label="{{ __('site.shop_view_cols', ['count' => $cols]) }}">
                                         <span class="ksm-colswitch__bars" aria-hidden="true">@for ($i = 0; $i < $cols; $i++)<i></i>@endfor</span>
@@ -229,16 +237,16 @@
                             @endif
                         </div>
                     @else
-                        <div class="ksm-shop__grid" data-shop-grid data-cols="4">
+                        <div class="ksm-shop__grid" data-shop-grid data-cols="6">
                             @foreach ($products as $product)
-                                <x-product-card :product="$product" />
+                                <x-product-card :product="$product" :storefront="true" />
                             @endforeach
                         </div>
                         <script>
                             // Colonne scelte in una visita precedente, applicate prima che la griglia si veda.
                             try {
                                 const cols = localStorage.getItem('ksm.shop.cols');
-                                if (['1', '2', '3', '4', '5'].includes(cols)) {
+                                if (['1', '2', '3', '4', '5', '6'].includes(cols)) {
                                     document.querySelector('[data-shop-grid]').dataset.cols = cols;
                                 }
                             } catch (e) {}
@@ -250,4 +258,5 @@
             </div>
         </div>
     </section>
+    @endif
 @endsection

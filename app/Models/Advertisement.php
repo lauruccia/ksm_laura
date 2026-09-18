@@ -87,13 +87,19 @@ class Advertisement extends Model
     {
         $domains = array_map('intval', (array) $this->target_domains);
 
+        // Il dominio puo' rifiutare i banner, o accettare solo le campagne scelte per lui.
+        if ($context->mode === 'none' || ($context->mode === 'targeted' && ! $domains)) {
+            return false;
+        }
+
         if ($domains && ! in_array($context->domainId, $domains, true)) {
             return false;
         }
 
         $cities = array_map(fn ($city) => mb_strtolower(trim((string) $city)), (array) $this->target_cities);
+        $here = array_map(fn ($place) => mb_strtolower(trim((string) $place)), array_filter([$context->city, ...$context->places]));
 
-        if ($cities && ! in_array(mb_strtolower(trim((string) $context->city)), $cities, true)) {
+        if ($cities && ! array_intersect($cities, $here)) {
             return false;
         }
 

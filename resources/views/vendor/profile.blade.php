@@ -88,11 +88,24 @@
         <div class="ksm-grid ksm-grid--2">
             <div class="ksm-field">
                 <label class="ksm-label" for="logo">Logo</label>
-                <input class="ksm-input" id="logo" name="logo" type="file">
+                @if ($company->logo)
+                    <img class="ksm-image-current" src="{{ asset('storage/'.$company->logo) }}" alt="">
+                @endif
+                @include('partials.image-editor-assets')
+                <input class="ksm-input" id="logo" name="logo" type="file" accept="image/jpeg,image/png,image/webp"
+                       data-image-editor data-ratios="1:1,free" data-max="800x800">
+                <small class="ksm-muted">Con "Mostra tutta l'immagine" il logo non viene tagliato.</small>
+                @error('logo')<span class="ksm-error">{{ $message }}</span>@enderror
             </div>
             <div class="ksm-field">
                 <label class="ksm-label" for="banner">Immagine di copertina</label>
-                <input class="ksm-input" id="banner" name="banner" type="file">
+                @if ($company->banner)
+                    <img class="ksm-image-current" src="{{ asset('storage/'.$company->banner) }}" alt="">
+                @endif
+                <input class="ksm-input" id="banner" name="banner" type="file" accept="image/jpeg,image/png,image/webp"
+                       data-image-editor data-ratios="16:9,free" data-max="2000x1200">
+                <small class="ksm-muted">Formato 16:9, come nelle schede delle aziende.</small>
+                @error('banner')<span class="ksm-error">{{ $message }}</span>@enderror
             </div>
         </div>
 

@@ -523,3 +523,6 @@
     .ksm-footer__grid { grid-template-columns: 1fr; gap: 32px; padding: 44px 0 36px; }
     .ksm-footer__bottom-inner p { flex: 1 1 100%; }
 }
+
+/* Piede dei domini della rete: dati legali sotto il copyright. */
+.ksm-footer--site .ksm-footer__legal { display: block; margin-top: 4px; font-size: .78rem; opacity: .8; }

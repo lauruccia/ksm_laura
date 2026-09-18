@@ -13,6 +13,9 @@ class ReviewController extends Controller
 {
     public function storeForCompany(Request $request, Company $company): RedirectResponse
     {
+        // Il modulo sta sulla pagina dell'azienda: senza pagina non c'e'.
+        abort_unless($company->hasPage(), 404);
+
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['nullable', 'email', 'max:255'],

@@ -15,7 +15,9 @@
             </p>
         </div>
         <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-            <a class="ksm-btn ksm-btn--ghost" href="{{ route('companies.show', $company->slug) }}">Vedi vetrina</a>
+            @if ($company->hasPage())
+                <a class="ksm-btn ksm-btn--ghost" href="{{ route('companies.show', $company->slug) }}">Vedi vetrina</a>
+            @endif
             <a class="ksm-btn ksm-btn--primary" href="{{ route('vendor.profile.edit') }}">Modifica profilo</a>
         </div>
     </div>

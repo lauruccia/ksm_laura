@@ -70,6 +70,8 @@
     display: inline-flex; align-items: center; justify-content: center; min-height: 44px; flex-shrink: 0; border: 1px solid #d5e2ef; border-radius: 9px; background: #fafdff; color: var(--brand-ink); font-size: 13px; font-weight: 600; white-space: nowrap;
 }
 .brand-header__icon-btn { width: 48px; cursor: pointer; }
+.brand-header__cart { position: relative; }
+.brand-header__cart-count { position: absolute; top: -7px; right: -6px; min-width: 20px; height: 20px; padding: 0 5px; border-radius: 999px; background: var(--brand-green-dark); color: #fff; font-size: 11px; line-height: 20px; text-align: center; }
 .brand-header__soft-btn { padding: 0 14px; }
 .brand-header__register-btn { gap: 10px; padding: 0 16px; color: #fff; border-color: var(--brand-green); background: linear-gradient(115deg, #58ad30, #4d9d2b); }
 .brand-header__register-btn:hover { background: var(--brand-green-dark); color: #fff; }
@@ -239,4 +241,11 @@
 @media (max-width: 1150px) {
     .brand-header:not(.brand-header--artisan) { background: linear-gradient(to bottom, transparent 34px, #fafdff 34px), var(--brand-background, #104b65); }
     .brand-header__brand::after { display: none; }
+    .brand-header__right { position: static; }
+    .brand-header__right > .brand-header__cart { display: inline-flex; position: absolute; left: 0; bottom: 16px; width: 44px; z-index: 3; }
+    .brand-header__bar { grid-template-columns: 44px minmax(0, 480px) 44px; }
+}
+@media (min-width: 1301px) and (max-width: 1600px) {
+    .brand-header__register-btn > span { display: none; }
+    .brand-header__register-btn { width: 44px; }
 }

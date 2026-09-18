@@ -40,7 +40,7 @@ class KMoneySplitter
             $percent = $allEuro || ! $product ? 0 : KMoneyShare::forProduct($product, $settings, $rules);
             $kmoney = intdiv($lineCents * $percent, 100);
 
-            $lines[(int) $item['product_id']] = ['percent' => $percent, 'kmoney' => $kmoney];
+            $lines[(int) $item['product_id']] = ['percent' => $percent, 'kmoney' => ($lines[(int) $item['product_id']]['kmoney'] ?? 0) + $kmoney];
             $subtotalCents += $lineCents;
             $kmoneyCents += $kmoney;
         }

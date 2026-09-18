@@ -24,7 +24,8 @@ use Illuminate\Support\Collection;
  */
 class CompanyDirectory
 {
-    public const PER_PAGE = 12;
+    /** Multiplo di 4, 3 e 2: le righe restano piene a ogni larghezza della griglia. */
+    public const PER_PAGE = 24;
 
     /** Modulo della chiave di mescolamento: il primo 2^31 - 1. */
     private const MODULUS = 2147483647;
@@ -112,8 +113,10 @@ class CompanyDirectory
 
         return Company::query()
             ->whereIn('companies.id', $ids)
-            ->with('category', 'plan')
+            // Le madri servono all'icona del settore: le categorie arrivano a tre livelli.
+            ->with('category.parent.parent', 'plan')
             ->withAvg('reviews', 'rating')
+            ->withCount('reviews')
             ->get()
             ->sortBy(fn ($company) => $positions[$company->id])
             ->values()

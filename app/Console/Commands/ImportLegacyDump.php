@@ -197,8 +197,8 @@ class ImportLegacyDump extends Command
     private function product(array $row): array
     {
         return [
-            'stock' => (int) ($row['stock'] ?? 0),
-            'product_type' => $row['product_type'] ?: 'simple',
+            'stock' => $row['stock'] === null ? null : (int) $row['stock'],
+            'product_type' => in_array($row['product_type'], ['variant', 'variable'], true) ? 'variable' : 'simple',
         ] + $row;
     }
 

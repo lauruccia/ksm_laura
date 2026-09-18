@@ -63,7 +63,7 @@
                             <small class="ksm-muted">scelta</small>
                         @endif
                     </td>
-                    <td>{{ $product->stock }}</td>
+                    <td>{{ $product->product_type === 'variable' ? 'Per variante' : ($product->stock ?? 'Non gestito') }}</td>
                     <td>
                         <span class="ksm-badge @if ($product->status !== 'active') ksm-badge--muted @endif">
                             {{ $product->status }}

@@ -2,8 +2,18 @@
 
 @section('title', $tenant->brandName().' · '.__('site.claim_line2'))
 
+@push('styles')
+    <link rel="stylesheet" href="{{ asset('css/shop.css') }}?v={{ filemtime(public_path('css/shop.css')) }}">
+    <link rel="stylesheet" href="{{ asset('css/home.css') }}?v={{ filemtime(public_path('css/home.css')) }}">
+@endpush
+
 @section('content')
-    @php($heroImage = file_exists(public_path('img/hero.jpg')) ? asset('img/hero.jpg') : null)
+    <div class="ksm-home">
+    @php
+        // Su un dominio della rete testi e immagine dell'apertura vengono dal dominio, se li ha.
+        $site = $tenant->content();
+        $heroImage = $site->get('hero.image') ? asset('storage/'.$site->get('hero.image')) : (file_exists(public_path('img/hero.jpg')) ? asset('img/hero.jpg') : null);
+    @endphp
 
     <section class="ksm-hero">
         <div class="ksm-hero__media @if (! $heroImage) ksm-hero__media--empty @endif"
@@ -12,10 +22,10 @@
         <div class="ksm-container ksm-hero__grid">
             <div>
                 <h1>
-                    {{ __('site.hero_title_before') }}
-                    <em>{{ __('site.hero_title_highlight') }}</em>
+                    {{ $site->get('hero.title', __('site.hero_title_before')) }}
+                    <em>{{ $site->get('hero.highlight', __('site.hero_title_highlight')) }}</em>
                 </h1>
-                <p>{{ __('site.hero_text') }}</p>
+                <p>{{ $site->get('hero.text', __('site.hero_text')) }}</p>
 
                 <div class="ksm-hero__actions">
                     <a class="ksm-btn ksm-btn--primary" href="{{ route('companies.index') }}">
@@ -34,7 +44,7 @@
             <div></div>
         </div>
 
-        <p class="ksm-hero__script">{{ __('site.hero_script') }}</p>
+        <p class="ksm-hero__script">{{ $site->get('hero.script', $tenant->isNetworkSite() ? '' : __('site.hero_script')) }}</p>
     </section>
 
     <div class="ksm-container ksm-usp-wrap">
@@ -110,6 +120,8 @@
 
     <x-ad-slot placement="home_under_featured_companies" class="ksm-container" />
 
+    {{-- Come funziona: parla dei piani KSM, non ha senso sui domini della rete. --}}
+    @unless ($tenant->isNetworkSite())
     <section class="ksm-section ksm-section--alt">
         <div class="ksm-container">
             <div class="ksm-section-head">
@@ -132,6 +144,7 @@
             </div>
         </div>
     </section>
+    @endunless
 
     <section class="ksm-section">
         <div class="ksm-container">
@@ -149,9 +162,9 @@
             @if ($products->isEmpty())
                 <p class="ksm-muted">{{ __('site.no_results') }}</p>
             @else
-                <div class="ksm-grid ksm-grid--2">
+                <div class="ksm-shop__grid ksm-home__products" data-cols="4">
                     @foreach ($products as $product)
-                        <x-product-card :product="$product" />
+                        <x-product-card :product="$product" :storefront="true" />
                     @endforeach
                 </div>
             @endif
@@ -161,4 +174,5 @@
     <x-ad-slot placement="home_above_footer" class="ksm-container" />
 
     <x-ad-popup />
+    </div>
 @endsection

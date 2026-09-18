@@ -13,6 +13,7 @@ use App\Payments\KMoney\KMoneyPercentages;
 use App\Payments\KMoney\KMoneyShare;
 use App\Payments\Subscriptions\SubscriptionActivator;
 use App\Support\CategoryTree;
+use App\Support\Images\ImageStore;
 use App\Support\Domains\DomainConnectionChecker;
 use App\Support\Domains\HostName;
 use App\Support\Maps\CompanyLocation;
@@ -23,7 +24,6 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
@@ -57,7 +57,8 @@ class AdminCompanyController extends Controller
         $term = trim($request->string('cerca')->toString());
 
         $companies = Company::query()
-            ->with('plan:id,name')
+            // Le voci servono a sapere se l'azienda ha una pagina da aprire.
+            ->with('plan:id,name,capabilities')
             ->when($term !== '', fn ($q) => $q->where(fn ($q) => $q
                 ->where('name', 'like', "%$term%")
                 ->orWhere('email', 'like', "%$term%")))
@@ -218,10 +219,10 @@ class AdminCompanyController extends Controller
             'kmoney_in_debt' => ['boolean'],
             'kmoney_rules' => ['nullable', 'array'],
             'kmoney_rules.*' => ['nullable', Rule::in(KMoneyShare::STEPS)],
-            'logo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
-            'banner' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:4096'],
+            'logo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:12288'],
+            'banner' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:12288'],
             'gallery' => ['nullable', 'array'],
-            'gallery.*' => ['image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
+            'gallery.*' => ['image', 'mimes:jpg,jpeg,png,webp', 'max:12288'],
             'remove_gallery' => ['nullable', 'array'],
             'remove_gallery.*' => ['string'],
         ] + WorkingHours::rules(), [], WorkingHours::attributes());
@@ -290,13 +291,14 @@ class AdminCompanyController extends Controller
      */
     private function saveMedia(Request $request, Company $company): void
     {
+        $images = app(ImageStore::class);
         $folder = "companies/$company->id";
         $changes = [];
         $obsolete = [];
 
         foreach (['logo', 'banner'] as $field) {
             if ($request->hasFile($field)) {
-                $changes[$field] = $request->file($field)->store($folder, 'public');
+                $changes[$field] = $images->store($request->file($field), $folder, $field, $field);
                 $obsolete[] = $company->$field;
             }
         }
@@ -307,8 +309,8 @@ class AdminCompanyController extends Controller
         if ($removed || $request->hasFile('gallery')) {
             $gallery = array_values(array_diff($gallery, $removed));
 
-            foreach ($request->file('gallery', []) as $file) {
-                $gallery[] = $file->store("$folder/galleria", 'public');
+            foreach ($request->file('gallery', []) as $i => $file) {
+                $gallery[] = $images->store($file, "$folder/galleria", 'gallery', "gallery.$i");
             }
 
             $changes['offer_gallery'] = $gallery ?: null;
@@ -317,7 +319,7 @@ class AdminCompanyController extends Controller
 
         if ($changes) {
             $company->update($changes);
-            Storage::disk('public')->delete(array_filter($obsolete));
+            $images->delete($obsolete);
         }
     }
 

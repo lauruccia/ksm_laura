@@ -1,0 +1,283 @@
+/* Accesso e registrazioni: guscio a due colonne, scelta privato/azienda. */
+
+.ksm-auth .ksm-container { max-width: 1040px; }
+
+.ksm-auth__card {
+    display: grid;
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    background: var(--ksm-surface);
+    border: 1px solid var(--ksm-line);
+    border-radius: var(--ksm-radius-lg);
+    box-shadow: var(--ksm-shadow);
+    overflow: hidden;
+}
+
+/* ---- Colonna di marchio ---- */
+.ksm-auth__aside {
+    position: relative;
+    padding: 40px 34px;
+    color: #fff;
+    background: var(--ksm-stripes), var(--ksm-gradient-brand);
+}
+
+.ksm-auth__aside a { color: #fff; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
+
+.ksm-auth__eyebrow {
+    margin: 0 0 8px;
+    font-size: .74rem;
+    font-weight: 700;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--ksm-accent-light);
+}
+
+.ksm-auth__aside-title {
+    margin: 0 0 22px;
+    font-family: var(--ksm-font-display);
+    font-size: 1.45rem;
+    line-height: 1.25;
+    color: #fff;
+}
+
+.ksm-auth__aside-note {
+    margin: 26px 0 0;
+    padding-top: 18px;
+    border-top: 1px solid rgba(255, 255, 255, .16);
+    font-size: .9rem;
+    color: rgba(255, 255, 255, .82);
+}
+
+.ksm-auth__perks {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 12px;
+}
+
+.ksm-auth__perks li { display: flex; gap: 10px; align-items: flex-start; line-height: 1.4; }
+.ksm-auth__perks svg { flex: none; margin-top: 2px; color: var(--ksm-accent-light); }
+
+.ksm-auth__perks--light { margin: 4px 0 22px; color: var(--ksm-body); font-size: .92rem; }
+.ksm-auth__perks--light svg { color: var(--ksm-accent); }
+
+/* Scorciatoie verso le registrazioni, nella pagina di accesso. */
+.ksm-auth__aside .ksm-auth__option {
+    display: flex;
+    gap: 14px;
+    align-items: center;
+    padding: 14px 16px;
+    margin-bottom: 12px;
+    border: 1px solid rgba(255, 255, 255, .18);
+    border-radius: var(--ksm-radius);
+    background: rgba(255, 255, 255, .06);
+    text-decoration: none;
+    transition: background .18s var(--ksm-ease), border-color .18s var(--ksm-ease);
+}
+
+.ksm-auth__aside .ksm-auth__option:hover { background: rgba(255, 255, 255, .13); border-color: rgba(255, 255, 255, .35); }
+.ksm-auth__option strong { display: block; font-size: .98rem; }
+.ksm-auth__option small { display: block; margin-top: 2px; font-weight: 400; color: rgba(255, 255, 255, .75); }
+
+.ksm-auth__option-icon {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: var(--ksm-accent);
+    color: #fff;
+}
+
+/* Passaggi della registrazione azienda. */
+.ksm-auth__steps {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    counter-reset: step;
+}
+
+.ksm-auth__steps li {
+    position: relative;
+    counter-increment: step;
+    padding: 0 0 20px 46px;
+}
+
+.ksm-auth__steps li::before {
+    content: counter(step);
+    position: absolute;
+    left: 0;
+    top: 0;
+    display: grid;
+    place-items: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, .35);
+    font-size: .85rem;
+    font-weight: 700;
+}
+
+/* Il filo che unisce i passaggi. */
+.ksm-auth__steps li:not(:last-child)::after {
+    content: "";
+    position: absolute;
+    left: 15px;
+    top: 34px;
+    bottom: 4px;
+    width: 1px;
+    background: rgba(255, 255, 255, .22);
+}
+
+.ksm-auth__steps li.is-current::before { background: var(--ksm-accent); border-color: var(--ksm-accent); }
+.ksm-auth__steps strong { display: block; font-size: .95rem; }
+.ksm-auth__steps small { display: block; margin-top: 2px; color: rgba(255, 255, 255, .72); }
+
+/* ---- Colonna del modulo ---- */
+.ksm-auth__main { padding: 40px 42px; }
+
+.ksm-auth__title {
+    margin: 0 0 6px;
+    font-family: var(--ksm-font-display);
+    font-size: 1.7rem;
+    color: var(--ksm-dark);
+}
+
+.ksm-auth__lead { margin: 0 0 24px; color: var(--ksm-body); }
+
+.ksm-auth__switch {
+    display: flex;
+    gap: 6px;
+    padding: 4px;
+    margin-bottom: 24px;
+    background: var(--ksm-line-soft);
+    border-radius: var(--ksm-radius);
+}
+
+.ksm-auth__switch a {
+    flex: 1;
+    display: inline-flex;
+    gap: 8px;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 12px;
+    border-radius: calc(var(--ksm-radius) - 3px);
+    font-size: .92rem;
+    font-weight: 600;
+    color: var(--ksm-body);
+    text-decoration: none;
+}
+
+.ksm-auth__switch a:hover { color: var(--ksm-dark); }
+
+.ksm-auth__switch a.is-active {
+    background: var(--ksm-surface);
+    color: var(--ksm-dark);
+    box-shadow: var(--ksm-shadow-xs);
+}
+
+.ksm-auth__row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.ksm-auth__label-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 12px;
+}
+
+.ksm-auth__label-row a { font-size: .82rem; }
+
+.ksm-auth__optional { font-weight: 400; color: var(--ksm-muted); }
+
+.ksm-auth__hint { margin: -8px 0 20px; font-size: .82rem; color: var(--ksm-muted); }
+
+.ksm-auth__check {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin: 0 0 20px;
+    font-size: .92rem;
+    color: var(--ksm-body);
+}
+
+.ksm-auth__foot {
+    margin: 22px 0 0;
+    text-align: center;
+    font-size: .92rem;
+    color: var(--ksm-body);
+}
+
+/* Piani come tessere da spuntare. */
+.ksm-auth__plans { border: 0; padding: 0; margin-inline: 0; min-width: 0; }
+.ksm-auth__plans .ksm-auth__hint { margin: 10px 0 0; }
+
+.ksm-auth__plan-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 10px;
+}
+
+.ksm-auth__plan {
+    position: relative;
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    padding: 12px 14px;
+    border: 1px solid var(--ksm-line);
+    border-radius: var(--ksm-radius);
+    cursor: pointer;
+    transition: border-color .18s var(--ksm-ease), background .18s var(--ksm-ease);
+}
+
+.ksm-auth__plan:hover { border-color: var(--ksm-accent-light); }
+.ksm-auth__plan input { margin-top: 3px; accent-color: var(--ksm-accent); }
+.ksm-auth__plan strong { display: block; font-size: .92rem; color: var(--ksm-dark); }
+.ksm-auth__plan small { display: block; margin-top: 2px; color: var(--ksm-muted); }
+.ksm-auth__plan:has(input:checked) { border-color: var(--ksm-accent); background: var(--ksm-accent-soft); box-shadow: var(--ksm-ring); }
+
+/* ---- Scelta del tipo di account ---- */
+.ksm-auth__choose-head { text-align: center; margin-bottom: 30px; }
+
+.ksm-auth__choices {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 22px;
+}
+
+.ksm-auth__choice {
+    display: flex;
+    flex-direction: column;
+    padding: 30px;
+    background: var(--ksm-surface);
+    border: 1px solid var(--ksm-line);
+    border-radius: var(--ksm-radius-lg);
+    box-shadow: var(--ksm-shadow-xs);
+    color: inherit;
+    text-decoration: none;
+    transition: transform .2s var(--ksm-ease), box-shadow .2s var(--ksm-ease), border-color .2s var(--ksm-ease);
+}
+
+.ksm-auth__choice:hover { transform: translateY(-3px); border-color: var(--ksm-accent-light); box-shadow: var(--ksm-shadow-md); }
+.ksm-auth__choice .ksm-auth__option-icon { width: 54px; height: 54px; margin-bottom: 16px; }
+.ksm-auth__choice h2 { margin: 0 0 4px; font-family: var(--ksm-font-display); font-size: 1.35rem; color: var(--ksm-dark); }
+.ksm-auth__choice > p { margin: 0 0 14px; color: var(--ksm-body); }
+.ksm-auth__choice .ksm-btn { margin-top: auto; }
+
+@media (max-width: 860px) {
+    .ksm-auth__card { grid-template-columns: 1fr; }
+    /* Su schermi stretti prima il modulo, poi i vantaggi. */
+    .ksm-auth__aside { order: 2; padding: 30px 24px; }
+    .ksm-auth__main { padding: 30px 24px; }
+}
+
+@media (max-width: 640px) {
+    .ksm-auth__row,
+    .ksm-auth__choices { grid-template-columns: 1fr; }
+    .ksm-auth__row { gap: 0; }
+    .ksm-auth__title { font-size: 1.45rem; }
+}

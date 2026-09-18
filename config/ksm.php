@@ -44,6 +44,8 @@ return [
         'cname' => env('KSM_SERVER_CNAME'),
         // Chi puo' chiedere se un dominio merita un certificato: il server web della stessa macchina.
         'tls_ask_ips' => array_values(array_filter(array_map('trim', explode(',', (string) env('KSM_TLS_ASK_IPS', '127.0.0.1,::1'))))),
+        // Proxy davanti all'app (Caddy sulla stessa macchina): solo da loro valgono X-Forwarded-*.
+        'trusted_proxies' => array_values(array_filter(array_map('trim', explode(',', (string) env('KSM_TRUSTED_PROXIES', '127.0.0.1,::1'))))),
     ],
 
     /*
