@@ -61,7 +61,15 @@
                         @endif
                     </td>
                     <td class="ksm-table__email">{{ $company->email ?: '—' }}</td>
-                    <td class="ksm-table__phone">{{ $company->phone ?: '—' }}</td>
+                    <td class="ksm-table__phone">
+                        @if ($company->phone)
+                            {{-- Molte anagrafiche importate hanno piu' numeri in un campo solo:
+                                 in elenco se ne mostrano due righe, il resto nel suggerimento. --}}
+                            <span class="ksm-clamp" title="{{ $company->phone }}">{{ $company->phone }}</span>
+                        @else
+                            —
+                        @endif
+                    </td>
                     <td>
                         @if ($company->plan)
                             <span class="ksm-badge">{{ $company->plan->name }}</span>
@@ -75,21 +83,23 @@
                         </span>
                     </td>
                     <td style="white-space: nowrap;">{{ $company->created_at?->format('d/m/Y') }}</td>
-                    <td style="text-align: right; white-space: nowrap;">
-                        @if ($company->hasPage())
-                            <a class="ksm-btn ksm-btn--ghost ksm-btn--sm" target="_blank" rel="noopener"
-                               href="{{ route('companies.show', ['company' => $company->slug]) }}">Vedi</a>
-                        @endif
-                        @can(\App\Support\Permissions::COMPANIES_MANAGE)
-                            <a class="ksm-btn ksm-btn--ghost ksm-btn--sm"
-                               href="{{ route('admin.companies.edit', $company) }}">Modifica</a>
-                            <form method="POST" action="{{ route('admin.companies.status', $company) }}" style="display: inline;">
-                                @csrf @method('PATCH')
-                                <button class="ksm-btn ksm-btn--ghost ksm-btn--sm" type="submit">
-                                    {{ $company->is_active ? 'Spegni' : 'Accendi' }}
-                                </button>
-                            </form>
-                        @endcan
+                    <td>
+                        <div class="ksm-rowactions">
+                            @if ($company->hasPage())
+                                <a class="ksm-btn ksm-btn--ghost ksm-btn--sm" target="_blank" rel="noopener"
+                                   href="{{ route('companies.show', ['company' => $company->slug]) }}">Vedi</a>
+                            @endif
+                            @can(\App\Support\Permissions::COMPANIES_MANAGE)
+                                <a class="ksm-btn ksm-btn--ghost ksm-btn--sm"
+                                   href="{{ route('admin.companies.edit', $company) }}">Modifica</a>
+                                <form method="POST" action="{{ route('admin.companies.status', $company) }}">
+                                    @csrf @method('PATCH')
+                                    <button class="ksm-btn ksm-btn--ghost ksm-btn--sm" type="submit">
+                                        {{ $company->is_active ? 'Spegni' : 'Accendi' }}
+                                    </button>
+                                </form>
+                            @endcan
+                        </div>
                     </td>
                 </tr>
             @empty

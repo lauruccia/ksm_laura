@@ -218,16 +218,18 @@
 
 .ksm-auth__plan-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 10px;
 }
 
+/* La tessera intera fa da pulsante: il pallino della radio rubava la
+   larghezza che serve ai nomi lunghi, e lo stato scelto si vede gia'
+   dal bordo verde. */
 .ksm-auth__plan {
     position: relative;
-    display: flex;
-    gap: 10px;
-    align-items: flex-start;
-    padding: 12px 14px;
+    display: block;
+    padding: 11px 10px;
+    text-align: center;
     border: 1px solid var(--ksm-line);
     border-radius: var(--ksm-radius);
     cursor: pointer;
@@ -235,10 +237,18 @@
 }
 
 .ksm-auth__plan:hover { border-color: var(--ksm-accent-light); }
-.ksm-auth__plan input { margin-top: 3px; accent-color: var(--ksm-accent); }
-.ksm-auth__plan strong { display: block; font-size: .92rem; color: var(--ksm-dark); }
-.ksm-auth__plan small { display: block; margin-top: 2px; color: var(--ksm-muted); }
+.ksm-auth__plan input { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+.ksm-auth__plan strong { display: block; font-size: .9rem; line-height: 1.2; color: var(--ksm-dark); }
+.ksm-auth__plan small { display: block; margin-top: 3px; white-space: nowrap; color: var(--ksm-muted); }
 .ksm-auth__plan:has(input:checked) { border-color: var(--ksm-accent); background: var(--ksm-accent-soft); box-shadow: var(--ksm-ring); }
+.ksm-auth__plan:has(input:focus-visible) { outline: 2px solid var(--ksm-accent); outline-offset: 2px; }
+
+/* "Decido dopo" e' solo un link: deseleziona i piani. */
+.ksm-auth__plan-later { cursor: pointer; }
+.ksm-auth__plan-later input { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.ksm-auth__plan-later span { color: var(--ksm-accent); text-decoration: underline; text-underline-offset: 2px; }
+.ksm-auth__plan-later:hover span { color: var(--ksm-dark); }
+.ksm-auth__plan-later input:focus-visible + span { outline: 2px solid var(--ksm-accent); outline-offset: 2px; border-radius: 3px; }
 
 /* ---- Scelta del tipo di account ---- */
 .ksm-auth__choose-head { text-align: center; margin-bottom: 30px; }
@@ -278,6 +288,7 @@
 @media (max-width: 640px) {
     .ksm-auth__row,
     .ksm-auth__choices { grid-template-columns: 1fr; }
+    .ksm-auth__plan-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .ksm-auth__row { gap: 0; }
     .ksm-auth__title { font-size: 1.45rem; }
 }

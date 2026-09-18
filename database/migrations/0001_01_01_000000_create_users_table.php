@@ -12,7 +12,10 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->string('email')->unique();
-            $table->string('phone', 50)->nullable();
+            // Il telefono importato non e' un numero solo: fisso, cellulare e
+            // fax sullo stesso campo. Come quello dell'azienda, senza limite
+            // stretto: MySQL rifiuta cio' che SQLite accettava in silenzio.
+            $table->string('phone')->nullable();
             $table->string('profile_image')->nullable();
             // buyer | vendor | admin
             $table->string('user_type')->default('buyer');

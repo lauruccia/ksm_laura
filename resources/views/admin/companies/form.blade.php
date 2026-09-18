@@ -22,7 +22,7 @@
         </div>
     </div>
 
-    <form method="POST" enctype="multipart/form-data" style="max-width: 980px;"
+    <form class="ksm-formpage" method="POST" enctype="multipart/form-data"
           action="{{ $company->exists ? route('admin.companies.update', $company) : route('admin.companies.store') }}">
         @csrf
         @if ($company->exists)
@@ -30,7 +30,7 @@
         @endif
 
         {{-- Azienda, accesso e piano ------------------------------------ --}}
-        <section class="ksm-box" style="margin-bottom: 22px;">
+        <section class="ksm-box">
             <div class="ksm-box__head"><h2>Azienda e accesso</h2></div>
 
             <div class="ksm-formgrid">
@@ -99,7 +99,7 @@
         </section>
 
         {{-- Contatti e spedizioni -------------------------------------- --}}
-        <section class="ksm-box" style="margin-bottom: 22px;">
+        <section class="ksm-box">
             <div class="ksm-box__head"><h2>Contatti e spedizioni</h2></div>
 
             <div class="ksm-formgrid">
@@ -123,7 +123,7 @@
         </section>
 
         {{-- KMoney ----------------------------------------------------- --}}
-        <section class="ksm-box" style="margin-bottom: 22px;">
+        <section class="ksm-box">
             <div class="ksm-box__head"><h2>KMoney</h2></div>
 
             <div class="ksm-formgrid">
@@ -185,7 +185,7 @@
         </section>
 
         {{-- Dominio proprio ------------------------------------------- --}}
-        <section class="ksm-box" style="margin-bottom: 22px;">
+        <section class="ksm-box">
             <div class="ksm-box__head"><h2>Dominio proprio</h2></div>
 
             <div class="ksm-field">
@@ -215,7 +215,7 @@
         </section>
 
         {{-- Indirizzo e descrizione ------------------------------------ --}}
-        <section class="ksm-box" style="margin-bottom: 22px;">
+        <section class="ksm-box ksm-formpage__wide">
             <div class="ksm-box__head"><h2>Indirizzo e descrizione</h2></div>
 
             <div class="ksm-formgrid">
@@ -256,7 +256,7 @@
         </section>
 
         {{-- Orari ------------------------------------------------------ --}}
-        <section class="ksm-box" style="margin-bottom: 22px;">
+        <section class="ksm-box">
             <div class="ksm-box__head"><h2>Orari di apertura</h2></div>
 
             <div class="ksm-hours">
@@ -281,7 +281,7 @@
         </section>
 
         {{-- Immagini --------------------------------------------------- --}}
-        <section class="ksm-box" style="margin-bottom: 22px;">
+        <section class="ksm-box ksm-formpage__wide">
             <div class="ksm-box__head"><h2>Immagini</h2></div>
 
             <div class="ksm-field">
@@ -341,7 +341,7 @@
         </section>
 
         {{-- Stato ------------------------------------------------------ --}}
-        <section class="ksm-box" style="margin-bottom: 22px;">
+        <section class="ksm-box">
             <label class="ksm-label" style="display: flex; gap: 8px; align-items: center;">
                 <input type="hidden" name="is_active" value="0">
                 <input name="is_active" type="checkbox" value="1" @checked(old('is_active', $company->is_active))>
@@ -350,7 +350,7 @@
             <small class="ksm-muted">Senza un piano l'azienda non compare nella directory, anche se attiva.</small>
         </section>
 
-        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+        <div class="ksm-formpage__wide" style="display: flex; gap: 10px; flex-wrap: wrap;">
             <button class="ksm-btn ksm-btn--primary" type="submit">{{ $company->exists ? 'Salva le modifiche' : 'Crea azienda' }}</button>
             <a class="ksm-btn ksm-btn--ghost" href="{{ route('admin.companies.index') }}">Annulla</a>
         </div>

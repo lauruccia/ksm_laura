@@ -60,15 +60,14 @@
                                 </span>
                             </label>
                         @endforeach
-
-                        <label class="ksm-auth__plan">
-                            <input type="radio" name="piano" value="" @checked(blank(old('piano', $chosen)))>
-                            <span><strong>Decido dopo</strong><small>Li confronti con calma</small></span>
-                        </label>
                     </div>
 
                     <p class="ksm-auth__hint">
-                        Lo attivi dopo la verifica dell'email.
+                        <label class="ksm-auth__plan-later">
+                            <input type="radio" name="piano" value="" @checked(blank(old('piano', $chosen)))>
+                            <span>Decido dopo</span>
+                        </label>
+                        &middot; Lo attivi dopo la verifica dell'email.
                         <a href="{{ route('plans.index') }}" target="_blank" rel="noopener">Confronta i piani</a>
                     </p>
                     @error('piano')<span class="ksm-error">{{ $message }}</span>@enderror

@@ -40,13 +40,28 @@
     color: var(--ksm-accent-light);
 }
 
+/* Le voci sono tante e sui portatili la colonna scorre: la barra di
+   scorrimento di sistema qui e' larga e chiara, si vede come un difetto. */
 .ksm-panel__navwrap {
     flex: 1;
     min-height: 0;
     overflow-y: auto;
+    overscroll-behavior: contain;
     margin-right: -8px;
     padding-right: 8px;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, .24) transparent;
 }
+
+.ksm-panel__navwrap::-webkit-scrollbar { width: 6px; }
+.ksm-panel__navwrap::-webkit-scrollbar-track { background: transparent; }
+
+.ksm-panel__navwrap::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, .24);
+    border-radius: 3px;
+}
+
+.ksm-panel__navwrap:hover::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, .38); }
 
 .ksm-panel__nav {
     list-style: none;
@@ -413,6 +428,21 @@
     gap: 0 18px;
 }
 
+/* Moduli lunghi divisi in schede: occupano tutta la larghezza e si
+   affiancano quando lo schermo lo permette, invece di lasciare mezzo
+   pannello vuoto. Le schede alte - mappa, descrizione, foto - restano
+   larghe quanto la pagina. */
+.ksm-formpage {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(520px, 100%), 1fr));
+    grid-auto-flow: row dense;
+    gap: 22px;
+    align-items: start;
+}
+
+.ksm-formpage > .ksm-box { margin-bottom: 0; }
+.ksm-formpage__wide { grid-column: 1 / -1; }
+
 .ksm-rowactions {
     display: flex;
     gap: 6px;
@@ -748,11 +778,57 @@
 }
 
 /* Elenco aziende: i dati importati hanno telefoni e nomi lunghissimi,
-   quindi le colonne vanno a capo invece di allargare la tabella. */
-.ksm-table--companies .ksm-table__name { min-width: 160px; max-width: 260px; }
-.ksm-table--companies .ksm-table__email { max-width: 240px; overflow-wrap: anywhere; }
-.ksm-table--companies .ksm-table__phone { min-width: 120px; max-width: 200px; overflow-wrap: anywhere; }
+   quindi le colonne vanno a capo invece di allargare la tabella.
+   Con otto colonne lo spazio e' poco: qui si stringe il respiro laterale
+   delle celle, cosi' su un portatile la riga dei bottoni resta visibile. */
+.ksm-table--companies th,
+.ksm-table--companies td { padding-inline: 10px; }
+.ksm-table--companies th:first-child,
+.ksm-table--companies td:first-child { padding-left: 16px; }
+.ksm-table--companies th:last-child,
+.ksm-table--companies td:last-child { padding-right: 16px; }
+
+.ksm-table--companies .ksm-table__name { min-width: 150px; max-width: 240px; }
+.ksm-table--companies .ksm-table__email { max-width: 230px; overflow-wrap: anywhere; }
 .ksm-table--companies .ksm-badge { white-space: nowrap; }
 /* Senza un minimo, email e telefoni vanno a capo lettera per lettera: la tabella scorre di lato. */
-.ksm-table--companies .ksm-table__email { min-width: 190px; }
-.ksm-table--companies .ksm-table__phone { white-space: nowrap; }
+.ksm-table--companies .ksm-table__email { min-width: 175px; }
+/* Il telefono va a capo tra i pezzi del numero, non lettera per lettera. */
+.ksm-table--companies .ksm-table__phone {
+    min-width: 110px;
+    max-width: 150px;
+    overflow-wrap: break-word;
+}
+
+/* Testi lunghi dentro una cella: due righe e basta, il resto sta nel title. */
+.ksm-clamp {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    overflow: hidden;
+}
+
+/* I bottoni di riga restano su una riga sola: stringerli e' meglio che
+   mandarli a capo, perche' con centomila aziende le righe alte si notano. */
+.ksm-table--companies .ksm-rowactions { flex-wrap: nowrap; }
+.ksm-table--companies .ksm-rowactions .ksm-btn--sm { padding-inline: 11px; white-space: nowrap; }
+
+/* Quando la tabella scorre di lato la colonna dei bottoni resta agganciata
+   a destra, cosi' non finisce mai fuori dallo schermo. Solo dal tablet in
+   su: sul telefono coprirebbe tutta la riga.
+   Con border-collapse il bordo sotto sparisce dalle celle agganciate:
+   lo rifacciamo con un'ombra interna. */
+@media (min-width: 1000px) {
+    .ksm-table--companies th:last-child,
+    .ksm-table--companies td:last-child {
+        position: sticky;
+        right: 0;
+        background: #fff;
+        box-shadow: inset 0 -1px 0 var(--ksm-line), -8px 0 12px -10px rgba(16, 32, 43, .35);
+    }
+
+    .ksm-table--companies th:last-child { background: var(--ksm-line-soft); }
+    .ksm-table--companies tbody tr:last-child td:last-child { box-shadow: -8px 0 12px -10px rgba(16, 32, 43, .35); }
+    .ksm-table--companies tbody tr:hover td:last-child { background: var(--ksm-line-soft); }
+}
