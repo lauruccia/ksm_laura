@@ -283,6 +283,27 @@ cPanel conosce: ogni dominio va aggiunto come alias. La parte che manca e'
 la chiamata alle API di cPanel al salvataggio del dominio; si scrive quando
 il trasferimento e' deciso.
 
+## Posta
+
+Sul cPanel condiviso `proc_open()` e' disabilitato, quindi il trasporto
+`sendmail` di Symfony non parte: fallisce con *Call to undefined function
+... proc_open()* e nessuna mail esce, verifiche degli indirizzi comprese.
+Si esce con SMTP sulla porta locale, che usa un socket e non lancia
+processi:
+
+    MAIL_MAILER=smtp
+    MAIL_HOST=moff.dnshigh.com
+    MAIL_PORT=25
+    MAIL_USERNAME=null
+    MAIL_PASSWORD=null
+    MAIL_SCHEME=null
+
+L'host e' il nome della macchina, non `localhost`: Exim annuncia STARTTLS
+e Symfony lo attiva da solo, ma il certificato e' intestato a
+`moff.dnshigh.com` e con `localhost` la verifica fallisce. Dal server
+stesso non servono credenziali. Il `.env` e' in cache: dopo ogni modifica
+va rilanciato `artisan optimize`, altrimenti non cambia niente.
+
 ## Pagamenti
 
 Ogni azienda incassa sul proprio conto: le credenziali stanno in
