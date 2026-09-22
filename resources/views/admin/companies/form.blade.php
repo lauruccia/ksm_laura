@@ -85,6 +85,29 @@
                     @error('plan_id')<span class="ksm-error">{{ $message }}</span>@enderror
                 </div>
 
+                {{-- Il piano scelto dall'azienda resta fuori da questo elenco
+                     finche' l'incasso non e' confermato: senza questo avviso
+                     qui si legge "nessun piano" e sembra che non abbia scelto. --}}
+                @if ($pending)
+                    <div class="ksm-alert ksm-alert--info">
+                        <span>
+                            <strong>In attesa di incasso:</strong>
+                            {{ $pending->plan?->name }} ·
+                            {{ \App\Support\Money::format($pending->price) }}
+                            @if ($pending->payment_method)
+                                · {{ \App\Payments\Subscriptions\SubscriptionGatewayManager::label($pending->payment_method) }}
+                            @endif
+                            @if ($pending->created_at)
+                                · scelto il {{ $pending->created_at->format('d/m/Y') }}
+                            @endif
+                            <br>
+                            Il piano parte quando confermi l'incasso in
+                            <a href="{{ route('admin.subscriptions.index', ['cerca' => $company->name, 'stato' => \App\Models\CompanySubscription::PENDING]) }}">Abbonamenti</a>.
+                            Sceglierlo qui sopra lo fa partire lo stesso, ma senza registrare nessun pagamento.
+                        </span>
+                    </div>
+                @endif
+
                 <div class="ksm-field">
                     <label class="ksm-label" for="category_id">Categoria</label>
                     <select class="ksm-select" id="category_id" name="category_id">

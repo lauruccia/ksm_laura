@@ -49,6 +49,33 @@ return [
     ],
 
     /*
+     * Il pannello cPanel dell'account che ospita l'app. Con un token, ogni
+     * dominio della rete e ogni dominio proprio di un'azienda viene
+     * aggiunto da solo come dominio aggiuntivo con la cartella dell'app:
+     * senza, Apache non lo servirebbe e AutoSSL non gli farebbe il
+     * certificato. Senza token non si fa nulla (VPS, sviluppo).
+     */
+    'cpanel' => [
+        'url' => env('KSM_CPANEL_URL'),
+        'user' => env('KSM_CPANEL_USER'),
+        'token' => env('KSM_CPANEL_TOKEN'),
+        // Relativa alla home dell'account.
+        'docroot' => env('KSM_CPANEL_DOCROOT', 'ksm-next/public'),
+    ],
+
+    /*
+     * In alternativa, la WHM di un rivenditore che parcheggia i domini
+     * sull'account dell'app (permesso park-dns): serve quando il
+     * pacchetto dell'account non ammette alias. Se c'e', vince su cpanel.
+     */
+    'whm' => [
+        'url' => env('KSM_WHM_URL'),
+        'reseller' => env('KSM_WHM_RESELLER'),
+        'token' => env('KSM_WHM_TOKEN'),
+        'account' => env('KSM_WHM_ACCOUNT'),
+    ],
+
+    /*
      * API KMoney v1, la stessa del plugin WooCommerce 2.0, per esempio
      * https://kmoney.example/api/v1. Il token e' di ogni venditore e sta
      * nelle sue impostazioni di incasso, non qui.

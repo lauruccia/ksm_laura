@@ -119,9 +119,11 @@
     margin-top: -68px;
 }
 
+.ksm-usp-wrap--flat { margin-top: 0; }
+
 .ksm-usp {
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(var(--usp-count, 4), minmax(0, 1fr));
     background: var(--ksm-surface);
     border: 1px solid var(--ksm-line);
     border-radius: var(--ksm-radius-lg);

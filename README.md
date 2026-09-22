@@ -279,9 +279,27 @@ si ignorano. `www.dominio` rimanda con un 301 a `dominio`
 - un eventuale CAA deve ammettere `letsencrypt.org`; gli MX non si toccano.
 
 **cPanel.** Il certificato lo emette AutoSSL, ma solo per domini che
-cPanel conosce: ogni dominio va aggiunto come alias. La parte che manca e'
-la chiamata alle API di cPanel al salvataggio del dominio; si scrive quando
-il trasferimento e' deciso.
+cPanel conosce, e Apache serve solo quelli. Con `KSM_CPANEL_URL`,
+`KSM_CPANEL_USER` e `KSM_CPANEL_TOKEN` (cPanel -> Sicurezza -> Gestisci
+token API) ogni dominio della rete e ogni dominio proprio di un'azienda
+viene aggiunto da solo come dominio aggiuntivo con la cartella
+`KSM_CPANEL_DOCROOT` (predefinita `ksm-next/public`): al salvataggio, a
+"Verifica ora" e nel giro orario `domains:check`, che chiede anche il
+certificato ad AutoSSL quando il DNS e' gia' giusto. Un rifiuto di cPanel
+finisce nell'errore del dominio. Non si toglie mai niente dal pannello.
+Se il dominio e' gia' una zona di un altro account del cluster DNS
+dnshigh, cPanel lo rifiuta finche' quella zona non sparisce. Il giro
+orario verifica soltanto: nel pannello un dominio entra solo al
+salvataggio o con "Verifica ora".
+
+Il pacchetto di hnksmsho non ammette domini aggiuntivi, quindi i domini
+diventano alias di ksmshop.it e arrivano in `public_html`, che e' il sito
+WordPress. In cima al suo `.htaccess` il blocco `# BEGIN ksm-next`
+manda ogni host diverso da ksmshop.it e pizzerie.it (e dai sottodomini
+di servizio di cPanel, e da `/.well-known/` per AutoSSL) a
+`/ksmnext/`, un collegamento a `ksm-next/public` creato da cron con
+`ln -sfn`. Il blocco sta fuori dai marcatori di WordPress, che quindi
+non lo riscrive; la copia di prima e' `.htaccess.bak-ksmnext`.
 
 ## Posta
 

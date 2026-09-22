@@ -81,17 +81,18 @@
             {{-- Generale --}}
             <section class="ksm-card ksm-domain-form__section" id="generale">
                 <h2>Generale</h2>
-                <p>Il nome del sito compare nella testata, nel titolo delle pagine e nel piede.</p>
+                <p>Chi è il sito: nome, indirizzo e marchio. Valgono su tutte le pagine del dominio.</p>
                 <div class="ksm-formgrid">
                     <div class="ksm-field">
                         <label class="ksm-label" for="name">Nome del sito</label>
                         <input class="ksm-input" id="name" name="name" value="{{ $value('name') }}" required>
+                        <small class="ksm-muted">Compare nel titolo della scheda del browser, nel copyright del piede e come mittente delle email del sito. In testata solo se manca il logo.</small>
                         @error('name')<span class="ksm-error">{{ $message }}</span>@enderror
                     </div>
                     <div class="ksm-field">
                         <label class="ksm-label" for="domain">Dominio</label>
                         <input class="ksm-input" id="domain" name="domain" value="{{ $value('domain') }}" placeholder="mozzarelledibufala.it" required>
-                        <small class="ksm-muted">Senza www e senza protocollo.</small>
+                        <small class="ksm-muted">L'indirizzo del sito, senza www e senza https://. Cambiarlo azzera la verifica del collegamento.</small>
                         @error('domain')<span class="ksm-error">{{ $message }}</span>@enderror
                     </div>
                     <div class="ksm-field">
@@ -101,7 +102,7 @@
                             <label style="display: flex; gap: 6px; align-items: center;"><input type="checkbox" name="remove_logo" value="1"> Togli il logo</label>
                         @endif
                         <input class="ksm-input" id="logo" name="logo" type="file" accept="image/*">
-                        <small class="ksm-muted">Senza logo la testata mostra il nome scritto.</small>
+                        <small class="ksm-muted">Il marchio in testata, su ogni pagina. Meglio PNG con sfondo trasparente. Senza logo la testata mostra il nome scritto.</small>
                         @error('logo')<span class="ksm-error">{{ $message }}</span>@enderror
                     </div>
                     <div class="ksm-field">
@@ -111,7 +112,7 @@
                             <label style="display: flex; gap: 6px; align-items: center;"><input type="checkbox" name="remove_favicon" value="1"> Togli l'icona</label>
                         @endif
                         <input class="ksm-input" id="favicon" name="favicon" type="file" accept="image/*">
-                        <small class="ksm-muted">Quadrata. Senza, si usa il logo.</small>
+                        <small class="ksm-muted">La piccola icona accanto al titolo nella scheda del browser. Quadrata. Senza, si usa il logo.</small>
                         @error('favicon')<span class="ksm-error">{{ $message }}</span>@enderror
                     </div>
                 </div>
@@ -119,6 +120,7 @@
                     <input type="hidden" name="is_active" value="0">
                     <input type="checkbox" name="is_active" value="1" @checked($value('is_active'))> Dominio attivo
                 </label>
+                <small class="ksm-muted">Spento, il dominio non ha più un sito suo: mostra il sito principale.</small>
             </section>
 
             {{-- Cosa mostra --}}
@@ -133,6 +135,7 @@
                                 <option value="{{ $key }}" @selected($value('type') === $key)>{{ $label }}</option>
                             @endforeach
                         </select>
+                        <small class="ksm-muted">Quali aziende e prodotti entrano nel sito. "Nessun filtro": tutto il marketplace. "Per città": usa il campo Città o regione. "Per categoria": usa le categorie qui a fianco.</small>
                         @error('type')<span class="ksm-error">{{ $message }}</span>@enderror
                     </div>
                     <div class="ksm-field">
@@ -153,6 +156,7 @@
                                 <option value="{{ $key }}" @selected($value('company_scope') === $key)>{{ $label }}</option>
                             @endforeach
                         </select>
+                        <small class="ksm-muted">Quali aziende compaiono in home, nell'elenco Aziende e con la loro scheda.</small>
                         @error('company_scope')<span class="ksm-error">{{ $message }}</span>@enderror
                     </div>
                     <div class="ksm-field">
@@ -169,7 +173,7 @@
                     <div class="ksm-field">
                         <label class="ksm-label" for="city">Città o regione</label>
                         <input class="ksm-input" id="city" name="city" value="{{ $value('city') }}">
-                        <small class="ksm-muted">Con il filtro per città: "Calabria" filtra la regione, "Ostia" la città. Vale per aziende e prodotti.</small>
+                        <small class="ksm-muted">Con il filtro per città. Il nome di una regione ("Calabria") prende tutta la regione. Il nome di una città ("Ostia") prende le aziende la cui città contiene quella parola intera: Ostia, Lido di Ostia, Ostia Antica, ma non Ostiano. Vale per aziende e prodotti, e toglie dalla home il menu "Tutte le regioni".</small>
                         @error('city')<span class="ksm-error">{{ $message }}</span>@enderror
                     </div>
                 </div>
@@ -182,7 +186,7 @@
                                 <option value="{{ $key }}" @selected($value('entry_page') === $key)>{{ $label }}</option>
                             @endforeach
                         </select>
-                        <small class="ksm-muted">Cosa si apre digitando il dominio.</small>
+                        <small class="ksm-muted">Cosa si apre digitando il dominio. "Home": apertura, vantaggi, ricerca, aziende e prodotti in evidenza. "Shop prodotti": lo shop con le sezioni Apertura, Vantaggi, Categorie e Prodotti di questo modulo.</small>
                         @error('entry_page')<span class="ksm-error">{{ $message }}</span>@enderror
                     </div>
                     <div class="ksm-field">
@@ -199,6 +203,7 @@
                                 <option value="{{ $id }}" @selected((string) $value('entry_cms_page_id') === (string) $id)>{{ $label }}</option>
                             @endforeach
                         </select>
+                        <small class="ksm-muted">Solo con Pagina iniziale "Pagina CMS".</small>
                         @error('entry_cms_page_id')<span class="ksm-error">{{ $message }}</span>@enderror
                     </div>
                     <div class="ksm-field">
@@ -217,7 +222,7 @@
             {{-- Aspetto --}}
             <section class="ksm-card ksm-domain-form__section" id="aspetto">
                 <h2>Aspetto</h2>
-                <p>I colori valgono per tutto il sito: testata, pulsanti, apertura e piede. Formato HEX, ad esempio #0b4662.</p>
+                <p>La testata e i colori, su tutte le pagine del sito. Colori in formato HEX, ad esempio #0b4662. Vuoti: quelli dello stile scelto.</p>
                 <div class="ksm-formgrid">
                     <div class="ksm-field">
                         <label class="ksm-label" for="header_variant">Stile della testata</label>
@@ -227,53 +232,61 @@
                                 <option value="{{ $key }}" @selected($value('header_variant') === $key)>{{ $label }}</option>
                             @endforeach
                         </select>
+                        <small class="ksm-muted">Marketplace: pulsante Registrati in testata. Shop e Artigianale: carrello in testata e menu da negozio.</small>
                     </div>
-                    @foreach (['header_background' => 'Colore principale (fasce e piede)', 'header_accent' => 'Colore dei pulsanti e accenti', 'header_color' => 'Colore del testo e del marchio'] as $field => $label)
+                    @foreach ([
+                        'header_background' => ['Colore principale', 'Sfondo della fascia di apertura, del piede e delle parti scure.'],
+                        'header_accent' => ['Colore dei pulsanti e accenti', 'Pulsanti, link attivi, pallini del motto e parole evidenziate.'],
+                        'header_color' => ['Colore del testo e del marchio', 'Titoli e testi scuri, e il nome del sito in testata.'],
+                    ] as $field => [$label, $hint])
                         <div class="ksm-field">
                             <label class="ksm-label" for="{{ $field }}">{{ $label }}</label>
                             <div style="display: flex; gap: 8px; align-items: center;">
                                 <span style="width: 34px; height: 34px; flex: none; border-radius: 8px; border: 1px solid var(--ksm-line); background: {{ preg_match('/^#[0-9a-fA-F]{6}$/', (string) $value($field)) ? $value($field) : 'transparent' }};"></span>
                                 <input class="ksm-input" id="{{ $field }}" name="{{ $field }}" value="{{ $value($field) }}" placeholder="#rrggbb">
                             </div>
+                            <small class="ksm-muted">{{ $hint }}</small>
                             @error($field)<span class="ksm-error">{{ $message }}</span>@enderror
                         </div>
                     @endforeach
                     <div class="ksm-field">
                         <label class="ksm-label" for="header_tagline">Sottotitolo sotto il marchio</label>
                         <input class="ksm-input" id="header_tagline" name="header_tagline" value="{{ $value('header_tagline') }}" placeholder="L'eccellenza artigianale a casa tua">
+                        <small class="ksm-muted">La prima riga sotto il logo. Vuoto: "{{ trim(__('site.claim_line1').' '.__('site.claim_line2')) }}".</small>
                     </div>
                     <div class="ksm-field">
                         <label class="ksm-label" for="header_subline">Motto sotto il marchio</label>
                         <input class="ksm-input" id="header_subline" name="header_subline" value="{{ $value('header_subline') }}" placeholder="Sapori autentici · Territorio · Passione">
-                        <small class="ksm-muted">Separa le parole con il punto centrale ·</small>
+                        <small class="ksm-muted">La riga in maiuscoletto sotto il sottotitolo. Separa le parole con · e diventano MARE • STORIA • PERSONE. Vuoto: "{{ __('site.claim_tagline') }}".</small>
                     </div>
                 </div>
             </section>
 
             {{-- Apertura --}}
             <section class="ksm-card ksm-domain-form__section" id="apertura">
-                <h2>Apertura dello shop</h2>
-                <p>La fascia grande in cima allo shop. Titolo, parte evidenziata e testo compaiono anche nella home.</p>
+                <h2>Apertura</h2>
+                <p>La fascia grande in cima alla pagina. Ogni campo dice dove compare: <strong>home e shop</strong>, oppure <strong>solo shop</strong>. Nella home i due pulsanti sono fissi: Esplora le aziende e Scopri i prodotti. I campi vuoti usano il testo grigio d'esempio.</p>
                 <label class="ksm-domain-form__switch">
                     <input type="hidden" name="site[hero][enabled]" value="0">
-                    <input type="checkbox" name="site[hero][enabled]" value="1" @checked($siteOn('hero.enabled', true))> Mostra l'apertura
+                    <input type="checkbox" name="site[hero][enabled]" value="1" @checked($siteOn('hero.enabled', true))> Mostra l'apertura nello shop
                 </label>
                 <div class="ksm-formgrid">
                     @foreach ([
-                        'hero.eyebrow' => ['Scritta piccola sopra il titolo', $hero['eyebrow']],
-                        'hero.title' => ['Titolo', $hero['title']],
-                        'hero.highlight' => ['Parte del titolo in evidenza', $hero['highlight']],
-                        'hero.script' => ['Scritta a mano sull\'immagine', 'Il gusto della tradizione ogni giorno'],
-                        'hero.primary_label' => ['Pulsante principale', $hero['primary_label']],
-                        'hero.primary_url' => ['Link del pulsante principale', $hero['primary_url']],
-                        'hero.secondary_label' => ['Secondo pulsante', $hero['secondary_label']],
-                        'hero.secondary_url' => ['Link del secondo pulsante', '/prodotti?offerta=1'],
-                        'hero.badge_title' => ['Riquadro: numero o parola forte', '100%'],
-                        'hero.badge_text' => ['Riquadro: testo', 'Latte di bufala italiano'],
-                    ] as $key => [$label, $placeholder])
+                        'hero.title' => ['Titolo', $hero['title'], 'Home e shop. La prima parte del titolo, in bianco.'],
+                        'hero.highlight' => ['Parte del titolo in evidenza', $hero['highlight'], 'Home e shop. Segue il titolo, in verde di risalto.'],
+                        'hero.script' => ['Scritta a mano sull\'immagine', 'Il gusto della tradizione ogni giorno', 'Home e shop. In corsivo, in basso a destra, con una riga sotto. Vuota: non compare.'],
+                        'hero.eyebrow' => ['Scritta piccola sopra il titolo', $hero['eyebrow'], 'Solo shop.'],
+                        'hero.primary_label' => ['Pulsante principale', $hero['primary_label'], 'Solo shop. Il pulsante pieno.'],
+                        'hero.primary_url' => ['Link del pulsante principale', $hero['primary_url'], 'Solo shop. #catalogo scende al catalogo nella stessa pagina.'],
+                        'hero.secondary_label' => ['Secondo pulsante', $hero['secondary_label'], 'Solo shop. Il pulsante a contorno.'],
+                        'hero.secondary_url' => ['Link del secondo pulsante', '/prodotti?offerta=1', 'Solo shop.'],
+                        'hero.badge_title' => ['Riquadro: numero o parola forte', '100%', 'Solo shop. Il bollino sopra l\'immagine. Vuoto: niente bollino.'],
+                        'hero.badge_text' => ['Riquadro: testo', 'Latte di bufala italiano', 'Solo shop. La riga piccola del bollino.'],
+                    ] as $key => [$label, $placeholder, $hint])
                         <div class="ksm-field">
                             <label class="ksm-label" for="site-{{ $key }}">{{ $label }}</label>
                             <input class="ksm-input" id="site-{{ $key }}" name="{{ $name($key) }}" value="{{ $site($key) }}" placeholder="{{ $placeholder }}">
+                            <small class="ksm-muted">{{ $hint }}</small>
                             @error('site.'.$key)<span class="ksm-error">{{ $message }}</span>@enderror
                         </div>
                     @endforeach
@@ -281,11 +294,12 @@
                 <div class="ksm-field">
                     <label class="ksm-label" for="site-hero.text">Testo</label>
                     <textarea class="ksm-textarea" id="site-hero.text" name="site[hero][text]" rows="3" placeholder="{{ $hero['text'] }}">{{ $site('hero.text') }}</textarea>
+                    <small class="ksm-muted">Home e shop. Una o due frasi sotto il titolo.</small>
                     @error('site.hero.text')<span class="ksm-error">{{ $message }}</span>@enderror
                 </div>
                 <label class="ksm-domain-form__switch">
                     <input type="hidden" name="site[hero][badge_flag]" value="0">
-                    <input type="checkbox" name="site[hero][badge_flag]" value="1" @checked($siteOn('hero.badge_flag', false))> Bandiera italiana nel riquadro
+                    <input type="checkbox" name="site[hero][badge_flag]" value="1" @checked($siteOn('hero.badge_flag', false))> Bandiera italiana nel riquadro (solo shop)
                 </label>
                 <div class="ksm-field">
                     <label class="ksm-label" for="hero_image">Immagine</label>
@@ -302,11 +316,12 @@
             {{-- Vantaggi --}}
             <section class="ksm-card ksm-domain-form__section" id="vantaggi">
                 <h2>Vantaggi</h2>
-                <p>La fascia bianca sotto l'apertura, fino a quattro voci. Vuota: quelle predefinite.</p>
+                <p><strong>Home e shop.</strong> I riquadri bianchi subito sotto l'apertura, fino a quattro. Per ogni riquadro: icona, titolo in grassetto e riga piccola sotto. Un riquadro senza titolo non compare. Tutti vuoti: nella home "Migliaia di aziende…", nello shop le voci grigie d'esempio.</p>
                 <label class="ksm-domain-form__switch">
                     <input type="hidden" name="site[benefits][enabled]" value="0">
                     <input type="checkbox" name="site[benefits][enabled]" value="1" @checked($siteOn('benefits.enabled', true))> Mostra i vantaggi
                 </label>
+                <div class="ksm-domain-form__benefit ksm-muted" style="font-size: .8rem; margin-bottom: 4px;"><span>Icona</span><span>Titolo</span><span>Riga sotto</span></div>
                 @for ($i = 0; $i < 4; $i++)
                     <div class="ksm-domain-form__benefit">
                         <select class="ksm-select" name="site[benefits][items][{{ $i }}][icon]" aria-label="Icona {{ $i + 1 }}">
@@ -324,7 +339,7 @@
             {{-- Categorie --}}
             <section class="ksm-card ksm-domain-form__section" id="categorie">
                 <h2>Categorie</h2>
-                <p>I riquadri delle categorie. Senza scelta: le sottocategorie della categoria del dominio. L'immagine di ogni riquadro si carica da Categorie prodotti.</p>
+                <p><strong>Solo shop.</strong> I riquadri con foto delle categorie, sotto i vantaggi. Spunta quelle da mostrare. Senza spunte: le sottocategorie della categoria del dominio. La foto di ogni riquadro si carica da Categorie prodotti.</p>
                 <label class="ksm-domain-form__switch">
                     <input type="hidden" name="site[categories][enabled]" value="0">
                     <input type="checkbox" name="site[categories][enabled]" value="1" @checked($siteOn('categories.enabled', true))> Mostra le categorie
@@ -333,10 +348,12 @@
                     <div class="ksm-field">
                         <label class="ksm-label" for="site-categories-title">Titolo</label>
                         <input class="ksm-input" id="site-categories-title" name="site[categories][title]" value="{{ $site('categories.title') }}" placeholder="{{ __('storefront.categories') }}">
+                        <small class="ksm-muted">Il titolo sopra i riquadri.</small>
                     </div>
                     <div class="ksm-field">
                         <label class="ksm-label" for="site-categories-link">Link a destra del titolo</label>
                         <input class="ksm-input" id="site-categories-link" name="site[categories][link_label]" value="{{ $site('categories.link_label') }}" placeholder="{{ __('site.shop_all_products') }}">
+                        <small class="ksm-muted">Il testo del link che porta a tutti i prodotti.</small>
                     </div>
                 </div>
                 <div class="ksm-domain-form__checks">
@@ -356,7 +373,7 @@
             {{-- Prodotti --}}
             <section class="ksm-card ksm-domain-form__section" id="prodotti">
                 <h2>Prodotti</h2>
-                <p>Una fila di prodotti in evidenza e, sotto, il catalogo completo con i filtri.</p>
+                <p><strong>Solo shop.</strong> Una fila di prodotti in evidenza e, sotto, il catalogo completo con i filtri. Nella home i prodotti in evidenza sono scelti in automatico.</p>
                 <label class="ksm-domain-form__switch">
                     <input type="hidden" name="site[featured][enabled]" value="0">
                     <input type="checkbox" name="site[featured][enabled]" value="1" @checked($siteOn('featured.enabled', true))> Mostra i prodotti in evidenza
@@ -377,10 +394,12 @@
                                 <option value="{{ $key }}" @selected(($site('featured.sort') ?? 'bestsellers') === $key)>{{ $label }}</option>
                             @endforeach
                         </select>
+                        <small class="ksm-muted">Con quale criterio si scelgono i prodotti della fila.</small>
                     </div>
                     <div class="ksm-field">
                         <label class="ksm-label" for="site-featured-count">Quanti</label>
                         <input class="ksm-input" id="site-featured-count" name="site[featured][count]" type="number" min="2" max="12" value="{{ $site('featured.count') ?? 6 }}">
+                        <small class="ksm-muted">Da 2 a 12.</small>
                         @error('site.featured.count')<span class="ksm-error">{{ $message }}</span>@enderror
                     </div>
                 </div>
@@ -395,6 +414,7 @@
                 <div class="ksm-field">
                     <label class="ksm-label" for="site-catalog-title">Titolo del catalogo</label>
                     <input class="ksm-input" id="site-catalog-title" name="site[catalog][title]" value="{{ $site('catalog.title') }}" placeholder="{{ __('storefront.catalog') }}">
+                    <small class="ksm-muted">Il titolo sopra l'elenco completo dei prodotti.</small>
                 </div>
             </section>
 
@@ -403,18 +423,24 @@
                 <section class="ksm-card ksm-domain-form__section" id="{{ $anchor }}">
                     <h2>{{ $heading }}</h2>
                     @if ($anchor === 'menu')
-                        <p>Voci della testata. Link interni come /prodotti o /prodotti?offerta=1, oppure indirizzi completi. Vuoto: Home, Prodotti, Aziende e Contattaci.</p>
+                        <p><strong>Tutte le pagine.</strong> Le voci della testata, ai lati del logo. Per ogni voce: a sinistra il testo, a destra il link. Link interni come /prodotti, /aziende, /contatti o /prodotti?offerta=1, oppure indirizzi completi con https://. Tutto vuoto: le voci predefinite (Home, Aziende, Prodotti, Contattaci…).</p>
                     @else
-                        <p>Il piede non mostra nulla di KSM: marchio, recapiti e link sono quelli del dominio.</p>
+                        <p><strong>Tutte le pagine.</strong> La fascia in fondo al sito. Non mostra nulla di KSM: marchio, recapiti e link sono quelli del dominio. Indirizzo, telefono ed email compaiono solo se compilati.</p>
                         <div class="ksm-field">
                             <label class="ksm-label" for="site-footer-about">Descrizione</label>
                             <textarea class="ksm-textarea" id="site-footer-about" name="site[footer][about]" rows="3" placeholder="{{ $footerDefaults['about'] ?: 'Due righe sul sito' }}">{{ $site('footer.about') }}</textarea>
+                            <small class="ksm-muted">Due righe sotto il logo nel piede. Vuota: la Descrizione del dominio della sezione SEO.</small>
                         </div>
                         <div class="ksm-formgrid">
-                            @foreach (['address' => 'Indirizzo', 'phone' => 'Telefono', 'email' => 'Email'] as $field => $label)
+                            @foreach ([
+                                'address' => ['Indirizzo', 'Nel piede.'],
+                                'phone' => ['Telefono', 'Nel piede.'],
+                                'email' => ['Email', 'Nel piede. I messaggi del modulo Contattaci arrivano a questo indirizzo.'],
+                            ] as $field => [$label, $hint])
                                 <div class="ksm-field">
                                     <label class="ksm-label" for="{{ $field }}">{{ $label }}</label>
                                     <input class="ksm-input" id="{{ $field }}" name="{{ $field }}" value="{{ $value($field) }}">
+                                    <small class="ksm-muted">{{ $hint }}</small>
                                     @error($field)<span class="ksm-error">{{ $message }}</span>@enderror
                                 </div>
                             @endforeach
@@ -423,6 +449,7 @@
                                     <label class="ksm-label" for="social-{{ $network }}">{{ $label }}</label>
                                     <input class="ksm-input" id="social-{{ $network }}" name="social_links[{{ $network }}]" type="url" placeholder="https://"
                                            value="{{ old('social_links.'.$network, $record->social_links[$network] ?? '') }}">
+                                    <small class="ksm-muted">L'icona nel piede compare solo se l'indirizzo è compilato.</small>
                                     @error('social_links.'.$network)<span class="ksm-error">{{ $message }}</span>@enderror
                                 </div>
                             @endforeach
@@ -455,10 +482,12 @@
                             <div class="ksm-field">
                                 <label class="ksm-label" for="site-footer-copyright">Riga del copyright</label>
                                 <input class="ksm-input" id="site-footer-copyright" name="site[footer][copyright]" value="{{ $site('footer.copyright') }}" placeholder="{{ $footerDefaults['copyright'] }}">
+                                <small class="ksm-muted">L'ultima riga del piede, a sinistra.</small>
                             </div>
                             <div class="ksm-field">
                                 <label class="ksm-label" for="site-footer-legal">Dati legali</label>
                                 <input class="ksm-input" id="site-footer-legal" name="site[footer][legal]" value="{{ $site('footer.legal') }}" placeholder="Ragione sociale · P. IVA">
+                                <small class="ksm-muted">Accanto al copyright, nell'ultima riga del piede.</small>
                             </div>
                         </div>
                     @endif
@@ -468,14 +497,16 @@
             {{-- SEO --}}
             <section class="ksm-card ksm-domain-form__section" id="seo">
                 <h2>SEO e condivisione</h2>
-                <p>Titolo e descrizione della pagina iniziale, e immagine mostrata quando il sito si condivide sui social.</p>
+                <p>Non si vedono nella pagina: sono quello che mostrano Google e i social quando qualcuno cerca o condivide il sito.</p>
                 <div class="ksm-field">
                     <label class="ksm-label" for="site-seo-title">Titolo della pagina iniziale</label>
                     <input class="ksm-input" id="site-seo-title" name="site[seo][title]" value="{{ $site('seo.title') }}" placeholder="Mozzarella di bufala fresca a casa tua" maxlength="255">
+                    <small class="ksm-muted">Il titolo nella scheda del browser e nei risultati di Google, solo per la pagina iniziale. Vuoto: il nome del sito seguito da una frase standard.</small>
                 </div>
                 <div class="ksm-field">
                     <label class="ksm-label" for="site-seo-description">Descrizione</label>
                     <textarea class="ksm-textarea" id="site-seo-description" name="site[seo][description]" rows="2" maxlength="320">{{ $site('seo.description') }}</textarea>
+                    <small class="ksm-muted">Le due righe grigie sotto il titolo nei risultati di Google. Massimo circa 160 caratteri.</small>
                 </div>
                 <div class="ksm-field">
                     <label class="ksm-label" for="description">Descrizione del dominio</label>

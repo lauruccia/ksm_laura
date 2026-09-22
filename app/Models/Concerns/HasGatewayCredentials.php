@@ -47,7 +47,8 @@ trait HasGatewayCredentials
             $methods[] = 'stripe';
         }
 
-        if ($this->enable_paypal && filled($this->paypalKeys()['secret'])) {
+        // PayPal vuole la coppia: il segreto da solo non apre nessun ordine.
+        if ($this->enable_paypal && filled($this->paypalKeys()['client_id']) && filled($this->paypalKeys()['secret'])) {
             $methods[] = 'paypal';
         }
 

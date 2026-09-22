@@ -1,0 +1,17 @@
+---
+# Pubblicazione da cPanel, Git Version Control: "Deploy HEAD Commit".
+# Il repository e' clonato a parte; qui si copiano i file nell'app e si
+# lanciano gli artisan. .env, vendor/ e storage/ restano quelli del server.
+# I file cancellati nel repository non vengono tolti dal server.
+deployment:
+  tasks:
+    - export DEPLOYPATH=/home2/ilnetwork/ksm-next
+    - export PHP=/usr/local/bin/ea-php83
+    # Il .htaccess del server sceglie PHP 8.3: non va sovrascritto.
+    - /bin/cp $DEPLOYPATH/public/.htaccess /tmp/ksm-htaccess-$USER
+    - /bin/cp -R app bootstrap config database lang public resources routes artisan composer.json composer.lock $DEPLOYPATH/
+    - /bin/cp /tmp/ksm-htaccess-$USER $DEPLOYPATH/public/.htaccess
+    - cd $DEPLOYPATH && echo "=== deploy $(date) ===" >> deploy.log
+    - cd $DEPLOYPATH && $PHP artisan migrate --force >> deploy.log 2>&1
+    - cd $DEPLOYPATH && $PHP artisan optimize:clear >> deploy.log 2>&1
+    - cd $DEPLOYPATH && $PHP artisan optimize >> deploy.log 2>&1

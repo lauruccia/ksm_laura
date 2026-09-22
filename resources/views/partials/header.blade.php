@@ -9,8 +9,10 @@
     $presentation = app(\App\Support\HeaderPresentation::class)->resolve(request(), $headerVariant ?? null);
     $isShopHeader = $presentation['shop'];
     $siteName = $siteName ?? $presentation['name'] ?? $tenant->brandName();
-    $siteTagline = $siteTagline ?? $presentation['tagline'] ?? ($isShopHeader ? __('header.shop_tagline') : trim(__('site.claim_line1').' '.__('site.claim_line2')));
-    $siteSubline = $siteSubline ?? $presentation['subline'] ?? ($isShopHeader ? __('header.shop_subline') : __('site.claim_tagline'));
+    // Sul sito principale sottotitolo e motto si scrivono in Amministrazione, Impostazioni.
+    $mainSite = ! $tenant->isNetworkSite() && ! $tenant->isCompanySite();
+    $siteTagline = $siteTagline ?? $presentation['tagline'] ?? ($mainSite ? $settings->header_tagline : null) ?? ($isShopHeader ? __('header.shop_tagline') : trim(__('site.claim_line1').' '.__('site.claim_line2')));
+    $siteSubline = $siteSubline ?? $presentation['subline'] ?? ($mainSite ? $settings->header_subline : null) ?? ($isShopHeader ? __('header.shop_subline') : __('site.claim_tagline'));
     $logoUrl = $logoUrl ?? $presentation['logo'] ?? ($tenant->brandLogo() ? asset('storage/'.$tenant->brandLogo()) : null);
 
     // Un dominio della rete puo' scrivere il proprio menu e non mostra le pagine CMS di KSM.

@@ -62,6 +62,18 @@ class AdminResourceCrudTest extends TestCase
             ->assertSee('Vetrina');
     }
 
+    public function test_la_modifica_mostra_tutte_le_voci_del_piano(): void
+    {
+        $plan = $this->plan();
+        $plan->update(['features' => array_map(fn ($n) => "Voce $n", range(1, 9))]);
+
+        // Prima c'erano sei caselle fisse: salvando, dalla settima in poi sparivano.
+        $this->actingAs($this->admin())
+            ->get(route('admin.plans.edit', $plan))
+            ->assertOk()
+            ->assertSee('value="Voce 9"', false);
+    }
+
     public function test_il_salvataggio_di_un_piano_cambia_le_voci_spuntate(): void
     {
         $plan = $this->plan();

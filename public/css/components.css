@@ -560,6 +560,12 @@
     color: var(--ksm-danger);
 }
 
+.ksm-alert--info {
+    background: #EDF3F7;
+    border-color: #CFE0EA;
+    color: var(--ksm-dark);
+}
+
 /* ============ Tabelle ============ */
 .ksm-table {
     width: 100%;
@@ -1112,3 +1118,281 @@ a.ksm-pagination__page:hover {
     cursor: pointer;
 }
 .ksm-cart-vendor__remove:hover { background: #fdecec; color: var(--ksm-danger); }
+
+/* ============ Piani ============ */
+.ksm-plan {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    padding: 30px 26px 26px;
+    background: var(--ksm-surface);
+    border: 1px solid var(--ksm-line);
+    border-radius: var(--ksm-radius-xl);
+    box-shadow: var(--ksm-shadow);
+    transition: transform .28s var(--ksm-ease), box-shadow .28s var(--ksm-ease), border-color .28s var(--ksm-ease);
+}
+
+.ksm-plan:hover { transform: translateY(-4px); box-shadow: var(--ksm-shadow-md); border-color: #D2E2D6; }
+
+.ksm-plan--selected { border-color: var(--ksm-accent); box-shadow: var(--ksm-ring), var(--ksm-shadow-md); }
+
+.ksm-plan__badge {
+    position: absolute;
+    top: -13px;
+    left: 26px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 12px;
+    border-radius: var(--ksm-radius-pill);
+    background: var(--ksm-gradient-accent);
+    color: #fff;
+    font-size: .72rem;
+    font-weight: 700;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    box-shadow: 0 6px 14px rgba(81, 165, 44, .35);
+}
+
+.ksm-plan__badge .ksm-icon { fill: currentColor; }
+
+.ksm-plan__name {
+    margin: 0;
+    font-family: var(--ksm-font-display);
+    font-size: 1.2rem;
+    font-weight: 800;
+    color: var(--ksm-dark);
+}
+
+.ksm-plan__desc {
+    margin: 8px 0 0;
+    min-height: 2.9em;
+    color: var(--ksm-muted);
+    font-size: .92rem;
+    line-height: 1.45;
+}
+
+.ksm-plan__price {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 22px 0 0;
+    padding-bottom: 22px;
+    border-bottom: 1px solid var(--ksm-line-soft);
+}
+
+.ksm-plan__price strong {
+    font-family: var(--ksm-font-display);
+    font-size: 2.15rem;
+    font-weight: 800;
+    line-height: 1;
+    letter-spacing: -.02em;
+    color: var(--ksm-ink);
+    white-space: nowrap;
+}
+
+.ksm-plan__price span { color: var(--ksm-muted); font-size: .9rem; font-weight: 500; white-space: nowrap; }
+
+.ksm-plan__label {
+    margin: 22px 0 12px;
+    font-size: .72rem;
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--ksm-muted);
+}
+
+.ksm-plan__features {
+    display: grid;
+    gap: 11px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.ksm-plan__features li {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    font-size: .94rem;
+    line-height: 1.4;
+    color: var(--ksm-body);
+}
+
+.ksm-plan__features .ksm-icon {
+    flex: none;
+    width: 20px;
+    height: 20px;
+    padding: 3px;
+    border-radius: 50%;
+    background: var(--ksm-accent-soft);
+    color: var(--ksm-accent-dark);
+    stroke-width: 2.4;
+}
+
+.ksm-plan__action { margin-top: auto; padding-top: 28px; }
+.ksm-plan__action .ksm-btn .ksm-icon { margin-left: auto; }
+.ksm-plan__action .ksm-btn { justify-content: space-between; padding-block: 14px; }
+
+/* Il piano in evidenza: scheda scura */
+.ksm-plan--featured {
+    background: var(--ksm-gradient-brand);
+    border-color: transparent;
+    box-shadow: var(--ksm-shadow-lg);
+}
+
+.ksm-plan--featured:hover { border-color: transparent; box-shadow: 0 30px 70px rgba(7, 54, 77, .24); }
+.ksm-plan--featured .ksm-plan__name,
+.ksm-plan--featured .ksm-plan__price strong { color: #fff; }
+.ksm-plan--featured .ksm-plan__desc,
+.ksm-plan--featured .ksm-plan__price span,
+.ksm-plan--featured .ksm-plan__label { color: rgba(255, 255, 255, .68); }
+.ksm-plan--featured .ksm-plan__price { border-color: rgba(255, 255, 255, .14); }
+.ksm-plan--featured .ksm-plan__features li { color: rgba(255, 255, 255, .92); }
+.ksm-plan--featured .ksm-plan__features .ksm-icon { background: rgba(111, 191, 69, .22); color: var(--ksm-accent-light); }
+
+/* ============ Pagina piani ============ */
+.ksm-plans-hero {
+    position: relative;
+    padding: 72px 0 132px;
+    background: var(--ksm-gradient-brand);
+    color: #fff;
+    text-align: center;
+    overflow: hidden;
+}
+
+.ksm-plans-hero::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at 15% 20%, rgba(111, 191, 69, .22), transparent 42%),
+                radial-gradient(circle at 88% 90%, rgba(255, 255, 255, .08), transparent 40%);
+    pointer-events: none;
+}
+
+.ksm-plans-hero .ksm-container { position: relative; }
+
+.ksm-plans-hero__eyebrow {
+    display: inline-block;
+    margin: 0 0 14px;
+    padding: 6px 14px;
+    border: 1px solid rgba(255, 255, 255, .22);
+    border-radius: var(--ksm-radius-pill);
+    font-size: .74rem;
+    font-weight: 700;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--ksm-accent-light);
+}
+
+.ksm-plans-hero h1 {
+    max-width: 760px;
+    margin: 0 auto;
+    font-family: var(--ksm-font-display);
+    font-size: clamp(1.9rem, 4vw, 2.9rem);
+    font-weight: 800;
+    line-height: 1.12;
+    letter-spacing: -.02em;
+    color: #fff;
+}
+
+.ksm-plans-hero__lead {
+    max-width: 560px;
+    margin: 16px auto 0;
+    font-size: 1.08rem;
+    color: rgba(255, 255, 255, .78);
+}
+
+.ksm-plans-hero__notes {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px 28px;
+    margin: 28px 0 0;
+    padding: 0;
+    list-style: none;
+    font-size: .9rem;
+    color: rgba(255, 255, 255, .85);
+}
+
+.ksm-plans-hero__notes li { display: inline-flex; align-items: center; gap: 8px; }
+.ksm-plans-hero__notes .ksm-icon { color: var(--ksm-accent-light); }
+
+.ksm-plans { padding: 0 0 80px; }
+
+.ksm-plans__grid {
+    display: grid;
+    grid-template-columns: repeat(var(--plans, 4), minmax(0, 1fr));
+    gap: 22px;
+    align-items: stretch;
+    margin-top: -84px;
+    position: relative;
+}
+
+.ksm-plans__empty {
+    margin: -60px auto 0;
+    max-width: 520px;
+    padding: 28px;
+    border-radius: var(--ksm-radius-lg);
+    background: var(--ksm-surface);
+    box-shadow: var(--ksm-shadow);
+    text-align: center;
+    color: var(--ksm-muted);
+    position: relative;
+}
+
+.ksm-plans__steps {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 22px;
+    margin: 64px 0 0;
+    padding: 32px;
+    list-style: none;
+    border: 1px solid var(--ksm-line);
+    border-radius: var(--ksm-radius-xl);
+    background: var(--ksm-surface);
+}
+
+.ksm-plans__steps li { display: flex; gap: 16px; align-items: flex-start; }
+
+.ksm-plans__steps li > span {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--ksm-accent-soft);
+    color: var(--ksm-accent-dark);
+    font-family: var(--ksm-font-display);
+    font-weight: 800;
+}
+
+.ksm-plans__steps strong { display: block; color: var(--ksm-dark); font-size: 1rem; }
+.ksm-plans__steps p { margin: 4px 0 0; color: var(--ksm-muted); font-size: .9rem; line-height: 1.45; }
+
+@media (max-width: 1100px) {
+    .ksm-plans__grid { grid-template-columns: repeat(min(var(--plans, 4), 2), minmax(0, 1fr)); row-gap: 34px; }
+}
+
+@media (max-width: 680px) {
+    .ksm-plans-hero { padding: 52px 0 108px; }
+    .ksm-plans__grid { grid-template-columns: 1fr; }
+    .ksm-plans__steps { grid-template-columns: 1fr; padding: 24px; }
+    .ksm-plan { padding: 28px 22px 22px; }
+}
+
+/* Voci che il piano non comprende: X rossa e testo spento */
+.ksm-plan__features li.is-missing { color: var(--ksm-muted); }
+.ksm-plan__features li.is-missing .ksm-icon { background: #FDECEC; color: var(--ksm-danger); }
+.ksm-plan__features li.is-missing > span { text-decoration: line-through; text-decoration-color: rgba(127, 145, 157, .45); }
+
+.ksm-sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+}

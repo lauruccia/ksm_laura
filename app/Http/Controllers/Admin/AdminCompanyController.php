@@ -373,6 +373,9 @@ class AdminCompanyController extends Controller
             'days' => WorkingHours::DAYS,
             'galleryMax' => self::GALLERY_MAX,
             'subscription' => $company->exists ? $company->activeSubscription() : null,
+            // Il periodo scelto e non ancora incassato: senza, il modulo
+            // direbbe "nessun piano" a un'azienda che sta aspettando.
+            'pending' => $company->exists ? $company->pendingSubscription() : null,
             'kmoney' => $company->exists ? $company->paymentSettings()->first() : null,
             'kmoneyRules' => $company->exists ? KMoneyPercentages::rulesFor($company->id) : [],
             'kmoneySteps' => KMoneyShare::STEPS,

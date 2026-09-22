@@ -33,6 +33,24 @@
             <div class="ksm-field">
                 <label class="ksm-label" for="about">Descrizione breve</label>
                 <textarea class="ksm-textarea" id="about" name="about" rows="3">{{ old('about', $settings->about) }}</textarea>
+                <small class="ksm-muted">Nel piede e nella descrizione per i motori di ricerca.</small>
+            </div>
+
+            {{-- Le righe sotto il logo in testata, solo sul sito principale. --}}
+            <div class="ksm-field">
+                <label class="ksm-label" for="header_tagline">Sottotitolo sotto il marchio</label>
+                <input class="ksm-input" id="header_tagline" name="header_tagline"
+                       value="{{ old('header_tagline', $settings->header_tagline) }}"
+                       placeholder="{{ trim(__('site.claim_line1').' '.__('site.claim_line2')) }}">
+                <small class="ksm-muted">La prima riga sotto il logo, in testata. Vuoto: il testo grigio d'esempio.</small>
+            </div>
+
+            <div class="ksm-field">
+                <label class="ksm-label" for="header_subline">Motto sotto il marchio</label>
+                <input class="ksm-input" id="header_subline" name="header_subline"
+                       value="{{ old('header_subline', $settings->header_subline) }}"
+                       placeholder="{{ __('site.claim_tagline') }}">
+                <small class="ksm-muted">La riga in maiuscoletto sotto il sottotitolo. Separa le parole con · e diventano MARE • STORIA • PERSONE.</small>
             </div>
 
             {{-- Le icone social compaiono nel piede solo per le reti con un indirizzo. --}}
@@ -92,7 +110,15 @@
                 <h2 style="font-size: 1.05rem;">Pagamenti di piattaforma</h2>
                 <p class="ksm-muted" style="font-size: .85rem;">
                     I campi lasciati vuoti non sovrascrivono le chiavi già salvate.
+                    Le credenziali qui sotto sono quelle live: in modalità test non vengono lette.
                 </p>
+
+                {{-- Interruttore generale: spento, nessun metodo viene offerto. --}}
+                <label class="ksm-label" style="display: flex; gap: 8px; align-items: center;">
+                    <input type="hidden" name="is_active" value="0">
+                    <input type="checkbox" name="is_active" value="1" @checked($payments->is_active)>
+                    Incassi della piattaforma attivi
+                </label>
 
                 <div class="ksm-field">
                     <label class="ksm-label" for="mode">Modalità</label>
@@ -116,16 +142,36 @@
                 </label>
                 <small class="ksm-muted">Non vale per i venditori con il conto KMoney in debito: da loro si paga solo in KMoney.</small>
 
+                {{-- Un metodo si offre solo con la coppia di credenziali al completo:
+                     senza, la pagina del pagamento resta senza scelte. --}}
                 <div class="ksm-field" style="margin-top: 14px;">
+                    <label class="ksm-label" for="stripe_live_public_key">Chiave pubblica Stripe (live)</label>
+                    <input class="ksm-input" id="stripe_live_public_key" name="stripe_live_public_key"
+                           value="{{ old('stripe_live_public_key', $payments->stripe_live_public_key) }}">
+                </div>
+
+                <div class="ksm-field">
                     <label class="ksm-label" for="stripe_live_secret_key">Chiave segreta Stripe (live)</label>
                     <input class="ksm-input" id="stripe_live_secret_key" name="stripe_live_secret_key" type="password"
                            placeholder="{{ $payments->stripe_live_secret_key ? 'già impostata' : '' }}">
                 </div>
 
                 <div class="ksm-field">
+                    <label class="ksm-label" for="paypal_live_client_id">Client id PayPal (live)</label>
+                    <input class="ksm-input" id="paypal_live_client_id" name="paypal_live_client_id"
+                           value="{{ old('paypal_live_client_id', $payments->paypal_live_client_id) }}">
+                </div>
+
+                <div class="ksm-field">
                     <label class="ksm-label" for="paypal_live_secret">Segreto PayPal (live)</label>
                     <input class="ksm-input" id="paypal_live_secret" name="paypal_live_secret" type="password"
                            placeholder="{{ $payments->paypal_live_secret ? 'già impostato' : '' }}">
+                </div>
+
+                <div class="ksm-field">
+                    <label class="ksm-label" for="kmoney_live_account">Conto KMoney della piattaforma (live)</label>
+                    <input class="ksm-input" id="kmoney_live_account" name="kmoney_live_account"
+                           value="{{ old('kmoney_live_account', $payments->kmoney_live_account) }}">
                 </div>
 
                 {{-- Il bonifico non ha credenziali: ha le coordinate che

@@ -1,36 +1,58 @@
-@props(['plan', 'highlight' => false])
+@props(['plan', 'highlight' => false, 'featured' => false, 'compare' => null])
 
-<article class="ksm-card" style="padding: 24px; {{ $highlight ? 'outline: 2px solid var(--ksm-accent);' : '' }}">
-    <h3>{{ $plan->name }}</h3>
+@php
+    // Con `compare` (vedi Plan::featureUnion) la scheda elenca anche le voci che il piano non ha.
+    $own = $plan->featureItems();
+    $ownKeys = array_map([\App\Models\Plan::class, 'featureKey'], $own);
+    $items = collect($compare ?: array_combine($ownKeys, $own))
+        ->map(fn ($label, $key) => ['label' => $label, 'included' => in_array($key, $ownKeys, true)]);
 
-    <p class="ksm-product__price" style="font-size: 1.8rem;">
-        {{ $plan->isFree() ? 'Gratis' : \App\Support\Money::format($plan->price) }}
-        @unless ($plan->isFree())
-            <small class="ksm-muted" style="display: inline-block; font-size: .95rem; line-height: 1.2; white-space: nowrap;">{{ match (true) {
-                $plan->isLifetime() => 'una tantum',
-                $plan->duration_days == 365 => '/ anno',
-                default => '/ '.$plan->duration_days.' giorni',
-            } }}</small>
-        @endunless
-    </p>
+    $period = match (true) {
+        $plan->isFree() => null,
+        $plan->isLifetime() => 'una tantum',
+        $plan->duration_days == 365 => 'all\'anno',
+        default => 'ogni '.$plan->duration_days.' giorni',
+    };
+@endphp
 
-    @if ($plan->description)
-        <p class="ksm-muted">{{ $plan->description }}</p>
+<article {{ $attributes->class([
+    'ksm-plan',
+    'ksm-plan--featured' => $featured,
+    'ksm-plan--selected' => $highlight,
+]) }}>
+    @if ($featured)
+        <span class="ksm-plan__badge"><x-icon name="star" :size="14" /> Il più completo</span>
     @endif
 
-    @if ($plan->features)
-        <ul class="ksm-meta">
-            @foreach ($plan->features as $feature)
-                <li>{{ $feature }}</li>
-            @endforeach
-        </ul>
-    @elseif ($plan->capabilityLabels())
-        <ul class="ksm-meta">
-            @foreach ($plan->capabilityLabels() as $label)
-                <li>{{ $label }}</li>
+    <header class="ksm-plan__head">
+        <h3 class="ksm-plan__name">{{ $plan->name }}</h3>
+        @if ($plan->description)
+            <p class="ksm-plan__desc">{{ $plan->description }}</p>
+        @endif
+    </header>
+
+    <div class="ksm-plan__price">
+        <strong>{{ $plan->isFree() ? 'Gratis' : \App\Support\Money::format($plan->price) }}</strong>
+        @if ($period)
+            <span>{{ $period }}</span>
+        @endif
+    </div>
+
+    @if ($items->isNotEmpty())
+        <p class="ksm-plan__label">Cosa comprende</p>
+        <ul class="ksm-plan__features">
+            @foreach ($items as $item)
+                @if ($item['included'])
+                    <li><x-icon name="check" :size="16" /> <span>{{ $item['label'] }}</span></li>
+                @else
+                    <li class="is-missing">
+                        <x-icon name="close" :size="16" />
+                        <span><span class="ksm-sr-only">Non incluso: </span>{{ $item['label'] }}</span>
+                    </li>
+                @endif
             @endforeach
         </ul>
     @endif
 
-    <div style="margin-top: 18px;">{{ $slot }}</div>
+    <div class="ksm-plan__action">{{ $slot }}</div>
 </article>

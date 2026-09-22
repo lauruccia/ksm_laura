@@ -36,6 +36,8 @@ class AdminSettingController extends Controller
             'contact_number' => ['nullable', 'string', 'max:50'],
             'address' => ['nullable', 'string', 'max:255'],
             'about' => ['nullable', 'string', 'max:1000'],
+            'header_tagline' => ['nullable', 'string', 'max:255'],
+            'header_subline' => ['nullable', 'string', 'max:255'],
             'location_map_embed' => ['nullable', 'string', 'max:2000'],
             'social_links' => ['nullable', 'array'],
             'social_links.facebook' => ['nullable', 'url', 'max:255'],
@@ -90,6 +92,11 @@ class AdminSettingController extends Controller
         ]);
 
         $settings->fill(array_filter($data, fn ($v) => $v !== null && $v !== ''));
+        // L'interruttore generale si tocca solo se il modulo lo ha mandato.
+        if ($request->has('is_active')) {
+            $settings->is_active = $request->boolean('is_active');
+        }
+
         $settings->enable_stripe = $request->boolean('enable_stripe');
         $settings->enable_paypal = $request->boolean('enable_paypal');
         $settings->enable_kmoney = $request->boolean('enable_kmoney');

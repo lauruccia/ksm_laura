@@ -146,6 +146,21 @@ final class SiteScope
         return $query
             ->when($this->companyCategoryIds(), fn ($q, $ids) => $q->whereIn('companies.category_id', $ids))
             ->when($place && $place['column'] === 'region', fn ($q) => $q->where('companies.region', $place['value']))
-            ->when($place && $place['column'] === 'city', fn ($q) => $q->where('companies.city', 'like', '%'.$place['value'].'%'));
+            ->when($place && $place['column'] === 'city', fn ($q) => $this->whereCityWord($q, $place['value']));
+    }
+
+    /** La citta' come parola intera: "Ostia" prende "Lido di Ostia" e "Ostia Antica", non "Ostiano". */
+    private function whereCityWord(Builder $query, string $city): Builder
+    {
+        $city = addcslashes($city, '\\%_');
+
+        return $query->where(function ($q) use ($city) {
+            $q->where('companies.city', 'like', $city);
+            foreach ([' ', '-'] as $separator) {
+                $q->orWhere('companies.city', 'like', $city.$separator.'%')
+                    ->orWhere('companies.city', 'like', '%'.$separator.$city)
+                    ->orWhere('companies.city', 'like', '%'.$separator.$city.$separator.'%');
+            }
+        });
     }
 }

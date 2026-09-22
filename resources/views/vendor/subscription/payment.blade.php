@@ -14,7 +14,7 @@
 
             @if ($methods === [])
                 <div class="ksm-card" style="padding: 24px;">
-                    <p>Non c e ancora un modo per incassare la quota.</p>
+                    <p>Non c'è ancora un modo per incassare la quota.</p>
                     <p class="ksm-muted">
                         Scrivi a {{ \App\Models\AdminSetting::current()->support_email ?? \App\Models\AdminSetting::current()->website_email }}
                         e attiviamo il pagamento.

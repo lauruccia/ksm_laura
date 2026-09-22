@@ -66,8 +66,9 @@
                         @break
 
                     @case('list')
-                        @php($values = (array) old($name, $record->$name ?? []))
-                        @for ($i = 0; $i < 6; $i++)
+                        @php($values = array_values((array) old($name, $record->$name ?? [])))
+                        {{-- Tutte le voci salvate piu' tre righe libere: con un tetto fisso le ultime si perdevano al salvataggio. --}}
+                        @for ($i = 0; $i < max(6, count($values) + 3); $i++)
                             <input class="ksm-input" style="margin-bottom: 6px;" name="{{ $name }}[]"
                                    value="{{ $values[$i] ?? '' }}">
                         @endfor

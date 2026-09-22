@@ -163,6 +163,58 @@ class SubscriptionFlowTest extends TestCase
         $this->assertSame('pending', AdminTransaction::firstOrFail()->status);
     }
 
+    /**
+     * La pagina del pagamento resta senza scelte finche' un metodo non e'
+     * configurato per intero: e' il modulo in amministrazione a metterlo.
+     */
+    public function test_l_amministratore_apre_il_pagamento_dalle_impostazioni(): void
+    {
+        $user = $this->vendor();
+        $this->companyFor($user);
+        $plan = $this->plan();
+
+        $this->actingAs($user)->post(route('subscription.store'), ['plan_id' => $plan->id]);
+        $subscription = CompanySubscription::firstOrFail();
+
+        $this->actingAs($user)
+            ->get(route('subscription.payment', $subscription))
+            ->assertOk()
+            ->assertSee('ancora un modo per incassare la quota');
+
+        $role = Role::firstOrCreate(
+            ['slug' => Role::SUPER_ADMIN],
+            ['name' => 'Super amministratore', 'is_system' => true]
+        );
+
+        $admin = User::create([
+            'name' => 'Amministratore',
+            'email' => 'admin'.uniqid().'@example.test',
+            'password' => 'password',
+            'user_type' => 'admin',
+            'role_id' => $role->id,
+            'is_active' => true,
+        ]);
+
+        // Il segreto PayPal da solo non basta: senza client id il metodo non si offre.
+        $this->actingAs($admin)
+            ->put(route('admin.settings.payments'), [
+                'mode' => 'live',
+                'is_active' => '1',
+                'enable_bank_transfer' => '1',
+                'enable_paypal' => '1',
+                'paypal_live_secret' => 'segreto',
+                'bank_holder' => 'Circuito KSM',
+                'bank_iban' => 'IT60X0542811101000000123456',
+            ])
+            ->assertRedirect();
+
+        $this->actingAs($user)
+            ->get(route('subscription.payment', $subscription))
+            ->assertOk()
+            ->assertSee('Bonifico bancario')
+            ->assertDontSee('PayPal');
+    }
+
     public function test_la_conferma_in_amministrazione_attiva_il_piano(): void
     {
         $user = $this->vendor();
@@ -207,6 +259,14 @@ class SubscriptionFlowTest extends TestCase
             ->assertOk()
             ->assertSee($company->name);
 
+        // Finche' l'incasso non e' confermato la scheda azienda non ha
+        // nessun piano: deve dire perche', non lasciarlo indovinare.
+        $this->actingAs($admin)
+            ->get(route('admin.companies.edit', $company))
+            ->assertOk()
+            ->assertSee('In attesa di incasso')
+            ->assertSee($plan->name);
+
         $this->actingAs($admin)
             ->patch(route('admin.subscriptions.confirm', $subscription))
             ->assertRedirect();
@@ -219,6 +279,11 @@ class SubscriptionFlowTest extends TestCase
         $this->assertTrue($company->is_active);
         $this->assertSame($plan->id, $company->plan_id);
         $this->assertSame('completed', AdminTransaction::firstOrFail()->status);
+
+        $this->actingAs($admin)
+            ->get(route('admin.companies.edit', $company))
+            ->assertOk()
+            ->assertDontSee('In attesa di incasso');
     }
 
     public function test_la_scadenza_spegne_l_azienda_senza_cancellare_niente(): void

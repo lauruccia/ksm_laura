@@ -18,6 +18,7 @@ class DomainConnectionChecker
     public function __construct(
         private readonly DnsResolver $dns = new SystemDnsResolver,
         private readonly TlsProbe $tls = new StreamTlsProbe,
+        private readonly HostingPanel $panel = new NoHostingPanel,
     ) {
     }
 
@@ -57,9 +58,21 @@ class DomainConnectionChecker
      * Le date restano quelle della prima verifica riuscita: dicono da
      * quando il dominio funziona, non quando e' stato guardato l'ultima volta.
      */
-    public function refresh(Model $model, string $host): DomainCheck
+    public function refresh(Model $model, string $host, bool $register = true): DomainCheck
     {
+        // Su cPanel il dominio deve esistere sull'account prima di tutto il resto.
+        // Il giro orario non aggiunge niente: un dominio entra nel pannello solo
+        // quando qualcuno lo salva o preme "Verifica ora".
+        $panelError = $register && HostName::isValid($host) ? $this->panel->ensure($host) : null;
         $result = $this->check($host);
+
+        if ($result->dns && ! $result->ssl) {
+            $this->panel->requestCertificate();
+        }
+
+        if ($panelError) {
+            $result = new DomainCheck($result->dns, $result->ssl, $panelError);
+        }
 
         $model->forceFill([
             'dns_verified_at' => $result->dns ? ($model->dns_verified_at ?? now()) : null,

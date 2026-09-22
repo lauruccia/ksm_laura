@@ -38,10 +38,11 @@
             @if ($plans->isEmpty())
                 <p class="ksm-muted">{{ __('site.no_results') }}</p>
             @else
+                @php($compare = \App\Models\Plan::featureUnion($plans))
                 <div class="ksm-grid ksm-grid--4">
                     @foreach ($plans as $plan)
                         @php($quote = $quotes[$plan->id])
-                        <x-plan-card :plan="$plan" :highlight="session('piano_scelto') === $plan->slug">
+                        <x-plan-card :plan="$plan" :highlight="session('piano_scelto') === $plan->slug" :compare="$compare">
                             @if ($current)
                                 <p class="ksm-muted" style="margin: 0 0 10px;">
                                     <strong>

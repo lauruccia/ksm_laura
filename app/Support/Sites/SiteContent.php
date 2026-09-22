@@ -85,24 +85,31 @@ final class SiteContent
     /** @return list<array{icon: string, title: string, text: ?string}> */
     public function benefits(): array
     {
+        return $this->customBenefits() ?? array_map(fn ($icon, $key) => [
+            'icon' => $icon,
+            'title' => __("storefront.$key"),
+            'text' => __("storefront.{$key}_detail"),
+        ], ['building', 'grid', 'sparkle', 'tag'], ['vendors', 'selection', 'kmoney', 'offers']);
+    }
+
+    /**
+     * Le voci scritte per il dominio, null se non ce ne sono: shop e home
+     * hanno predefiniti diversi, ma le voci del dominio valgono per entrambi.
+     *
+     * @return list<array{icon: string, title: string, text: ?string}>|null
+     */
+    public function customBenefits(): ?array
+    {
         $items = array_values(array_filter(
             (array) $this->get('benefits.items', []),
             fn ($item) => filled($item['title'] ?? null)
         ));
 
-        if ($items) {
-            return array_map(fn ($item) => [
-                'icon' => array_key_exists($item['icon'] ?? '', self::BENEFIT_ICONS) ? $item['icon'] : 'check',
-                'title' => $item['title'],
-                'text' => $item['text'] ?? null,
-            ], $items);
-        }
-
-        return array_map(fn ($icon, $key) => [
-            'icon' => $icon,
-            'title' => __("storefront.$key"),
-            'text' => __("storefront.{$key}_detail"),
-        ], ['building', 'grid', 'sparkle', 'tag'], ['vendors', 'selection', 'kmoney', 'offers']);
+        return $items ? array_map(fn ($item) => [
+            'icon' => array_key_exists($item['icon'] ?? '', self::BENEFIT_ICONS) ? $item['icon'] : 'check',
+            'title' => $item['title'],
+            'text' => $item['text'] ?? null,
+        ], $items) : null;
     }
 
     public function categories(): array

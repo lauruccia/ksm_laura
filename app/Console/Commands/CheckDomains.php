@@ -32,7 +32,7 @@ class CheckDomains extends Command
 
         foreach ($targets as [$query, $column]) {
             foreach ($query->lazyById(200) as $model) {
-                $connected += $checker->refresh($model, $model->$column)->connected() ? 1 : 0;
+                $connected += $checker->refresh($model, $model->$column, register: false)->connected() ? 1 : 0;
                 $checked++;
             }
         }

@@ -2,6 +2,10 @@
 
 namespace App\Models\Concerns;
 
+use App\Support\Domains\DomainConnectionChecker;
+use App\Support\Domains\HostingPanel;
+use App\Support\Domains\NoHostingPanel;
+
 /**
  * Stato di collegamento di un dominio, per `Domain` e per `Company`.
  *
@@ -24,6 +28,20 @@ trait HasDomainConnection
                     'domain_error' => null,
                 ]);
             }
+        });
+
+        // Un dominio nuovo va subito sul pannello dell'hosting, dopo la risposta per non far aspettare il modulo.
+        static::saved(function (self $model) {
+            $host = $model->{$model->domainColumn()};
+
+            if (blank($host) || app(HostingPanel::class) instanceof NoHostingPanel
+                || ! ($model->wasRecentlyCreated || $model->wasChanged($model->domainColumn()))) {
+                return;
+            }
+
+            dispatch(function () use ($model, $host) {
+                app(DomainConnectionChecker::class)->refresh($model, $host);
+            })->afterResponse();
         });
     }
 

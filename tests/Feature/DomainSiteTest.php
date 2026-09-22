@@ -162,6 +162,21 @@ class DomainSiteTest extends TestCase
             ->assertDontSee('ksm-store-featured', false);
     }
 
+    public function test_sottotitolo_e_motto_del_sito_principale_vengono_dalle_impostazioni(): void
+    {
+        \App\Models\AdminSetting::current()->update(['header_tagline' => 'Il Portale dei Portali', 'header_subline' => 'Uno · Due']);
+
+        $this->get('http://localhost/')
+            ->assertOk()
+            ->assertSee('Il Portale dei Portali')
+            ->assertSee('Uno')
+            ->assertDontSee(trim(__('site.claim_line1').' '.__('site.claim_line2')));
+
+        // Un dominio della rete tiene i suoi testi.
+        $this->domain();
+        $this->get(self::HOST.'/prodotti')->assertOk()->assertDontSee('Il Portale dei Portali');
+    }
+
     public function test_il_segno_piu_venduto_e_la_fila_in_evidenza(): void
     {
         $caseificio = $this->company('Caseificio Aurora');
@@ -188,7 +203,7 @@ class DomainSiteTest extends TestCase
         Storage::fake('public');
         $admin = $this->admin();
 
-        $this->actingAs($admin)->get(route('admin.domains.create'))->assertOk()->assertSee('Apertura dello shop');
+        $this->actingAs($admin)->get(route('admin.domains.create'))->assertOk()->assertSee("Mostra l'apertura nello shop", false);
 
         $this->actingAs($admin)->post(route('admin.domains.store'), [
             'name' => 'Mozzarelle di bufala',
@@ -337,6 +352,43 @@ class DomainSiteTest extends TestCase
             ->assertOk()
             ->assertDontSee('ksm-footer--site', false)
             ->assertDontSee('https://mozzarelledibufala.test', false);
+    }
+
+    public function test_la_home_usa_i_vantaggi_del_dominio_e_senza_luogo_tiene_il_filtro_regioni(): void
+    {
+        $domain = $this->domain([
+            'type' => 'city', 'city' => 'Ostia', 'product_category_id' => null, 'entry_page' => 'home',
+            'site' => ['benefits' => ['items' => [['icon' => 'pin', 'title' => 'Aziende del quartiere', 'text' => 'A due passi da casa'], ['icon' => 'star', 'title' => '']]]],
+        ]);
+
+        $this->get(self::HOST.'/')
+            ->assertOk()
+            ->assertSee('Aziende del quartiere')
+            ->assertSee('A due passi da casa')
+            ->assertSee('--usp-count: 1', false)
+            ->assertDontSee(__('site.usp_marketplace'))
+            // Il dominio mostra gia' solo Ostia: niente menu delle regioni.
+            ->assertDontSee('name="regione"', false);
+
+        $domain->update(['site' => ['benefits' => ['enabled' => false]]]);
+        $this->get(self::HOST.'/')->assertOk()->assertDontSee('ksm-usp__item', false)->assertSee('ksm-usp-wrap--flat', false);
+
+        // Il sito principale tiene i suoi riquadri e il filtro per regione.
+        $this->get('http://localhost/')->assertOk()->assertSee(__('site.usp_marketplace'))->assertSee('name="regione"', false);
+
+        $this->actingAs($this->admin())->get(route('admin.domains.edit', $domain))->assertOk()->assertSee('Home e shop.');
+    }
+
+    public function test_la_citta_del_dominio_vale_come_parola_intera(): void
+    {
+        foreach (['Ostia', 'Lido di Ostia', 'Ostia Antica', 'Ostiano', 'Ostia-Lido'] as $city) {
+            $this->company('Azienda '.$city)->update(['city' => $city]);
+        }
+        $domain = $this->domain(['type' => 'city', 'city' => 'Ostia', 'product_category_id' => null, 'company_scope' => 'category']);
+
+        $cities = (new \App\Support\Sites\SiteScope($domain))->companies(Company::query())->pluck('city')->sort()->values()->all();
+
+        $this->assertSame(['Lido di Ostia', 'Ostia', 'Ostia Antica', 'Ostia-Lido'], $cities);
     }
 
     public function test_banner_scelti_dal_dominio_e_citta_della_regione(): void

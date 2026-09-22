@@ -47,23 +47,30 @@
         <p class="ksm-hero__script">{{ $site->get('hero.script', $tenant->isNetworkSite() ? '' : __('site.hero_script')) }}</p>
     </section>
 
-    <div class="ksm-container ksm-usp-wrap">
-        <div class="ksm-usp">
-            @foreach ([
-                ['building', 'usp_marketplace'],
-                ['box', 'usp_directory'],
-                ['chart', 'usp_products'],
-                ['users', 'usp_presence'],
-            ] as [$icon, $key])
-                <div class="ksm-usp__item">
-                    <span class="ksm-usp__icon"><x-icon :name="$icon" :size="32" /></span>
-                    <div>
-                        <h3>{{ __('site.'.$key) }}</h3>
-                        <p>{{ __('site.'.$key.'_text') }}</p>
+    @php
+        // I vantaggi scritti per il dominio valgono anche qui; senza, quelli del marketplace.
+        $usp = $site->customBenefits() ?? array_map(fn ($icon, $key) => [
+            'icon' => $icon, 'title' => __('site.'.$key), 'text' => __('site.'.$key.'_text'),
+        ], ['building', 'box', 'chart', 'users'], ['usp_marketplace', 'usp_directory', 'usp_products', 'usp_presence']);
+        $showUsp = $site->enabled('benefits');
+        // Un dominio legato a un luogo mostra gia' solo quello: il filtro per regione non serve.
+        $hasPlace = $tenant->scope()->place() !== null;
+    @endphp
+
+    <div class="ksm-container ksm-usp-wrap @unless ($showUsp) ksm-usp-wrap--flat @endunless">
+        @if ($showUsp)
+            <div class="ksm-usp" style="--usp-count: {{ count($usp) }}">
+                @foreach ($usp as $item)
+                    <div class="ksm-usp__item">
+                        <span class="ksm-usp__icon"><x-icon :name="$item['icon']" :size="32" /></span>
+                        <div>
+                            <h3>{{ $item['title'] }}</h3>
+                            @if ($item['text'])<p>{{ $item['text'] }}</p>@endif
+                        </div>
                     </div>
-                </div>
-            @endforeach
-        </div>
+                @endforeach
+            </div>
+        @endif
 
         {{-- Una sola casella per azienda, prodotto, settore o luogo, piu' il filtro per regione. --}}
         <form class="ksm-searchbar" method="GET" action="{{ route('companies.index') }}" role="search">
@@ -79,15 +86,17 @@
                 {{ __('site.search_submit') }}
             </button>
 
-            <div class="ksm-searchbar__filter">
-                <x-icon name="pin" :size="18" />
-                <select id="regione" name="regione" aria-label="{{ __('site.search_region') }}">
-                    <option value="">{{ __('site.search_all_regions') }}</option>
-                    @foreach (config('ksm.regions') as $region)
-                        <option value="{{ $region }}" @selected(request('regione') === $region)>{{ $region }}</option>
-                    @endforeach
-                </select>
-            </div>
+            @unless ($hasPlace)
+                <div class="ksm-searchbar__filter">
+                    <x-icon name="pin" :size="18" />
+                    <select id="regione" name="regione" aria-label="{{ __('site.search_region') }}">
+                        <option value="">{{ __('site.search_all_regions') }}</option>
+                        @foreach (config('ksm.regions') as $region)
+                            <option value="{{ $region }}" @selected(request('regione') === $region)>{{ $region }}</option>
+                        @endforeach
+                    </select>
+                </div>
+            @endunless
         </form>
     </div>
 
