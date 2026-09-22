@@ -129,9 +129,12 @@ class AdminUserController extends Controller
             'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user)],
             'phone' => ['nullable', 'string', 'max:50'],
             'user_type' => ['required', Rule::in(array_keys(User::TYPES))],
-            'role_id' => ['nullable', Rule::in($assignable)],
+            // Senza ruolo chi sta in amministrazione trova solo il 403.
+            'role_id' => ['nullable', 'required_if:user_type,admin', Rule::in($assignable)],
             'is_active' => ['boolean'],
             'password' => [$user ? 'nullable' : 'required', 'confirmed', Password::defaults()],
+        ], [
+            'role_id.required_if' => __('Scegli un ruolo: senza ruolo non si entra nel pannello di amministrazione.'),
         ]);
 
         if ($data['user_type'] !== 'admin') {

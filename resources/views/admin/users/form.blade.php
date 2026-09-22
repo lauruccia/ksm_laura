@@ -60,7 +60,7 @@
                     </option>
                 @endforeach
             </select>
-            <small class="ksm-muted">Chi non ha ruolo non entra nel pannello.</small>
+            <small class="ksm-muted">Obbligatorio per il tipo Amministrazione: decide cosa si vede nel pannello.</small>
             @error('role_id')<span class="ksm-error">{{ $message }}</span>@enderror
         </div>
 

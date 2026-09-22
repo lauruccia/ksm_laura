@@ -146,6 +146,22 @@ class AdminPermissionTest extends TestCase
         $this->assertDatabaseMissing('users', ['email' => 'nuovo@example.test']);
     }
 
+    public function test_un_utente_di_amministrazione_senza_ruolo_non_si_crea(): void
+    {
+        $this->actingAs($this->admin(Role::where('slug', Role::SUPER_ADMIN)->firstOrFail()))
+            ->post(route('admin.users.store'), [
+                'name' => 'Senza ruolo',
+                'email' => 'senzaruolo@example.test',
+                'user_type' => 'admin',
+                'role_id' => '',
+                'password' => 'password-lunga-1',
+                'password_confirmation' => 'password-lunga-1',
+            ])
+            ->assertSessionHasErrors('role_id');
+
+        $this->assertDatabaseMissing('users', ['email' => 'senzaruolo@example.test']);
+    }
+
     public function test_nessuno_si_toglie_da_solo_l_amministrazione(): void
     {
         $admin = $this->admin(Role::where('slug', Role::SUPER_ADMIN)->firstOrFail());
