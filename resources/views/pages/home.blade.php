@@ -12,7 +12,9 @@
     @php
         // Su un dominio della rete testi e immagine dell'apertura vengono dal dominio, se li ha.
         $site = $tenant->content();
-        $heroImage = $site->get('hero.image') ? asset('storage/'.$site->get('hero.image')) : (file_exists(public_path('img/hero.jpg')) ? asset('img/hero.jpg') : null);
+        // Sul sito principale la foto caricata nelle Impostazioni, poi public/img/hero.jpg.
+        $heroPath = $site->get('hero.image') ?? ($tenant->isNetworkSite() ? null : \App\Models\AdminSetting::current()->hero_image);
+        $heroImage = $heroPath ? asset('storage/'.$heroPath) : (file_exists(public_path('img/hero.jpg')) ? asset('img/hero.jpg') : null);
     @endphp
 
     <section class="ksm-hero">

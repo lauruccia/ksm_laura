@@ -100,6 +100,18 @@
                 @error('favicon')<span class="ksm-error">{{ $message }}</span>@enderror
             </div>
 
+            <div class="ksm-field">
+                <label class="ksm-label" for="hero_image">Immagine di apertura della home (hero)</label>
+                @if ($settings->hero_image)
+                    <img class="ksm-image-current" src="{{ asset('storage/'.$settings->hero_image) }}" alt="">
+                    <label style="display: flex; gap: 6px; align-items: center;"><input type="checkbox" name="remove_hero_image" value="1"> Togli l'immagine</label>
+                @endif
+                <input class="ksm-input" id="hero_image" name="hero_image" type="file" accept="image/jpeg,image/png,image/webp"
+                       data-image-editor data-ratios="free,16:9,21:9" data-max="2000x1200">
+                <small class="ksm-muted">Sfondo dell'apertura della home. Orizzontale, almeno 1600 px di larghezza.</small>
+                @error('hero_image')<span class="ksm-error">{{ $message }}</span>@enderror
+            </div>
+
             <button class="ksm-btn ksm-btn--primary" type="submit">Salva</button>
         </form>
 

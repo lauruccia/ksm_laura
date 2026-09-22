@@ -177,6 +177,33 @@ class DomainSiteTest extends TestCase
         $this->get(self::HOST.'/prodotti')->assertOk()->assertDontSee('Il Portale dei Portali');
     }
 
+    public function test_la_foto_di_apertura_del_sito_principale_si_carica_dalle_impostazioni(): void
+    {
+        Storage::fake('public');
+        $admin = $this->admin();
+
+        $this->actingAs($admin)->get(route('admin.settings.edit'))->assertOk()->assertSee('name="hero_image"', false);
+
+        $this->actingAs($admin)->put(route('admin.settings.update'), [
+            'website_name' => 'KSM',
+            'hero_image' => UploadedFile::fake()->image('hero.jpg', 1600, 800),
+        ])->assertRedirect()->assertSessionHasNoErrors();
+
+        $image = \App\Models\AdminSetting::current()->hero_image;
+        Storage::disk('public')->assertExists($image);
+        $this->get('http://localhost/')->assertOk()->assertSee('storage/'.$image, false);
+
+        // Un dominio della rete senza foto sua non prende quella del sito principale.
+        $this->domain(['entry_page' => 'home']);
+        $this->get(self::HOST.'/')->assertOk()->assertDontSee('storage/'.$image, false);
+
+        // Togliendola si cancella anche il file.
+        $this->actingAs($admin)->put(route('admin.settings.update'), ['website_name' => 'KSM', 'remove_hero_image' => '1'])
+            ->assertRedirect();
+        $this->assertNull(\App\Models\AdminSetting::current()->hero_image);
+        Storage::disk('public')->assertMissing($image);
+    }
+
     public function test_il_segno_piu_venduto_e_la_fila_in_evidenza(): void
     {
         $caseificio = $this->company('Caseificio Aurora');

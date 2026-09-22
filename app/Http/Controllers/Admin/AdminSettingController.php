@@ -46,16 +46,24 @@ class AdminSettingController extends Controller
             'per_kg_rate' => ['nullable', 'numeric', 'min:0'],
             'site_logo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:12288'],
             'favicon' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:4096'],
+            'hero_image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:12288'],
+            'remove_hero_image' => ['boolean'],
         ]);
 
         $replaced = [];
 
-        foreach (['site_logo', 'favicon'] as $field) {
+        foreach (['site_logo' => 'site_logo', 'favicon' => 'favicon', 'hero_image' => 'banner'] as $field => $profile) {
             if ($request->hasFile($field)) {
-                $data[$field] = app(ImageStore::class)->store($request->file($field), 'brand', $field, $field);
+                $data[$field] = app(ImageStore::class)->store($request->file($field), 'brand', $profile, $field);
                 $replaced[] = $settings->$field;
             }
         }
+
+        if (! $request->hasFile('hero_image') && $request->boolean('remove_hero_image')) {
+            $data['hero_image'] = null;
+            $replaced[] = $settings->hero_image;
+        }
+        unset($data['remove_hero_image']);
 
         // Solo le reti con un indirizzo: il piede mostra le icone di quelle.
         $data['social_links'] = array_map(fn ($url) => $url ?: null, $data['social_links'] ?? []);
