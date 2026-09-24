@@ -15,14 +15,21 @@
     display: flex;
     flex-direction: column;
     justify-content: flex-end;
-    /* Alta come un banner vero: l'immagine e' il primo biglietto da visita. */
+    /* Alta come un banner vero: l'immagine e' il primo biglietto da visita.
+       Sotto i 1440px vince questa altezza e i lati del 4:1 si rifilano. */
     min-height: 360px;
     padding: 0;
     background: var(--ksm-hero-image) center / cover no-repeat, var(--ksm-dark);
 }
 
+/* Da 1440px in su la striscia e' 4:1, la proporzione del ritaglio
+   nell'editor: si vede esattamente quello che si e' tagliato. */
+@media (min-width: 1440px) {
+    .ksm-mini__hero { min-height: 0; aspect-ratio: 4 / 1; }
+}
+
 .ksm-mini__hero--plain {
-    background: var(--ksm-bands), var(--ksm-stripes), var(--ksm-gradient-brand);
+    background: var(--ksm-gradient-brand);
 }
 
 /* Il velo scuro serve solo a tenere leggibile il testo, che sta in basso:

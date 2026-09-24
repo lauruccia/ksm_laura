@@ -469,7 +469,7 @@
 
 
 /* Vetrina: apertura, categorie e catalogo a tutta larghezza. */
-.ksm-store-hero { position: relative; isolation: isolate; overflow: hidden; background: var(--ksm-bands), var(--ksm-gradient-brand); color: white; }
+.ksm-store-hero { position: relative; isolation: isolate; overflow: hidden; background: var(--ksm-gradient-brand); color: white; }
 .ksm-store-hero::after { content: ''; position: absolute; inset: 0; z-index: -1; background: linear-gradient(90deg, #07364d 5%, rgba(7,54,77,.95) 30%, rgba(7,54,77,.35) 65%, transparent); }
 .ksm-store-hero__image { position: absolute; z-index: -2; right: 0; top: 0; width: 68%; height: 100%; object-fit: cover; }
 .ksm-store-hero__copy { max-width: 600px; padding: 42px 0 66px; }

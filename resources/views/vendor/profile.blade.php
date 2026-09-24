@@ -103,8 +103,8 @@
                     <img class="ksm-image-current" src="{{ asset('storage/'.$company->banner) }}" alt="">
                 @endif
                 <input class="ksm-input" id="banner" name="banner" type="file" accept="image/jpeg,image/png,image/webp"
-                       data-image-editor data-ratios="16:9,free" data-max="2000x1200">
-                <small class="ksm-muted">Formato 16:9, come nelle schede delle aziende.</small>
+                       data-image-editor data-ratios="4:1,free" data-max="2000x500">
+                <small class="ksm-muted">Striscia 4:1, come in cima alla pagina dell'azienda. Nelle schede della directory si rifila ai lati.</small>
                 @error('banner')<span class="ksm-error">{{ $message }}</span>@enderror
             </div>
         </div>

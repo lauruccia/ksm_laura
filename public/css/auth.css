@@ -17,7 +17,7 @@
     position: relative;
     padding: 40px 34px;
     color: #fff;
-    background: var(--ksm-stripes), var(--ksm-gradient-brand);
+    background: var(--ksm-gradient-brand);
 }
 
 .ksm-auth__aside a { color: #fff; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }

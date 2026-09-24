@@ -311,8 +311,8 @@
                         <label style="display: flex; gap: 6px; align-items: center;"><input type="checkbox" name="remove_hero_image" value="1"> Togli l'immagine</label>
                     @endif
                     <input class="ksm-input" id="hero_image" name="hero_image" type="file" accept="image/jpeg,image/png,image/webp"
-                           data-image-editor data-ratios="free,16:9,21:9" data-max="2000x1200">
-                    <small class="ksm-muted">Orizzontale, almeno 1600 pixel di larghezza: il soggetto a destra, il testo sta a sinistra.</small>
+                           data-image-editor data-ratios="2:1,free" data-max="2000x1000">
+                    <small class="ksm-muted">In 2:1, almeno 1600 pixel di larghezza: il soggetto a destra, il testo sta a sinistra. Sugli schermi piccoli si rifila il lato sinistro, già sfumato.</small>
                     @error('hero_image')<span class="ksm-error">{{ $message }}</span>@enderror
                 </div>
             </section>

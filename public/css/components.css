@@ -240,7 +240,7 @@
 }
 
 .ksm-bizcard__cover--plain {
-    background: var(--ksm-bands), var(--ksm-stripes), var(--ksm-gradient-brand);
+    background: var(--ksm-gradient-brand);
 }
 
 .ksm-card:hover .ksm-bizcard__cover { filter: saturate(1.06); }

@@ -216,20 +216,10 @@
 .brand-header:not(.brand-header--artisan) {
     background: linear-gradient(to bottom, transparent 50px, #fafdff 50px), linear-gradient(110deg, #ffffff0b, transparent 60%), var(--brand-background, #104b65);
 }
-.brand-header__accent {
-    background: url('../images/header-facets.svg') center / 100% 50px no-repeat,
-        linear-gradient(133deg, transparent 36%, #49a063 36%, var(--brand-green) 49%, transparent 49%);
-}
-.brand-header__accent--right { background-position: center; }
-.brand-header__accent--right { background-image: url('../images/header-facets.svg'), linear-gradient(133deg, transparent 47%, #298966 47%, var(--brand-green) 61%, transparent 61%); }
+/* Niente fasce oblique nella striscia in alto: restano solo i puntini. */
+.brand-header__accent, .brand-header__accent--right { background: none; }
 .brand-header__accent::after { background-size: 12px 13px; opacity: .85; }
 .brand-header__brand::before { background: linear-gradient(160deg, #fff 30%, #f1f8fc); }
-.brand-header__brand::after {
-    content: ''; position: absolute; left: -24px; top: 0; width: 32px; height: 50px; pointer-events: none;
-    background: linear-gradient(120deg, transparent 0 40%, #aad0dc55 41% 59%, #deedf355 60% 78%, transparent 79%);
-    transform: translateX(-7px);
-}
-.brand-header--artisan .brand-header__brand::after { display: none; }
 .brand-header__icon-btn, .brand-header__soft-btn, .brand-header__lang { background: linear-gradient(#fff, #f5faff); border-color: #d6e4f1; }
 .brand-header__register-btn { box-shadow: inset 0 1px 0 #ffffff24, 0 2px 3px #234b1510; }
 @media (min-width: 1601px) {
@@ -240,7 +230,6 @@
 }
 @media (max-width: 1150px) {
     .brand-header:not(.brand-header--artisan) { background: linear-gradient(to bottom, transparent 34px, #fafdff 34px), var(--brand-background, #104b65); }
-    .brand-header__brand::after { display: none; }
     .brand-header__right { position: static; }
     .brand-header__right > .brand-header__cart { display: inline-flex; position: absolute; left: 0; bottom: 16px; width: 44px; z-index: 3; }
     .brand-header__bar { grid-template-columns: 44px minmax(0, 480px) 44px; }

@@ -8,13 +8,13 @@
     padding: 84px 0 132px;
 }
 
-/* Fasce diagonali sul lato sinistro, le stesse della testata. */
+/* Trama a puntini sul lato sinistro. */
 .ksm-hero::before {
     content: "";
     position: absolute;
     inset: 0 auto 0 0;
     width: 46%;
-    background: var(--ksm-bands), radial-gradient(rgba(255, 255, 255, .10) 1px, transparent 1.2px) 0 0 / 14px 14px;
+    background: radial-gradient(rgba(255, 255, 255, .10) 1px, transparent 1.2px) 0 0 / 14px 14px;
     -webkit-mask-image: linear-gradient(90deg, #000 0%, #000 40%, transparent 100%);
     mask-image: linear-gradient(90deg, #000 0%, #000 40%, transparent 100%);
     opacity: .85;
@@ -22,12 +22,14 @@
     z-index: -1;
 }
 
-/* Immagine a vivo sul lato destro, sfumata verso il testo */
+/* Immagine a vivo sul lato destro, sfumata verso il testo. Agganciata al
+   bordo destro: il riquadro cambia forma con lo schermo (2:1 a 1920px) e
+   quello che avanza si rifila a sinistra, nella parte gia' sfumata. */
 .ksm-hero__media {
     position: absolute;
     inset: 0 0 0 44%;
     z-index: -2;
-    background: rgba(255, 255, 255, .05) center/cover no-repeat;
+    background: rgba(255, 255, 255, .05) right center / cover no-repeat;
     -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 26%);
     mask-image: linear-gradient(90deg, transparent 0, #000 26%);
 }
@@ -321,19 +323,6 @@
     margin-top: 64px;
     background: var(--ksm-gradient-brand);
     color: rgba(255, 255, 255, .78);
-}
-
-/* Le fasce diagonali della testata, appena accennate. */
-.ksm-footer::before {
-    content: "";
-    position: absolute;
-    inset: 0 auto 0 0;
-    width: 40%;
-    background: var(--ksm-bands);
-    -webkit-mask-image: linear-gradient(90deg, #000 0%, transparent 90%);
-    mask-image: linear-gradient(90deg, #000 0%, transparent 90%);
-    opacity: .22;
-    pointer-events: none;
 }
 
 .ksm-footer .ksm-container { position: relative; z-index: 1; }

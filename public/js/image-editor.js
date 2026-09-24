@@ -10,7 +10,7 @@
         return;
     }
 
-    const RATIO_LABELS = { '1:1': 'Quadrato', '4:3': '4:3', '3:4': '3:4', '16:9': '16:9', '21:9': '21:9', '40:21': 'Condivisione', '3:1': '3:1', '8:1': 'Striscia', free: 'Libero' };
+    const RATIO_LABELS = { '1:1': 'Quadrato', '4:3': '4:3', '3:4': '3:4', '16:9': '16:9', '21:9': '21:9', '2:1': '2:1', '4:1': 'Striscia 4:1', '40:21': 'Condivisione', '3:1': '3:1', '8:1': 'Striscia', free: 'Libero' };
     const QUALITY = 0.86;
     const PAD = 22;
     const HANDLE = 16;

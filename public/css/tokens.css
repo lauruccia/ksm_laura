@@ -26,21 +26,6 @@
 
     --ksm-gradient-brand: linear-gradient(115deg, #07364D 0%, #0B4662 55%, #15566F 100%);
     --ksm-gradient-accent: linear-gradient(135deg, var(--ksm-accent-light) 0%, var(--ksm-accent-dark) 100%);
-    /* Righe diagonali appena accennate, usate come trama di fondo. */
-    --ksm-stripes: repeating-linear-gradient(
-        -58deg,
-        rgba(255, 255, 255, .07) 0 2px,
-        rgba(255, 255, 255, 0) 2px 22px
-    );
-    /* Fasce diagonali larghe dell'apertura e del piede, come nella testata. */
-    --ksm-bands: linear-gradient(125deg,
-        transparent 0 16%,
-        rgba(81, 165, 44, .9) 16% 23%,
-        transparent 23% 29%,
-        rgba(38, 137, 113, .5) 29% 36%,
-        transparent 36% 44%,
-        rgba(255, 255, 255, .05) 44% 52%,
-        transparent 52%);
 
     /* Forme */
     --ksm-radius-sm: 8px;
