@@ -34,7 +34,7 @@ class VendorKMoneyController extends Controller
             'settings' => $company->paymentSettings,
             'categories' => ProductCategory::whereKey($categoryIds)->orderBy('name')->get(['id', 'name']),
             'rules' => KMoneyPercentages::rulesFor($company->id),
-            'steps' => KMoneyShare::STEPS,
+            'steps' => KMoneyShare::steps($company->paymentSettings),
         ]);
     }
 
@@ -45,7 +45,7 @@ class VendorKMoneyController extends Controller
 
         $data = $request->validate([
             'rules' => ['nullable', 'array'],
-            'rules.*' => ['nullable', Rule::in(KMoneyShare::STEPS)],
+            'rules.*' => ['nullable', Rule::in(KMoneyShare::steps($company->paymentSettings))],
         ]);
 
         $this->percentages->saveCategoryRules($company, $data['rules'] ?? []);
@@ -62,7 +62,7 @@ class VendorKMoneyController extends Controller
         $data = $request->validate([
             'products' => ['required', 'array'],
             'products.*' => ['integer'],
-            'percent' => ['required', Rule::in(array_merge(['auto'], KMoneyShare::STEPS))],
+            'percent' => ['required', Rule::in(array_merge(['auto'], KMoneyShare::steps($company->paymentSettings)))],
         ], [
             'products.required' => __('Seleziona almeno un prodotto.'),
         ]);

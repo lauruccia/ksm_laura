@@ -76,12 +76,13 @@ return [
     ],
 
     /*
-     * API KMoney v1, la stessa del plugin WooCommerce 2.0, per esempio
-     * https://kmoney.example/api/v1. Il token e' di ogni venditore e sta
-     * nelle sue impostazioni di incasso, non qui.
+     * API KMoney v1, la stessa del plugin WooCommerce 2.0: di serie la
+     * produzione, per le prove https://kosmopay.it/api/v1. Il token e' di
+     * ogni venditore e sta nelle sue impostazioni di incasso, non qui.
      */
     'kmoney' => [
-        'base_url' => env('KMONEY_API_BASE_URL'),
+        // Anche con la riga vuota nel .env, come in .env.example.
+        'base_url' => env('KMONEY_API_BASE_URL') ?: 'https://kmoney.it/api/v1',
     ],
 
 ];

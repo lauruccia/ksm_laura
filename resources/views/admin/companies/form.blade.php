@@ -149,6 +149,32 @@
         <section class="ksm-box">
             <div class="ksm-box__head"><h2>KMoney</h2></div>
 
+            {{-- Collegamento con il numero di conto: i pulsanti inviano i moduli in fondo alla pagina. --}}
+            @if ($company->exists)
+                <div class="ksm-field">
+                    <label class="ksm-label" for="kmoney_account_number">Numero di conto KMoney</label>
+                    <p style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin: 0;">
+                        @if ($kmoney?->kmoney_pairing_status === 'pending')
+                            <strong>{{ $kmoney->kmoney_account_number }}</strong>
+                            <button class="ksm-btn ksm-btn--ghost ksm-btn--sm" type="submit" form="kmoney-check">Controlla ora</button>
+                        @else
+                            <input class="ksm-input" id="kmoney_account_number" name="kmoney_account_number" form="kmoney-pair"
+                                   autocomplete="off" placeholder="KYB..." style="max-width: 260px;"
+                                   value="{{ old('kmoney_account_number', $kmoney?->kmoney_account_number) }}">
+                            <button class="ksm-btn ksm-btn--ghost ksm-btn--sm" type="submit" form="kmoney-pair">Chiedi il collegamento</button>
+                        @endif
+                    </p>
+                    <small class="ksm-muted">
+                        {{ \App\Payments\KMoney\KMoneyPairing::describe($kmoney?->kmoney_pairing_status) }}
+                        @if ($kmoney?->kmoney_pairing_requested_at)
+                            Richiesto il {{ $kmoney->kmoney_pairing_requested_at->format('d/m/Y H:i') }}.
+                        @endif
+                        Token e segreto arrivano da soli quando KMoney approva.
+                    </small>
+                    @error('kmoney_account_number')<span class="ksm-error">{{ $message }}</span>@enderror
+                </div>
+            @endif
+
             <div class="ksm-formgrid">
                 <div class="ksm-field">
                     @php($contract = old('kmoney_contract_percent', $kmoney?->kmoney_contract_percent))
@@ -166,11 +192,14 @@
                 <div class="ksm-field">
                     <label class="ksm-label" style="display: flex; gap: 8px; align-items: center; margin-top: 28px;">
                         <input type="hidden" name="kmoney_in_debt" value="0">
-                        <input name="kmoney_in_debt" type="checkbox" value="1" @checked(old('kmoney_in_debt', $kmoney?->kmoney_in_debt))>
+                        <input name="kmoney_in_debt" type="checkbox" value="1" @checked(old('kmoney_in_debt', $kmoney?->kmoney_in_debt)) @disabled($kmoney?->kmoney_synced_at)>
                         Conto KMoney in debito
                     </label>
                     <small class="ksm-muted">
                         In debito tutti i prodotti si pagano al 100% in KMoney e il venditore non può cambiare le quote.
+                        @if ($kmoney?->kmoney_synced_at)
+                            Letto da KMoney il {{ $kmoney->kmoney_synced_at->format('d/m/Y H:i') }}{{ $kmoney->kmoney_can_sell === false ? ' · il conto non può vendere' : '' }}.
+                        @endif
                     </small>
                 </div>
             </div>
@@ -387,6 +416,11 @@
     @endif
 
     @if ($company->exists)
+        <form id="kmoney-pair" method="POST" action="{{ route('admin.companies.kmoney.pair', $company) }}">@csrf</form>
+        <form id="kmoney-check" method="POST" action="{{ route('admin.companies.kmoney.check', $company) }}">
+            @csrf @method('PATCH')
+        </form>
+
         <form method="POST" action="{{ route('admin.companies.destroy', $company) }}" style="margin-top: 32px;"
               onsubmit="return confirm('Eliminare l azienda insieme a prodotti e ordini? Non si torna indietro.');">
             @csrf @method('DELETE')

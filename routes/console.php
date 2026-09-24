@@ -20,3 +20,15 @@ Schedule::command('subscriptions:renewals')->dailyAt('07:00');
  * cliente cambia il DNS quando vuole, e ogni ora lo stato si rimette in pari.
  */
 Schedule::command('domains:check')->hourly()->withoutOverlapping();
+
+/*
+ * Lo stato KMoney dei venditori: debito e capacita' di vendita. La
+ * notifica di KMoney arriva subito, il giro orario copre quelle perse.
+ */
+Schedule::command('kmoney:sync')->hourly()->withoutOverlapping();
+
+/*
+ * I collegamenti KMoney in attesa: appena KMoney approva, token e
+ * segreto si ritirano. Il pulsante "Controlla ora" fa lo stesso subito.
+ */
+Schedule::command('kmoney:pairings')->everyFiveMinutes()->withoutOverlapping();

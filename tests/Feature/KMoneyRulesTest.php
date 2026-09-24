@@ -98,6 +98,33 @@ class KMoneyRulesTest extends TestCase
         ]);
     }
 
+    public function test_con_quote_ammesse_da_kmoney_il_venditore_sceglie_solo_quelle(): void
+    {
+        $this->settings->forceFill(['kmoney_allowed_percentages' => [25, 50, 100]])->save();
+        $product = $this->product(['category_id' => $this->vini->id]);
+
+        $this->actingAs($this->vendor)
+            ->patch(route('vendor.products.kmoney'), ['products' => [$product->id], 'percent' => 75])
+            ->assertSessionHasErrors('percent');
+        $this->assertNull($product->fresh()->kmoney_discount_percent);
+
+        $this->actingAs($this->vendor)
+            ->patch(route('vendor.products.kmoney'), ['products' => [$product->id], 'percent' => 50])
+            ->assertSessionHasNoErrors();
+        $this->assertSame(50, $product->fresh()->kmoney_percent);
+
+        $this->actingAs($this->vendor)
+            ->put(route('vendor.kmoney.update'), ['rules' => [$this->vini->id => 75]])
+            ->assertSessionHasErrors('rules.'.$this->vini->id);
+
+        foreach ([route('vendor.products.index'), route('vendor.products.edit', $product), route('vendor.kmoney.edit')] as $page) {
+            $this->actingAs($this->vendor)->get($page)
+                ->assertOk()
+                ->assertSee('value="50"', false)
+                ->assertDontSee('value="75"', false);
+        }
+    }
+
     public function test_il_venditore_sceglie_la_quota_di_piu_prodotti_insieme_ma_solo_dei_suoi(): void
     {
         $scelto = $this->product();

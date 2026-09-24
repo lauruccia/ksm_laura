@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Vendor;
 
 use App\Http\Controllers\Controller;
 use App\Models\CompanyPaymentSetting;
+use App\Payments\KMoney\KMoneyPairing;
+use App\Payments\PaymentException;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -60,5 +62,34 @@ class VendorPaymentSettingController extends Controller
         $settings->save();
 
         return back()->with('success', __('Impostazioni di incasso salvate.'));
+    }
+
+    /** Collegamento KMoney con il solo numero di conto: poi approva KMoney. */
+    public function pairKMoney(Request $request, KMoneyPairing $pairing): RedirectResponse
+    {
+        $data = $request->validate(['kmoney_account_number' => ['required', 'string', 'max:40']]);
+
+        if (! KMoneyPairing::isValidAccount(KMoneyPairing::normalize($data['kmoney_account_number']))) {
+            return back()->withErrors(['kmoney_account_number' => __('Numero di conto KMoney non valido: KYB o KYP seguito da 13 caratteri.')])->withInput();
+        }
+
+        try {
+            $pairing->request($request->user()->company, $data['kmoney_account_number']);
+        } catch (PaymentException $e) {
+            return back()->with('error', $e->getMessage())->withInput();
+        }
+
+        return back()->with('success', KMoneyPairing::describe(KMoneyPairing::PENDING));
+    }
+
+    public function checkKMoney(Request $request, KMoneyPairing $pairing): RedirectResponse
+    {
+        try {
+            $status = $pairing->check($request->user()->company);
+        } catch (PaymentException $e) {
+            return back()->with('error', $e->getMessage());
+        }
+
+        return back()->with($status === KMoneyPairing::APPROVED ? 'success' : 'error', KMoneyPairing::describe($status));
     }
 }

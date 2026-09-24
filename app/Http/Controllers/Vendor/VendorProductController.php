@@ -27,7 +27,11 @@ class VendorProductController extends Controller
             ->paginate(20)
             ->withQueryString();
 
-        return view('vendor.products.index', ['products' => $products, 'inDebt' => $this->inDebt($request)]);
+        return view('vendor.products.index', [
+            'products' => $products,
+            'inDebt' => $this->inDebt($request),
+            'kmoneySteps' => $this->kmoneySteps($request),
+        ]);
     }
 
     public function create(Request $request): View
@@ -35,6 +39,7 @@ class VendorProductController extends Controller
         return view('vendor.products.form', [
             'product' => new Product(),
             'inDebt' => $this->inDebt($request),
+            'kmoneySteps' => $this->kmoneySteps($request),
             'categories' => ProductCategory::orderBy('name')->get(),
             'brands' => ProductBrand::orderBy('name')->get(),
         ]);
@@ -68,6 +73,7 @@ class VendorProductController extends Controller
         return view('vendor.products.form', [
             'product' => $product->load('variants'),
             'inDebt' => $this->inDebt($request),
+            'kmoneySteps' => $this->kmoneySteps($request),
             'categories' => ProductCategory::orderBy('name')->get(),
             'brands' => ProductBrand::orderBy('name')->get(),
         ]);
@@ -117,6 +123,12 @@ class VendorProductController extends Controller
         return (bool) $request->user()->company->paymentSettings?->kmoney_in_debt;
     }
 
+    /** Le quote KMoney che KMoney ammette per il conto del venditore. */
+    private function kmoneySteps(Request $request): array
+    {
+        return KMoneyShare::steps($request->user()->company->paymentSettings);
+    }
+
     /** Con il conto KMoney in debito la quota e' 100 per tutti: la scelta sul prodotto non si tocca. */
     private function withoutKMoneyChoiceInDebt(Request $request, array $data): array
     {
@@ -139,7 +151,7 @@ class VendorProductController extends Controller
             'price' => ['required', 'numeric', 'min:0'],
             'discount_price' => ['nullable', 'numeric', 'min:0', 'lt:price'],
             // Quota KMoney scelta sul prodotto; vuoto vuol dire automatica, da categoria o contratto.
-            'kmoney_discount_percent' => ['nullable', Rule::in(KMoneyShare::STEPS)],
+            'kmoney_discount_percent' => ['nullable', Rule::in($this->kmoneySteps($request))],
             'stock' => ['nullable', 'integer', 'min:0'],
             'weight_kg' => ['nullable', 'numeric', 'min:0'],
             'fixed_shipping_cost' => ['nullable', 'numeric', 'min:0'],

@@ -21,6 +21,9 @@ class KMoneyGateway implements PaymentGateway, WebhookAware
 {
     private const PAID_EVENT = 'payment_request.paid';
 
+    /** Il conto del venditore cambia stato commerciale: debito, tetto, sospensione. */
+    public const TRADING_EVENT = 'company.trading_status_changed';
+
     private const SIGNATURE_HEADER = 'X-KMoney-Signature';
 
     public function __construct(private readonly CompanyPaymentSetting $settings)

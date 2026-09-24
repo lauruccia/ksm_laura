@@ -3,8 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Jobs\ProcessPaymentNotification;
+use App\Jobs\SyncKMoneyTradingStatus;
 use App\Models\Company;
 use App\Payments\GatewayManager;
+use App\Payments\KMoneyGateway;
 use App\Payments\PaymentException;
 use App\Payments\WebhookAware;
 use Illuminate\Http\Request;
@@ -39,7 +41,14 @@ class WebhookController extends Controller
 
     public function kmoney(Request $request, Company $company): Response
     {
-        return $this->handle($request, $company, 'kmoney');
+        $response = $this->handle($request, $company, 'kmoney');
+
+        // 200 arriva solo dopo la firma verificata: lo stato si rilegge dall'API.
+        if ($response->getStatusCode() === 200 && $request->json('event') === KMoneyGateway::TRADING_EVENT) {
+            SyncKMoneyTradingStatus::dispatch($company->id);
+        }
+
+        return $response;
     }
 
     private function handle(Request $request, Company $company, string $method): Response

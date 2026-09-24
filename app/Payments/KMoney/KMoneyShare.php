@@ -16,6 +16,9 @@ use App\Models\Product;
  * 3. la quota scelta per la categoria del prodotto;
  * 4. la quota del contratto KMoney del venditore.
  *
+ * Se KMoney ammette solo alcune quote per il conto del venditore, si
+ * sceglie solo fra quelle, e la quota finale e' sempre una di quelle.
+ *
  * La quota non dipende dall'aver collegato il conto KMoney: e' una scelta
  * del venditore, e non si trasforma in euro da sola. Se il conto manca, e'
  * la cassa a non accettare l'ordine.
@@ -30,6 +33,36 @@ final class KMoneyShare
         return intdiv(max(0, min(100, (int) $percent)), 25) * 25;
     }
 
+    /**
+     * Le quote che il venditore puo' scegliere: quelle ammesse da KMoney
+     * per il suo conto (GET /balance), o tutte finche' KMoney non le ha dette.
+     *
+     * @return array<int, int>
+     */
+    public static function steps(?CompanyPaymentSetting $settings): array
+    {
+        $allowed = array_values(array_intersect(self::STEPS, (array) $settings?->kmoney_allowed_percentages));
+
+        return $allowed ?: self::STEPS;
+    }
+
+    /**
+     * Una quota non piu' ammessa sale alla prima ammessa, o scende all'ultima.
+     *
+     * Serve alle scelte fatte prima che KMoney restringesse le quote: non
+     * si cancellano, valgono come la quota ammessa piu' vicina verso l'alto.
+     */
+    public static function fit(int $percent, array $steps): int
+    {
+        foreach ($steps as $step) {
+            if ($step >= $percent) {
+                return $step;
+            }
+        }
+
+        return end($steps);
+    }
+
     /** @param  array<int, int>  $categoryRules  categoria => quota, per il venditore del prodotto */
     public static function forProduct(Product $product, ?CompanyPaymentSetting $settings, array $categoryRules): int
     {
@@ -38,13 +71,13 @@ final class KMoneyShare
         }
 
         if ($product->kmoney_discount_percent !== null) {
-            return self::snap($product->kmoney_discount_percent);
+            $percent = $product->kmoney_discount_percent;
+        } elseif ($product->category_id !== null && array_key_exists($product->category_id, $categoryRules)) {
+            $percent = $categoryRules[$product->category_id];
+        } else {
+            $percent = $settings?->kmoney_contract_percent;
         }
 
-        if ($product->category_id !== null && array_key_exists($product->category_id, $categoryRules)) {
-            return self::snap($categoryRules[$product->category_id]);
-        }
-
-        return self::snap($settings?->kmoney_contract_percent);
+        return self::fit(self::snap($percent), self::steps($settings));
     }
 }

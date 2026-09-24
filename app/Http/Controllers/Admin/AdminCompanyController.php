@@ -9,8 +9,10 @@ use App\Models\CompanyPaymentSetting;
 use App\Models\Plan;
 use App\Models\ProductCategory;
 use App\Models\User;
+use App\Payments\KMoney\KMoneyPairing;
 use App\Payments\KMoney\KMoneyPercentages;
 use App\Payments\KMoney\KMoneyShare;
+use App\Payments\PaymentException;
 use App\Payments\Subscriptions\SubscriptionActivator;
 use App\Support\CategoryTree;
 use App\Support\Images\ImageStore;
@@ -174,6 +176,35 @@ class AdminCompanyController extends Controller
             : back()->with('error', $company->custom_domain.': '.$result->error);
     }
 
+    /** Collegamento KMoney per conto dell'azienda, con il suo numero di conto. */
+    public function pairKMoney(Request $request, Company $company, KMoneyPairing $pairing): RedirectResponse
+    {
+        $data = $request->validate(['kmoney_account_number' => ['required', 'string', 'max:40']]);
+
+        if (! KMoneyPairing::isValidAccount(KMoneyPairing::normalize($data['kmoney_account_number']))) {
+            return back()->withErrors(['kmoney_account_number' => __('Numero di conto KMoney non valido: KYB o KYP seguito da 13 caratteri.')])->withInput();
+        }
+
+        try {
+            $pairing->request($company, $data['kmoney_account_number']);
+        } catch (PaymentException $e) {
+            return back()->with('error', $e->getMessage())->withInput();
+        }
+
+        return back()->with('success', KMoneyPairing::describe(KMoneyPairing::PENDING));
+    }
+
+    public function checkKMoney(Company $company, KMoneyPairing $pairing): RedirectResponse
+    {
+        try {
+            $status = $pairing->check($company);
+        } catch (PaymentException $e) {
+            return back()->with('error', $e->getMessage());
+        }
+
+        return back()->with($status === KMoneyPairing::APPROVED ? 'success' : 'error', KMoneyPairing::describe($status));
+    }
+
     private function validated(Request $request, ?Company $company = null): array
     {
         // Il vecchio database scriveva "-" dove il sito mancava.
@@ -183,6 +214,9 @@ class AdminCompanyController extends Controller
 
         // Si salva sempre "dominio.it", comunque sia stato scritto.
         $request->merge(['custom_domain' => HostName::normalize($request->input('custom_domain'))]);
+
+        // Anche l'amministrazione sceglie solo fra le quote che KMoney ammette per il conto.
+        $kmoneySteps = KMoneyShare::steps($company?->paymentSettings()->first());
 
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
@@ -215,10 +249,10 @@ class AdminCompanyController extends Controller
             'longitude' => ['nullable', 'numeric', 'between:-180,180', 'required_with:latitude'],
             'company_description' => ['nullable', 'string', 'max:10000'],
             'is_active' => ['boolean'],
-            'kmoney_contract_percent' => ['nullable', Rule::in(KMoneyShare::STEPS)],
+            'kmoney_contract_percent' => ['nullable', Rule::in($kmoneySteps)],
             'kmoney_in_debt' => ['boolean'],
             'kmoney_rules' => ['nullable', 'array'],
-            'kmoney_rules.*' => ['nullable', Rule::in(KMoneyShare::STEPS)],
+            'kmoney_rules.*' => ['nullable', Rule::in($kmoneySteps)],
             'logo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:12288'],
             'banner' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:12288'],
             'gallery' => ['nullable', 'array'],
@@ -326,17 +360,20 @@ class AdminCompanyController extends Controller
     /**
      * Quota del contratto, debito e quote per categoria di KMoney.
      *
-     * Contratto e debito dovrebbero arrivare dall'API KMoney, ma la
-     * documentazione per leggerli non c'e' ancora: intanto li imposta
-     * l'amministrazione. Una scheda che non ha mai toccato KMoney non si
-     * porta dietro impostazioni di incasso vuote.
+     * Il debito lo legge kmoney:sync da GET /balance quando il venditore
+     * ha collegato il conto: da li' in poi il modulo non lo cambia. La
+     * quota del contratto l'API non la dice, e resta all'amministrazione.
+     * Una scheda che non ha mai toccato KMoney non si porta dietro
+     * impostazioni di incasso vuote.
      */
     private function saveKMoney(Company $company, array $data): void
     {
         $contract = isset($data['kmoney_contract_percent']) ? (int) $data['kmoney_contract_percent'] : null;
-        $inDebt = (bool) ($data['kmoney_in_debt'] ?? false);
         $rules = (array) ($data['kmoney_rules'] ?? []);
         $settings = $company->paymentSettings()->first();
+        $inDebt = $settings?->kmoney_synced_at
+            ? (bool) $settings->kmoney_in_debt
+            : (bool) ($data['kmoney_in_debt'] ?? false);
 
         $chosen = array_filter($rules, fn ($percent) => $percent !== null && $percent !== '');
 
@@ -378,7 +415,7 @@ class AdminCompanyController extends Controller
             'pending' => $company->exists ? $company->pendingSubscription() : null,
             'kmoney' => $company->exists ? $company->paymentSettings()->first() : null,
             'kmoneyRules' => $company->exists ? KMoneyPercentages::rulesFor($company->id) : [],
-            'kmoneySteps' => KMoneyShare::STEPS,
+            'kmoneySteps' => KMoneyShare::steps($company->exists ? $company->paymentSettings : null),
             // Solo le categorie in cui l'azienda ha prodotti.
             'productCategories' => $company->exists
                 ? ProductCategory::whereKey(

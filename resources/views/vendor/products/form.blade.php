@@ -92,7 +92,7 @@
                 <option value="">
                     Automatica{{ $product->exists ? ', oggi '.$product->kmoney_percent.'%' : ', da categoria o contratto' }}
                 </option>
-                @foreach (\App\Payments\KMoney\KMoneyShare::STEPS as $step)
+                @foreach ($kmoneySteps as $step)
                     <option value="{{ $step }}" @selected((string) $kmoneyChoice === (string) $step)>{{ $step }}%</option>
                 @endforeach
             </select>

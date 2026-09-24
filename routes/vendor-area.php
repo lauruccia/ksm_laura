@@ -68,5 +68,10 @@ Route::middleware(['auth', 'vendor'])
 
             Route::get('/incassi', [VendorPaymentSettingController::class, 'edit'])->name('payments.edit');
             Route::put('/incassi', [VendorPaymentSettingController::class, 'update'])->name('payments.update');
+            // Collegamento KMoney con il numero di conto: KMoney accetta 10 chiamate al minuto.
+            Route::middleware('throttle:6,1')->group(function () {
+                Route::post('/incassi/kmoney', [VendorPaymentSettingController::class, 'pairKMoney'])->name('payments.kmoney.pair');
+                Route::patch('/incassi/kmoney', [VendorPaymentSettingController::class, 'checkKMoney'])->name('payments.kmoney.check');
+            });
         });
     });

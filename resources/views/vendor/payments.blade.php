@@ -7,6 +7,43 @@
 @section('content')
     <div class="ksm-panel__head"><h1>Incassi</h1></div>
 
+    {{-- Collegamento KMoney con il numero di conto: token e segreto arrivano da soli dopo l'approvazione. --}}
+    <section class="ksm-card" style="padding: 24px; max-width: 680px; margin-bottom: 22px;">
+        <h2 style="font-size: 1.05rem; margin-top: 0;">Collega KMoney</h2>
+        <p class="ksm-muted" style="font-size: .88rem;">
+            Scrivi il numero del tuo conto KMoney: KMoney riceve la richiesta e, appena la approva,
+            il collegamento si completa da solo. Non serve copiare token.
+        </p>
+
+        @if ($settings->kmoney_pairing_status)
+            <p class="ksm-alert {{ $settings->kmoney_pairing_status === 'approved' ? 'ksm-alert--success' : ($settings->kmoney_pairing_status === 'pending' ? '' : 'ksm-alert--error') }}">
+                {{ \App\Payments\KMoney\KMoneyPairing::describe($settings->kmoney_pairing_status) }}
+                Conto {{ $settings->kmoney_account_number }}{{ $settings->kmoney_pairing_requested_at ? ', richiesto il '.$settings->kmoney_pairing_requested_at->format('d/m/Y H:i') : '' }}.
+            </p>
+        @endif
+
+        @if ($settings->kmoney_pairing_status === 'pending')
+            <form method="POST" action="{{ route('vendor.payments.kmoney.check') }}">
+                @csrf @method('PATCH')
+                <button class="ksm-btn ksm-btn--ghost" type="submit">Controlla ora</button>
+                <small class="ksm-muted">Il controllo avviene anche da solo ogni pochi minuti.</small>
+            </form>
+        @else
+            <form method="POST" action="{{ route('vendor.payments.kmoney.pair') }}" style="display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap;">
+                @csrf
+                <div class="ksm-field" style="margin: 0; flex: 1 1 240px;">
+                    <label class="ksm-label" for="kmoney_account_number">Numero di conto KMoney</label>
+                    <input class="ksm-input" id="kmoney_account_number" name="kmoney_account_number" autocomplete="off"
+                           placeholder="KYB..." value="{{ old('kmoney_account_number', $settings->kmoney_account_number) }}">
+                    @error('kmoney_account_number')<span class="ksm-error">{{ $message }}</span>@enderror
+                </div>
+                <button class="ksm-btn ksm-btn--primary" type="submit">
+                    {{ $settings->kmoney_pairing_status === 'approved' ? 'Collega di nuovo' : 'Chiedi il collegamento' }}
+                </button>
+            </form>
+        @endif
+    </section>
+
     <form class="ksm-card" style="padding: 24px; max-width: 680px;" method="POST" action="{{ route('vendor.payments.update') }}">
         @csrf @method('PUT')
 
@@ -56,7 +93,7 @@
         {{-- KMoney: il cliente paga sul sito KMoney, qui non passano le sue credenziali. --}}
         <h2 style="font-size: 1.05rem; margin-top: 26px;">KMoney</h2>
         <p class="ksm-muted" style="font-size: .88rem;">
-            Il token si crea sul portale KMoney, in Token API, con il permesso di scrittura.
+            Solo se non usi il collegamento qui sopra: il token si crea sul portale KMoney, in Token API, con il permesso di scrittura.
             Le quote dei prodotti si decidono da <a href="{{ route('vendor.kmoney.edit') }}">KMoney</a>.
         </p>
 

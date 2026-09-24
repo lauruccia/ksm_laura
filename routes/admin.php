@@ -56,6 +56,12 @@ Route::middleware(['auth', 'admin'])
                 ->name('companies.status');
             Route::patch('/aziende/{company}/dominio', [AdminCompanyController::class, 'checkDomain'])
                 ->name('companies.domain');
+            Route::middleware('throttle:6,1')->group(function () {
+                Route::post('/aziende/{company}/kmoney', [AdminCompanyController::class, 'pairKMoney'])
+                    ->name('companies.kmoney.pair');
+                Route::patch('/aziende/{company}/kmoney', [AdminCompanyController::class, 'checkKMoney'])
+                    ->name('companies.kmoney.check');
+            });
 
             Route::resource('categorie-aziende', AdminCompanyCategoryController::class)
                 ->parameters(['categorie-aziende' => 'category'])->names('company_categories');

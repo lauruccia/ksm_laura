@@ -52,20 +52,34 @@ class AdminProductController extends Controller
 
         $percent = $data['percent'] === 'auto' ? null : (int) $data['percent'];
         $count = 0;
+        $skipped = 0;
 
         Product::whereKey($data['products'])
-            ->with('company')
+            ->with('company.paymentSettings')
             ->get(['id', 'company_id'])
             ->groupBy('company_id')
-            ->each(function ($products) use ($percentages, $percent, &$count) {
-                $count += $percentages->setProductPercent(
-                    $products->first()->company,
-                    $products->pluck('id')->all(),
-                    $percent
-                );
+            ->each(function ($products) use ($percentages, $percent, &$count, &$skipped) {
+                $company = $products->first()->company;
+
+                // Una quota che KMoney non ammette per quel conto non si scrive.
+                if ($percent !== null && ! in_array($percent, KMoneyShare::steps($company->paymentSettings), true)) {
+                    $skipped += $products->count();
+
+                    return;
+                }
+
+                $count += $percentages->setProductPercent($company, $products->pluck('id')->all(), $percent);
             });
 
-        return back()->with('success', __('Quota KMoney aggiornata su :count prodotti.', ['count' => $count]));
+        $message = __('Quota KMoney aggiornata su :count prodotti.', ['count' => $count]);
+
+        if ($skipped) {
+            $message .= ' '.__(':skipped prodotti lasciati com\'erano: KMoney non ammette :percent% per il loro venditore.', [
+                'skipped' => $skipped, 'percent' => $percent,
+            ]);
+        }
+
+        return back()->with('success', $message);
     }
 
     public function destroy(Product $product): RedirectResponse

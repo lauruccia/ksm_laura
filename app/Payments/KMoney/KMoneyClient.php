@@ -20,8 +20,20 @@ class KMoneyClient
 {
     public function __construct(
         private readonly string $baseUrl,
-        private readonly string $token,
+        private readonly ?string $token,
     ) {
+    }
+
+    /** Senza token: solo per le chiamate pubbliche del collegamento. */
+    public static function anonymous(): self
+    {
+        $baseUrl = (string) config('ksm.kmoney.base_url');
+
+        if ($baseUrl === '') {
+            throw new PaymentException('KMoney non configurato: serve KMONEY_API_BASE_URL.');
+        }
+
+        return new self($baseUrl, null);
     }
 
     public static function forVendor(CompanyPaymentSetting $settings): self
@@ -68,10 +80,51 @@ class KMoneyClient
         return $this->send(fn (PendingRequest $http) => $http->get('/payment-requests/'.rawurlencode($uuid)));
     }
 
+    /**
+     * Saldo e stato commerciale del conto del venditore.
+     *
+     * @return array{is_in_debit?: bool, can_sell?: bool, allowed_ky_percentages?: array<int, int>}
+     */
+    public function balance(): array
+    {
+        return $this->send(fn (PendingRequest $http) => $http->get('/balance'));
+    }
+
+    /**
+     * Chiede il collegamento del conto: l'amministrazione KMoney lo approva
+     * e poi token e segreto del webhook si ritirano con pairing().
+     *
+     * @return array{uuid?: string, status?: string}
+     */
+    public function requestPairing(string $accountNumber, string $siteUrl, string $webhookUrl, string $claimSecret): array
+    {
+        return $this->send(fn (PendingRequest $http) => $http->post('/ecommerce/pairings', [
+            'account_number' => $accountNumber,
+            'site_url' => $siteUrl,
+            'webhook_url' => $webhookUrl,
+            'claim_secret' => $claimSecret,
+            'platform' => 'custom',
+        ]));
+    }
+
+    /**
+     * Stato del collegamento. Al primo ritiro dopo l'approvazione porta
+     * api_token e webhook_secret in chiaro, una volta sola.
+     *
+     * @return array{status?: string, api_token?: string, webhook_secret?: string, claimed?: bool}
+     */
+    public function pairing(string $uuid, string $claimSecret): array
+    {
+        return $this->send(fn (PendingRequest $http) => $http->get(
+            '/ecommerce/pairings/'.rawurlencode($uuid),
+            ['claim_secret' => $claimSecret]
+        ));
+    }
+
     private function send(callable $call): array
     {
         $http = Http::baseUrl(rtrim((string) $this->baseUrl, '/'))
-            ->withToken($this->token)
+            ->when(filled($this->token), fn (PendingRequest $http) => $http->withToken($this->token))
             ->acceptJson()
             ->asJson()
             ->timeout(20);
@@ -96,7 +149,8 @@ class KMoneyClient
         if ($response->failed()) {
             $reason = $body['error'] ?? $body['message'] ?? 'errore';
 
-            throw new PaymentException("KMoney ha rifiutato la richiesta ({$response->status()}): $reason");
+            // Il codice HTTP resta nell'eccezione: 404 e 422 dicono cose diverse.
+            throw new PaymentException("KMoney ha rifiutato la richiesta ({$response->status()}): $reason", $response->status());
         }
 
         return is_array($body['data'] ?? null) ? $body['data'] : $body;

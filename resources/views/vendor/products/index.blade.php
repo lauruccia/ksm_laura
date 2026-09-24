@@ -21,7 +21,7 @@
             <label class="ksm-label" for="bulk_percent" style="margin: 0;">Quota KMoney dei prodotti selezionati</label>
             <select class="ksm-select" id="bulk_percent" name="percent">
                 <option value="auto">Automatica</option>
-                @foreach (\App\Payments\KMoney\KMoneyShare::STEPS as $step)
+                @foreach ($kmoneySteps as $step)
                     <option value="{{ $step }}">{{ $step }}%</option>
                 @endforeach
             </select>

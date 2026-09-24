@@ -32,12 +32,18 @@ class CompanyPaymentSetting extends Model
         'kmoney_webhook_secret' => 'encrypted',
         'kmoney_contract_percent' => 'integer',
         'kmoney_in_debt' => 'boolean',
+        'kmoney_can_sell' => 'boolean',
+        'kmoney_allowed_percentages' => 'array',
+        'kmoney_synced_at' => 'datetime',
+        'kmoney_pairing_secret' => 'encrypted',
+        'kmoney_pairing_requested_at' => 'datetime',
+        'kmoney_pairing_checked_at' => 'datetime',
     ];
 
     protected $hidden = [
         'stripe_test_secret_key', 'stripe_live_secret_key',
         'paypal_test_secret', 'paypal_live_secret', 'stripe_webhook_secret',
-        'kmoney_api_token', 'kmoney_webhook_secret',
+        'kmoney_api_token', 'kmoney_webhook_secret', 'kmoney_pairing_secret',
     ];
 
     public function company(): BelongsTo
