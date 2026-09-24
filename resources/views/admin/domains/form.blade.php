@@ -101,7 +101,9 @@
                             <img class="ksm-domain-form__preview" src="{{ asset('storage/'.$record->logo) }}" alt="">
                             <label style="display: flex; gap: 6px; align-items: center;"><input type="checkbox" name="remove_logo" value="1"> Togli il logo</label>
                         @endif
-                        <input class="ksm-input" id="logo" name="logo" type="file" accept="image/*">
+                        @include('partials.image-editor-assets')
+                        <input class="ksm-input" id="logo" name="logo" type="file" accept="image/jpeg,image/png,image/webp"
+                               data-image-editor data-ratios="free,3:1,1:1" data-max="800x800">
                         <small class="ksm-muted">Il marchio in testata, su ogni pagina. Meglio PNG con sfondo trasparente. Senza logo la testata mostra il nome scritto.</small>
                         @error('logo')<span class="ksm-error">{{ $message }}</span>@enderror
                     </div>
@@ -111,7 +113,8 @@
                             <img class="ksm-domain-form__preview" src="{{ asset('storage/'.$record->favicon) }}" alt="" style="max-height: 32px;">
                             <label style="display: flex; gap: 6px; align-items: center;"><input type="checkbox" name="remove_favicon" value="1"> Togli l'icona</label>
                         @endif
-                        <input class="ksm-input" id="favicon" name="favicon" type="file" accept="image/*">
+                        <input class="ksm-input" id="favicon" name="favicon" type="file" accept="image/jpeg,image/png,image/webp"
+                               data-image-editor data-ratios="1:1" data-max="256x256">
                         <small class="ksm-muted">La piccola icona accanto al titolo nella scheda del browser. Quadrata. Senza, si usa il logo.</small>
                         @error('favicon')<span class="ksm-error">{{ $message }}</span>@enderror
                     </div>
@@ -307,7 +310,8 @@
                         <img class="ksm-domain-form__preview" src="{{ asset('storage/'.$site('hero.image')) }}" alt="">
                         <label style="display: flex; gap: 6px; align-items: center;"><input type="checkbox" name="remove_hero_image" value="1"> Togli l'immagine</label>
                     @endif
-                    <input class="ksm-input" id="hero_image" name="hero_image" type="file" accept="image/*">
+                    <input class="ksm-input" id="hero_image" name="hero_image" type="file" accept="image/jpeg,image/png,image/webp"
+                           data-image-editor data-ratios="free,16:9,21:9" data-max="2000x1200">
                     <small class="ksm-muted">Orizzontale, almeno 1600 pixel di larghezza: il soggetto a destra, il testo sta a sinistra.</small>
                     @error('hero_image')<span class="ksm-error">{{ $message }}</span>@enderror
                 </div>
@@ -519,7 +523,8 @@
                         <img class="ksm-domain-form__preview" src="{{ asset('storage/'.$site('seo.image')) }}" alt="">
                         <label style="display: flex; gap: 6px; align-items: center;"><input type="checkbox" name="remove_seo_image" value="1"> Togli l'immagine</label>
                     @endif
-                    <input class="ksm-input" id="seo_image" name="seo_image" type="file" accept="image/*">
+                    <input class="ksm-input" id="seo_image" name="seo_image" type="file" accept="image/jpeg,image/png,image/webp"
+                           data-image-editor data-ratios="40:21" data-max="1200x630">
                     <small class="ksm-muted">1200 × 630 pixel.</small>
                     @error('seo_image')<span class="ksm-error">{{ $message }}</span>@enderror
                 </div>

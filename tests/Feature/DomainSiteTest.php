@@ -230,7 +230,11 @@ class DomainSiteTest extends TestCase
         Storage::fake('public');
         $admin = $this->admin();
 
-        $this->actingAs($admin)->get(route('admin.domains.create'))->assertOk()->assertSee("Mostra l'apertura nello shop", false);
+        $this->actingAs($admin)->get(route('admin.domains.create'))->assertOk()->assertSee("Mostra l'apertura nello shop", false)
+            ->assertSee('js/image-editor.js', false)
+            ->assertSee('name="logo" type="file" accept="image/jpeg,image/png,image/webp"', false)
+            ->assertSee('data-ratios="1:1" data-max="256x256"', false)
+            ->assertSee('data-ratios="40:21" data-max="1200x630"', false);
 
         $this->actingAs($admin)->post(route('admin.domains.store'), [
             'name' => 'Mozzarelle di bufala',
