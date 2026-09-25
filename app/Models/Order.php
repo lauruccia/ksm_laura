@@ -11,6 +11,20 @@ class Order extends Model
 {
     public const STATUSES = ['pending', 'paid', 'shipped', 'completed', 'cancelled'];
 
+    /** Gli stati come si leggono nei pannelli. */
+    public const STATUS_LABELS = [
+        'pending' => 'In attesa',
+        'paid' => 'Pagato',
+        'shipped' => 'Spedito',
+        'completed' => 'Concluso',
+        'cancelled' => 'Annullato',
+    ];
+
+    public function statusLabel(): string
+    {
+        return self::STATUS_LABELS[$this->status] ?? (string) $this->status;
+    }
+
     protected $fillable = [
         'user_id', 'company_id', 'payment_id', 'kmoney_payment_id', 'subtotal', 'shipping', 'tax', 'total',
         'kmoney_total', 'currency', 'status', 'billing_name', 'billing_email', 'billing_phone',

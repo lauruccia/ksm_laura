@@ -5,23 +5,31 @@
 @section('nav')@include('admin.nav')@endsection
 
 @section('content')
-    <div class="ksm-panel__head">
-        <h1>Inserzionisti</h1>
-        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-            <a class="ksm-btn ksm-btn--ghost" href="{{ route('admin.advertisements.index') }}">Campagne</a>
-            <a class="ksm-btn ksm-btn--primary" href="{{ route('admin.advertisers.create') }}">Nuovo inserzionista</a>
-        </div>
+    {{-- Titolo, numero e ricerca su una riga sola: l'elenco parte subito sotto. --}}
+    <div class="ksm-listhead">
+        <h1>Inserzionisti <span class="ksm-listhead__count">{{ number_format($advertisers->total(), 0, ',', '.') }}</span></h1>
+
+        <form method="GET" class="ksm-listhead__filters" role="search">
+            <span class="ksm-listhead__search">
+                <x-icon name="search" :size="16" />
+                <input class="ksm-input" type="search" name="cerca" value="{{ request('cerca') }}" placeholder="Nome o email" aria-label="Nome o email">
+            </span>
+            <button class="ksm-btn ksm-btn--ghost ksm-btn--sm" type="submit">Cerca</button>
+            @if (request()->filled('cerca'))
+                <a class="ksm-btn ksm-btn--ghost ksm-btn--sm" href="{{ route('admin.advertisers.index') }}">Azzera</a>
+            @endif
+        </form>
+
+        <span class="ksm-listhead__actions">
+            <a class="ksm-btn ksm-btn--ghost ksm-btn--sm" href="{{ route('admin.advertisements.index') }}">Campagne</a>
+            <a class="ksm-btn ksm-btn--primary ksm-btn--sm" href="{{ route('admin.advertisers.create') }}">Nuovo inserzionista</a>
+        </span>
     </div>
 
-    <p class="ksm-muted">
+    <p class="ksm-muted" style="margin: -4px 0 14px; font-size: .85rem;">
         Gli esterni possono registrarsi da soli su
         <a href="{{ route('advertiser.register') }}" target="_blank" rel="noopener">{{ route('advertiser.register') }}</a>.
     </p>
-
-    <form method="GET" class="ksm-filters">
-        <input class="ksm-input" name="cerca" value="{{ request('cerca') }}" placeholder="Nome o email">
-        <button class="ksm-btn ksm-btn--ghost" type="submit">Cerca</button>
-    </form>
 
     <div class="ksm-table-wrap">
         <table class="ksm-table">

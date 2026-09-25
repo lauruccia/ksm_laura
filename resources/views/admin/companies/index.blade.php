@@ -5,38 +5,60 @@
 @section('nav')@include('admin.nav')@endsection
 
 @section('content')
-    <div class="ksm-panel__head">
-        <h1>Aziende</h1>
-        @can(\App\Support\Permissions::COMPANIES_MANAGE)
-            <a class="ksm-btn ksm-btn--primary" href="{{ route('admin.companies.create') }}">Nuova azienda</a>
-        @endcan
+    @php($canManage = auth()->user()->can(\App\Support\Permissions::COMPANIES_MANAGE))
+
+    {{-- Titolo, numero e filtri su una riga sola: l'elenco parte subito sotto. --}}
+    <div class="ksm-listhead">
+        <h1>Aziende <span class="ksm-listhead__count">{{ number_format($companies->total(), 0, ',', '.') }}</span></h1>
+
+        <form method="GET" class="ksm-listhead__filters" role="search">
+            <span class="ksm-listhead__search">
+                <x-icon name="search" :size="16" />
+                <input class="ksm-input" type="search" name="cerca" value="{{ request('cerca') }}" placeholder="Nome o email" aria-label="Nome o email">
+            </span>
+            <select class="ksm-select" name="piano" aria-label="Piano" onchange="this.form.submit()">
+                <option value="">Tutti i piani</option>
+                @foreach ($plans as $id => $name)
+                    <option value="{{ $id }}" @selected(request('piano') == $id)>{{ $name }}</option>
+                @endforeach
+            </select>
+            <select class="ksm-select" name="stato" aria-label="Stato" onchange="this.form.submit()">
+                <option value="">Attive e spente</option>
+                <option value="attive" @selected(request('stato') === 'attive')>Solo attive</option>
+                <option value="spente" @selected(request('stato') === 'spente')>Solo spente</option>
+            </select>
+            <button class="ksm-btn ksm-btn--ghost ksm-btn--sm" type="submit">Cerca</button>
+            @if (request()->hasAny(['cerca', 'piano', 'stato']))
+                <a class="ksm-btn ksm-btn--ghost ksm-btn--sm" href="{{ route('admin.companies.index') }}">Azzera</a>
+            @endif
+        </form>
+
+        @if ($canManage)
+            <span class="ksm-listhead__actions">
+                <a class="ksm-btn ksm-btn--primary ksm-btn--sm" href="{{ route('admin.companies.create') }}">Nuova azienda</a>
+            </span>
+        @endif
     </div>
 
-    <form method="GET" class="ksm-filters">
-        <input class="ksm-input" name="cerca" value="{{ request('cerca') }}" placeholder="Nome o email">
-
-        <select class="ksm-select" name="piano" aria-label="Piano">
-            <option value="">Tutti i piani</option>
-            @foreach ($plans as $id => $name)
-                <option value="{{ $id }}" @selected(request('piano') == $id)>{{ $name }}</option>
-            @endforeach
-        </select>
-
-        <select class="ksm-select" name="stato" aria-label="Stato">
-            <option value="">Attive e spente</option>
-            <option value="attive" @selected(request('stato') === 'attive')>Solo attive</option>
-            <option value="spente" @selected(request('stato') === 'spente')>Solo spente</option>
-        </select>
-
-        <button class="ksm-btn ksm-btn--ghost" type="submit">Filtra</button>
-    </form>
-
-    <p class="ksm-muted">{{ number_format($companies->total(), 0, ',', '.') }} aziende</p>
+    @if ($canManage && $companies->isNotEmpty())
+        @include('partials.bulk-bar', [
+            'action' => route('admin.companies.bulk'),
+            'paginator' => $companies,
+            'noun' => 'aziende',
+            'nounOne' => 'azienda',
+            'feminine' => true,
+            'actions' => ['activate' => 'Accendi', 'deactivate' => 'Spegni', 'delete' => 'Elimina'],
+            'onlySelected' => ['delete'],
+        ])
+    @endif
 
     <div class="ksm-table-wrap">
         <table class="ksm-table ksm-table--companies">
             <thead>
             <tr>
+                @if ($canManage)
+                    <th class="ksm-bulk__cell"><input type="checkbox" data-bulk-page aria-label="Seleziona tutte in questa pagina"></th>
+                @endif
                 <th aria-label="Logo"></th>
                 <th>Azienda</th>
                 <th>Email</th>
@@ -50,7 +72,13 @@
             <tbody>
             @forelse ($companies as $company)
                 <tr>
-                    <td>
+                    @if ($canManage)
+                        <td class="ksm-bulk__cell">
+                            <input type="checkbox" name="ids[]" value="{{ $company->id }}" form="bulk" data-bulk-item
+                                   aria-label="Seleziona {{ $company->name }}">
+                        </td>
+                    @endif
+                    <td class="ksm-table__logo">
                         <span class="ksm-thumb"
                               @if ($company->logo) style="background-image: url('{{ asset('storage/'.$company->logo) }}')" @endif></span>
                     </td>
@@ -89,7 +117,7 @@
                                 <a class="ksm-btn ksm-btn--ghost ksm-btn--sm" target="_blank" rel="noopener"
                                    href="{{ route('companies.show', ['company' => $company->slug]) }}">Vedi</a>
                             @endif
-                            @can(\App\Support\Permissions::COMPANIES_MANAGE)
+                            @if ($canManage)
                                 <a class="ksm-btn ksm-btn--ghost ksm-btn--sm"
                                    href="{{ route('admin.companies.edit', $company) }}">Modifica</a>
                                 <form method="POST" action="{{ route('admin.companies.status', $company) }}">
@@ -98,12 +126,12 @@
                                         {{ $company->is_active ? 'Spegni' : 'Accendi' }}
                                     </button>
                                 </form>
-                            @endcan
+                            @endif
                         </div>
                     </td>
                 </tr>
             @empty
-                <tr><td colspan="8" class="ksm-muted">Nessuna azienda.</td></tr>
+                <tr><td colspan="{{ $canManage ? 9 : 8 }}" class="ksm-muted">Nessuna azienda.</td></tr>
             @endforelse
             </tbody>
         </table>

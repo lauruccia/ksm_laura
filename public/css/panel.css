@@ -944,7 +944,7 @@ a.ksm-panel__me:hover { background: var(--ksm-line-soft); color: inherit; }
     .ksm-table-wrap > .ksm-table--stack.ksm-table--companies td[data-label] { padding-left: 38%; }
     .ksm-table--stack.ksm-table--companies .ksm-rowactions { flex-wrap: wrap; }
     /* Il logo accanto al nome, non su una riga tutta sua. */
-    .ksm-table-wrap > .ksm-table--stack.ksm-table--companies td:first-child { float: right; min-height: 0; margin-left: 10px; }
+    .ksm-table-wrap > .ksm-table--stack.ksm-table--companies td.ksm-table__logo { float: right; min-height: 0; margin-left: 10px; }
 }
 
 /* Aziende: miniature, galleria, orari ------------------------------------ */
@@ -1081,6 +1081,7 @@ a.ksm-panel__me:hover { background: var(--ksm-line-soft); color: inherit; }
 .ksm-table--companies td { padding-inline: 10px; }
 .ksm-table--companies th:first-child,
 .ksm-table--companies td:first-child { padding-left: 16px; }
+.ksm-table--companies .ksm-bulk__cell + td { padding-left: 4px; }
 .ksm-table--companies th:last-child,
 .ksm-table--companies td:last-child { padding-right: 16px; }
 
@@ -1350,6 +1351,8 @@ a.ksm-panel__me:hover { background: var(--ksm-line-soft); color: inherit; }
 }
 
 .ksm-bulk__cell { width: 44px; }
+/* Senza righe non c'e' la barra: la casella in testa non avrebbe niente da selezionare. */
+body:not(:has([data-bulk])) [data-bulk-page] { visibility: hidden; }
 .ksm-bulk__cell input { width: 17px; height: 17px; accent-color: var(--ksm-accent); cursor: pointer; }
 .ksm-table tbody tr.is-selected td { background: #F4FAF0; }
 

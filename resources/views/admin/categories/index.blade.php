@@ -6,18 +6,14 @@
 @section('nav')@include('admin.nav')@endsection
 
 @section('content')
-    <div class="ksm-panel__head">
-        <div>
-            <h1>{{ $title }}</h1>
-            <p class="ksm-panel__lead">
-                {{ $stats['total'] }} categorie: {{ $stats['roots'] }} principali e {{ $stats['children'] }} sottocategorie,
-                fino a {{ $maxLevels }} livelli.
-                @if ($stats['empty'])
-                    {{ $stats['empty'] }} senza {{ $itemsLabel }}.
-                @endif
-            </p>
-        </div>
-        <a class="ksm-btn ksm-btn--primary" href="{{ route($routePrefix.'.create') }}">Nuova categoria</a>
+    <div class="ksm-listhead">
+        <h1>{{ $title }} <span class="ksm-listhead__count">{{ $stats['total'] }}</span></h1>
+        <span class="ksm-muted" style="font-size: .85rem;">
+            {{ $stats['roots'] }} principali e {{ $stats['children'] }} sottocategorie, fino a {{ $maxLevels }} livelli{{ $stats['empty'] ? '; '.$stats['empty'].' senza '.$itemsLabel : '' }}
+        </span>
+        <span class="ksm-listhead__actions" style="margin-left: auto;">
+            <a class="ksm-btn ksm-btn--primary ksm-btn--sm" href="{{ route($routePrefix.'.create') }}">Nuova categoria</a>
+        </span>
     </div>
 
     {{-- Aggiunta veloce: nome e posizione nell'albero, il resto si completa dopo. --}}

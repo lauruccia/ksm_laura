@@ -5,7 +5,9 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Role;
 use App\Models\User;
+use App\Support\BulkSelection;
 use Illuminate\Contracts\View\View;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -22,13 +24,7 @@ class AdminUserController extends Controller
 {
     public function index(Request $request): View
     {
-        $users = User::query()
-            ->with('role')
-            ->when($request->string('cerca')->toString(), fn ($q, $term) => $q->where(
-                fn ($w) => $w->where('name', 'like', "%$term%")->orWhere('email', 'like', "%$term%")
-            ))
-            ->when($request->string('tipo')->toString(), fn ($q, $type) => $q->where('user_type', $type))
-            ->when($request->string('ruolo')->toString(), fn ($q, $role) => $q->where('role_id', $role))
+        $users = $this->filters(User::query()->with('role'), $request)
             ->latest()
             ->paginate(20)
             ->withQueryString();
@@ -83,6 +79,55 @@ class AdminUserController extends Controller
         $user->update($data);
 
         return back()->with('success', __('Modifiche salvate.'));
+    }
+
+    /** I filtri dell'elenco, gli stessi per la pagina e per "tutti i risultati". */
+    public function filters(Builder $query, Request $request): Builder
+    {
+        return $query
+            ->when($request->string('cerca')->toString(), fn ($q, $term) => $q->where(
+                fn ($w) => $w->where('name', 'like', "%$term%")->orWhere('email', 'like', "%$term%")
+            ))
+            ->when($request->string('tipo')->toString(), fn ($q, $type) => $q->where('user_type', $type))
+            ->when($request->string('ruolo')->toString(), fn ($q, $role) => $q->where('role_id', $role));
+    }
+
+    /**
+     * Riattiva, sospende o elimina piu' utenti insieme.
+     *
+     * Il proprio accesso resta sempre fuori, come nei bottoni di riga; chi ha
+     * un'azienda collegata non si elimina da qui, e l'eliminazione vale solo
+     * sulle righe spuntate.
+     */
+    public function bulk(Request $request): RedirectResponse
+    {
+        $request->validate(
+            BulkSelection::rules(['activate', 'deactivate', 'delete'], onlySelected: ['delete']),
+            BulkSelection::messages()
+        );
+
+        $query = BulkSelection::query($request, User::query(), $this->filters(...))
+            ->whereKeyNot($request->user()->getKey());
+
+        $message = match ($request->input('action')) {
+            'activate' => trans_choice(':count accesso riattivato.|:count accessi riattivati.', $query->update(['is_active' => true])),
+            'deactivate' => trans_choice(':count accesso sospeso.|:count accessi sospesi.', $query->update(['is_active' => false])),
+            'delete' => $this->deleteUsers($query),
+        };
+
+        return back()->with('success', $message);
+    }
+
+    private function deleteUsers(Builder $query): string
+    {
+        $kept = (clone $query)->whereHas('company')->count();
+        $message = trans_choice(':count utente eliminato.|:count utenti eliminati.', BulkSelection::deleteEach($query->whereDoesntHave('company')));
+
+        if ($kept) {
+            $message .= ' '.trans_choice(':count lasciato: ha un\'azienda collegata.|:count lasciati: hanno un\'azienda collegata.', $kept);
+        }
+
+        return $message;
     }
 
     public function toggleStatus(Request $request, User $user): RedirectResponse

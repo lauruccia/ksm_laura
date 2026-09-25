@@ -5,35 +5,40 @@
 @section('nav')@include('vendor.nav')@endsection
 
 @section('content')
-    <div class="ksm-panel__head">
-        <h1>Ordini</h1>
+    {{-- Titolo, numero e filtro su una riga sola: l'elenco parte subito sotto. --}}
+    <div class="ksm-listhead">
+        <h1>Ordini <span class="ksm-listhead__count">{{ number_format($orders->total(), 0, ',', '.') }}</span></h1>
 
-        <form method="GET">
-            <select class="ksm-select" name="stato" onchange="this.form.submit()">
+        <form method="GET" class="ksm-listhead__filters">
+            <select class="ksm-select" name="stato" aria-label="Stato" onchange="this.form.submit()">
                 <option value="">Tutti gli stati</option>
                 @foreach ($statuses as $status)
-                    <option value="{{ $status }}" @selected(request('stato') === $status)>{{ $status }}</option>
+                    <option value="{{ $status }}" @selected(request('stato') === $status)>{{ \App\Models\Order::STATUS_LABELS[$status] ?? $status }}</option>
                 @endforeach
             </select>
+            @if (request()->filled('stato'))
+                <a class="ksm-btn ksm-btn--ghost ksm-btn--sm" href="{{ route('vendor.orders.index') }}">Azzera</a>
+            @endif
         </form>
     </div>
 
     <div class="ksm-table-wrap">
         <table class="ksm-table">
-            <thead><tr><th>Ordine</th><th>Cliente</th><th>Totale</th><th>Stato</th><th></th></tr></thead>
+            <thead><tr><th>Ordine</th><th>Data</th><th>Cliente</th><th>Totale</th><th>Stato</th><th></th></tr></thead>
             <tbody>
             @forelse ($orders as $order)
                 <tr>
-                    <td>{{ $order->reference }}</td>
+                    <td><a href="{{ route('vendor.orders.show', $order) }}" style="font-weight: 600;">{{ $order->reference }}</a></td>
+                    <td style="white-space: nowrap;">{{ $order->created_at?->format('d/m/Y') }}</td>
                     <td>{{ $order->billing_name }}</td>
-                    <td>{{ \App\Support\Money::format($order->total) }}</td>
-                    <td><span class="ksm-badge ksm-badge--muted">{{ $order->status }}</span></td>
+                    <td style="white-space: nowrap;">{{ \App\Support\Money::format($order->total) }}</td>
+                    <td><span class="ksm-badge ksm-badge--{{ $order->status }}">{{ $order->statusLabel() }}</span></td>
                     <td style="text-align: right;">
-                        <a class="ksm-btn ksm-btn--ghost" href="{{ route('vendor.orders.show', $order) }}">Apri</a>
+                        <a class="ksm-btn ksm-btn--ghost ksm-btn--sm" href="{{ route('vendor.orders.show', $order) }}">Apri</a>
                     </td>
                 </tr>
             @empty
-                <tr><td colspan="5" class="ksm-muted">Nessun ordine.</td></tr>
+                <tr><td colspan="6" class="ksm-muted">Nessun ordine.</td></tr>
             @endforelse
             </tbody>
         </table>

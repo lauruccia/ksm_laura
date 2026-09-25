@@ -27,7 +27,7 @@
             @if ($order)
                 <div class="ksm-card" style="padding: 22px; margin-top: 20px;">
                     <h3>{{ $order->reference }}</h3>
-                    <p><span class="ksm-badge">{{ $order->status }}</span></p>
+                    <p><span class="ksm-badge">{{ $order->statusLabel() }}</span></p>
                     <p>Totale {{ \App\Support\Money::format($order->total) }}</p>
                 </div>
             @endif

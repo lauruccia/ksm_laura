@@ -55,6 +55,8 @@ Route::middleware(['auth', 'admin'])
                 ->except(['index']);
             Route::patch('/aziende/{company}/stato', [AdminCompanyController::class, 'toggleStatus'])
                 ->name('companies.status');
+            Route::patch('/aziende-in-blocco', [AdminCompanyController::class, 'bulk'])
+                ->name('companies.bulk');
             Route::patch('/aziende/{company}/dominio', [AdminCompanyController::class, 'checkDomain'])
                 ->name('companies.domain');
             Route::middleware('throttle:6,1')->group(function () {
@@ -119,6 +121,7 @@ Route::middleware(['auth', 'admin'])
             Route::resource('marche', AdminProductBrandController::class)
                 ->parameters(['marche' => 'brand'])->names('brands')
                 ->except(['index']);
+            Route::patch('/marche-in-blocco', [AdminProductBrandController::class, 'bulk'])->name('brands.bulk');
         });
 
         /* Vendite ------------------------------------------------------- */
@@ -129,6 +132,7 @@ Route::middleware(['auth', 'admin'])
 
         Route::middleware('can:'.P::ORDERS_MANAGE)->group(function () {
             Route::delete('/ordini/{order}', [AdminOrderController::class, 'destroy'])->name('orders.destroy');
+            Route::patch('/ordini-in-blocco', [AdminOrderController::class, 'bulk'])->name('orders.bulk');
             Route::patch('/ordini/{order}/stato', [AdminOrderController::class, 'updateStatus'])
                 ->name('orders.status');
         });
@@ -137,20 +141,26 @@ Route::middleware(['auth', 'admin'])
             ->middleware('can:'.P::PAYMENTS_VIEW)->name('payments.index');
         Route::delete('/pagamenti/{payment}', [AdminPaymentController::class, 'destroy'])
             ->middleware('can:'.P::PAYMENTS_MANAGE)->name('payments.destroy');
+        Route::patch('/pagamenti-in-blocco', [AdminPaymentController::class, 'bulk'])
+            ->middleware('can:'.P::PAYMENTS_MANAGE)->name('payments.bulk');
 
         Route::resource('piani', AdminPlanController::class)
             ->parameters(['piani' => 'plan'])->names('plans')
             ->middleware('can:'.P::PLANS_MANAGE);
+        Route::patch('/piani-in-blocco', [AdminPlanController::class, 'bulk'])
+            ->middleware('can:'.P::PLANS_MANAGE)->name('plans.bulk');
 
         /* Contenuti ----------------------------------------------------- */
 
         Route::middleware('can:'.P::CONTENT_MANAGE)->group(function () {
             Route::resource('domini', AdminDomainController::class)
                 ->parameters(['domini' => 'domain'])->names('domains');
+            Route::patch('/domini-in-blocco', [AdminDomainController::class, 'bulk'])->name('domains.bulk');
             Route::patch('/domini/{domain}/verifica', [AdminDomainController::class, 'check'])
                 ->name('domains.check');
             Route::resource('pagine', AdminCmsPageController::class)
                 ->parameters(['pagine' => 'page'])->names('cms');
+            Route::patch('/pagine-in-blocco', [AdminCmsPageController::class, 'bulk'])->name('cms.bulk');
             Route::get('/menu', [AdminMenuController::class, 'edit'])->name('menus.edit');
             Route::put('/menu/{location}', [AdminMenuController::class, 'update'])->name('menus.update');
             Route::resource('banner', AdminAdvertisementController::class)
@@ -175,6 +185,8 @@ Route::middleware(['auth', 'admin'])
                 ->except(['index']);
             Route::patch('/utenti/{user}/stato', [AdminUserController::class, 'toggleStatus'])
                 ->name('users.status');
+            Route::patch('/utenti-in-blocco', [AdminUserController::class, 'bulk'])
+                ->name('users.bulk');
         });
 
         Route::resource('ruoli', AdminRoleController::class)

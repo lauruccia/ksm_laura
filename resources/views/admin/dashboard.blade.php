@@ -140,7 +140,7 @@
                                 <td><a href="{{ route('admin.orders.show', $order) }}">{{ $order->reference }}</a></td>
                                 <td>{{ $order->company?->name }}</td>
                                 <td>{{ \App\Support\Money::format($order->total) }}</td>
-                                <td><span class="ksm-badge ksm-badge--{{ $order->status }}">{{ $order->status }}</span></td>
+                                <td><span class="ksm-badge ksm-badge--{{ $order->status }}">{{ $order->statusLabel() }}</span></td>
                             </tr>
                         @empty
                             <tr><td colspan="4" class="ksm-muted">Nessun ordine.</td></tr>

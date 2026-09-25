@@ -14,6 +14,7 @@ use App\Payments\KMoney\KMoneyPercentages;
 use App\Payments\KMoney\KMoneyShare;
 use App\Payments\PaymentException;
 use App\Payments\Subscriptions\SubscriptionActivator;
+use App\Support\BulkSelection;
 use App\Support\CategoryTree;
 use App\Support\Images\ImageStore;
 use App\Support\Domains\DomainConnectionChecker;
@@ -22,6 +23,7 @@ use App\Support\Maps\CompanyLocation;
 use App\Support\RichText;
 use App\Support\WorkingHours;
 use Illuminate\Contracts\View\View;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
@@ -56,16 +58,8 @@ class AdminCompanyController extends Controller
 
     public function index(Request $request): View
     {
-        $term = trim($request->string('cerca')->toString());
-
-        $companies = Company::query()
-            // Le voci servono a sapere se l'azienda ha una pagina da aprire.
-            ->with('plan:id,name,capabilities')
-            ->when($term !== '', fn ($q) => $q->where(fn ($q) => $q
-                ->where('name', 'like', "%$term%")
-                ->orWhere('email', 'like', "%$term%")))
-            ->when($request->integer('piano'), fn ($q, $id) => $q->where('plan_id', $id))
-            ->when($request->filled('stato'), fn ($q) => $q->where('is_active', $request->input('stato') === 'attive'))
+        // Le voci del piano servono a sapere se l'azienda ha una pagina da aprire.
+        $companies = $this->filters(Company::query()->with('plan:id,name,capabilities'), $request)
             // Per id e non per data: con centomila aziende risponde l'indice primario.
             ->orderByDesc('id')
             ->paginate(20)
@@ -75,6 +69,44 @@ class AdminCompanyController extends Controller
             'companies' => $companies,
             'plans' => Plan::byRank()->pluck('name', 'id'),
         ]);
+    }
+
+    /** I filtri dell'elenco, gli stessi per la pagina e per "tutti i risultati". */
+    public function filters(Builder $query, Request $request): Builder
+    {
+        $term = trim($request->string('cerca')->toString());
+
+        return $query
+            ->when($term !== '', fn ($q) => $q->where(fn ($q) => $q
+                ->where('name', 'like', "%$term%")
+                ->orWhere('email', 'like', "%$term%")))
+            ->when($request->integer('piano'), fn ($q, $id) => $q->where('plan_id', $id))
+            ->when($request->filled('stato'), fn ($q) => $q->where('is_active', $request->input('stato') === 'attive'));
+    }
+
+    /**
+     * Accende, spegne o elimina piu' aziende insieme.
+     *
+     * Eliminare vale solo sulle righe spuntate: un'azienda si porta via
+     * prodotti, abbonamenti e pagina, e "tutti i risultati" possono essere
+     * decine di migliaia.
+     */
+    public function bulk(Request $request): RedirectResponse
+    {
+        $request->validate(
+            BulkSelection::rules(['activate', 'deactivate', 'delete'], onlySelected: ['delete']),
+            BulkSelection::messages()
+        );
+
+        $query = BulkSelection::query($request, Company::query(), $this->filters(...));
+
+        $message = match ($request->input('action')) {
+            'activate' => trans_choice(':count azienda accesa.|:count aziende accese.', $query->update(['is_active' => true])),
+            'deactivate' => trans_choice(':count azienda spenta.|:count aziende spente.', $query->update(['is_active' => false])),
+            'delete' => trans_choice(':count azienda eliminata.|:count aziende eliminate.', BulkSelection::deleteEach($query)),
+        };
+
+        return back()->with('success', $message);
     }
 
     public function create(): View

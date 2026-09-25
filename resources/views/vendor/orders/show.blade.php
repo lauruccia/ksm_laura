@@ -45,7 +45,7 @@
                 @csrf @method('PATCH')
                 <select class="ksm-select" name="status">
                     @foreach (\App\Models\Order::STATUSES as $status)
-                        <option value="{{ $status }}" @selected($order->status === $status)>{{ $status }}</option>
+                        <option value="{{ $status }}" @selected($order->status === $status)>{{ \App\Models\Order::STATUS_LABELS[$status] ?? $status }}</option>
                     @endforeach
                 </select>
                 <button class="ksm-btn ksm-btn--primary" type="submit">Aggiorna</button>

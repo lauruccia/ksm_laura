@@ -54,7 +54,7 @@ class AdminProductController extends Controller
         $message = match ($request->input('action')) {
             'activate' => trans_choice(':count prodotto attivato.|:count prodotti attivati.', $query->update(['status' => 'active'])),
             'deactivate' => trans_choice(':count prodotto disattivato.|:count prodotti disattivati.', $query->update(['status' => 'inactive'])),
-            'delete' => trans_choice(':count prodotto eliminato.|:count prodotti eliminati.', $this->deleteAll($query)),
+            'delete' => trans_choice(':count prodotto eliminato.|:count prodotti eliminati.', BulkSelection::deleteEach($query)),
             'kmoney' => $this->applyKMoney($percentages, $query->pluck('id')->all(), $request->input('percent')),
         };
 
@@ -142,19 +142,6 @@ class AdminProductController extends Controller
         }
 
         return $message;
-    }
-
-    /** Uno per uno, cosi' partono gli eventi del modello come nell'eliminazione singola. */
-    private function deleteAll(Builder $query): int
-    {
-        $count = 0;
-
-        $query->chunkById(200, function ($products) use (&$count) {
-            $products->each->delete();
-            $count += $products->count();
-        });
-
-        return $count;
     }
 
     public function destroy(Product $product): RedirectResponse

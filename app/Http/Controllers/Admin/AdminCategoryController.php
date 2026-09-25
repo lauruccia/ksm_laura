@@ -131,6 +131,12 @@ abstract class AdminCategoryController extends AdminResourceController
             ->with('success', __('Categoria «:name» creata.', ['name' => $record->name]));
     }
 
+    /** Niente eliminazione in blocco: quella singola sposta prima il ramo, questa no. */
+    public function bulk(Request $request): RedirectResponse
+    {
+        abort(404);
+    }
+
     /**
      * Elimina la categoria senza portarsi dietro il ramo.
      *

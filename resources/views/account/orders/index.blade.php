@@ -6,22 +6,22 @@
 @section('nav')@include('account.nav')@endsection
 
 @section('content')
-    <div class="ksm-panel__head">
-        <h1>I miei ordini</h1>
-    </div>
+    {{-- Titolo, numero e filtro su una riga sola: l'elenco parte subito sotto. --}}
+    <div class="ksm-listhead">
+        <h1>I miei ordini <span class="ksm-listhead__count">{{ number_format($orders->total(), 0, ',', '.') }}</span></h1>
 
-    <form class="ksm-filters" method="GET">
-        <select class="ksm-select" name="stato">
-            <option value="">Tutti gli stati</option>
-            @foreach ($statuses as $status)
-                <option value="{{ $status }}" @selected(request('stato') === $status)>{{ $status }}</option>
-            @endforeach
-        </select>
-        <button class="ksm-btn ksm-btn--ghost" type="submit">Filtra</button>
-        @if (request('stato'))
-            <a class="ksm-btn ksm-btn--ghost" href="{{ route('account.orders.index') }}">Azzera</a>
-        @endif
-    </form>
+        <form method="GET" class="ksm-listhead__filters">
+            <select class="ksm-select" name="stato" aria-label="Stato" onchange="this.form.submit()">
+                <option value="">Tutti gli stati</option>
+                @foreach ($statuses as $status)
+                    <option value="{{ $status }}" @selected(request('stato') === $status)>{{ \App\Models\Order::STATUS_LABELS[$status] ?? $status }}</option>
+                @endforeach
+            </select>
+            @if (request('stato'))
+                <a class="ksm-btn ksm-btn--ghost ksm-btn--sm" href="{{ route('account.orders.index') }}">Azzera</a>
+            @endif
+        </form>
+    </div>
 
     <div class="ksm-table-wrap">
         <table class="ksm-table">
@@ -33,7 +33,7 @@
                     <td class="ksm-muted">{{ $order->created_at?->translatedFormat('j M Y') }}</td>
                     <td>{{ $order->company?->name }}</td>
                     <td>{{ \App\Support\Money::format($order->total) }}</td>
-                    <td><span class="ksm-badge ksm-badge--{{ $order->status }}">{{ $order->status }}</span></td>
+                    <td><span class="ksm-badge ksm-badge--{{ $order->status }}">{{ $order->statusLabel() }}</span></td>
                     <td class="ksm-rowactions">
                         <a class="ksm-btn ksm-btn--ghost ksm-btn--sm" href="{{ route('account.orders.show', $order) }}">Apri</a>
                     </td>

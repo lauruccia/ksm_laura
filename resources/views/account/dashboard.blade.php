@@ -51,7 +51,7 @@
                         <td><a href="{{ route('account.orders.show', $order) }}">{{ $order->reference }}</a></td>
                         <td>{{ $order->company?->name }}</td>
                         <td>{{ \App\Support\Money::format($order->total) }}</td>
-                        <td><span class="ksm-badge ksm-badge--{{ $order->status }}">{{ $order->status }}</span></td>
+                        <td><span class="ksm-badge ksm-badge--{{ $order->status }}">{{ $order->statusLabel() }}</span></td>
                         <td class="ksm-rowactions">
                             <a class="ksm-btn ksm-btn--ghost ksm-btn--sm" href="{{ route('account.orders.show', $order) }}">Apri</a>
                         </td>

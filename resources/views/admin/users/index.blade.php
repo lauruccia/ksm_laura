@@ -8,46 +8,61 @@
 @section('nav')@include('admin.nav')@endsection
 
 @section('content')
-    <div class="ksm-panel__head">
-        <div>
-            <h1>Utenti</h1>
-            <p class="ksm-muted" style="margin: 4px 0 0;">
-                {{ $counts['admin'] }} in amministrazione, {{ $counts['vendor'] }} aziende,
-                {{ $counts['buyer'] }} clienti.
-            </p>
-        </div>
+    {{-- Titolo, numero e filtri su una riga sola: l'elenco parte subito sotto. --}}
+    <div class="ksm-listhead">
+        <h1>Utenti <span class="ksm-listhead__count">{{ number_format($users->total(), 0, ',', '.') }}</span></h1>
+        <span class="ksm-muted" style="font-size: .85rem;">
+            {{ $counts['admin'] }} in amministrazione, {{ $counts['vendor'] }} aziende, {{ $counts['buyer'] }} clienti
+        </span>
+
+        <form method="GET" class="ksm-listhead__filters" role="search">
+            <span class="ksm-listhead__search">
+                <x-icon name="search" :size="16" />
+                <input class="ksm-input" type="search" name="cerca" value="{{ request('cerca') }}" placeholder="Nome o email" aria-label="Nome o email">
+            </span>
+            <select class="ksm-select" name="tipo" aria-label="Tipo" onchange="this.form.submit()">
+                <option value="">Tutti i tipi</option>
+                @foreach ($types as $key => $label)
+                    <option value="{{ $key }}" @selected(request('tipo') === $key)>{{ $label }}</option>
+                @endforeach
+            </select>
+            <select class="ksm-select" name="ruolo" aria-label="Ruolo" onchange="this.form.submit()">
+                <option value="">Tutti i ruoli</option>
+                @foreach ($roles as $role)
+                    <option value="{{ $role->id }}" @selected((string) request('ruolo') === (string) $role->id)>{{ $role->name }}</option>
+                @endforeach
+            </select>
+            <button class="ksm-btn ksm-btn--ghost ksm-btn--sm" type="submit">Cerca</button>
+            @if (request()->hasAny(['cerca', 'tipo', 'ruolo']))
+                <a class="ksm-btn ksm-btn--ghost ksm-btn--sm" href="{{ route('admin.users.index') }}">Azzera</a>
+            @endif
+        </form>
+
         @can(P::USERS_MANAGE)
-            <a class="ksm-btn ksm-btn--primary" href="{{ route('admin.users.create') }}">Nuovo utente</a>
+            <span class="ksm-listhead__actions">
+                <a class="ksm-btn ksm-btn--primary ksm-btn--sm" href="{{ route('admin.users.create') }}">Nuovo utente</a>
+            </span>
         @endcan
     </div>
 
-    <form class="ksm-filters" method="GET">
-        <input class="ksm-input" name="cerca" value="{{ request('cerca') }}" placeholder="Nome o email">
-
-        <select class="ksm-select" name="tipo">
-            <option value="">Tutti i tipi</option>
-            @foreach ($types as $key => $label)
-                <option value="{{ $key }}" @selected(request('tipo') === $key)>{{ $label }}</option>
-            @endforeach
-        </select>
-
-        <select class="ksm-select" name="ruolo">
-            <option value="">Tutti i ruoli</option>
-            @foreach ($roles as $role)
-                <option value="{{ $role->id }}" @selected((string) request('ruolo') === (string) $role->id)>{{ $role->name }}</option>
-            @endforeach
-        </select>
-
-        <button class="ksm-btn ksm-btn--ghost" type="submit">Filtra</button>
-        @if (request()->hasAny(['cerca', 'tipo', 'ruolo']))
-            <a class="ksm-btn ksm-btn--ghost" href="{{ route('admin.users.index') }}">Azzera</a>
-        @endif
-    </form>
+    @if (auth()->user()->can(P::USERS_MANAGE) && $users->isNotEmpty())
+        @include('partials.bulk-bar', [
+            'action' => route('admin.users.bulk'),
+            'paginator' => $users,
+            'noun' => 'utenti',
+            'nounOne' => 'utente',
+            'actions' => ['activate' => 'Riattiva', 'deactivate' => 'Sospendi', 'delete' => 'Elimina'],
+            'onlySelected' => ['delete'],
+        ])
+    @endif
 
     <div class="ksm-table-wrap">
         <table class="ksm-table">
             <thead>
             <tr>
+                @can(P::USERS_MANAGE)
+                    <th class="ksm-bulk__cell"><input type="checkbox" data-bulk-page aria-label="Seleziona tutti in questa pagina"></th>
+                @endcan
                 <th>Nome</th>
                 <th>Email</th>
                 <th>Tipo</th>
@@ -59,6 +74,15 @@
             <tbody>
             @forelse ($users as $user)
                 <tr>
+                    @can(P::USERS_MANAGE)
+                        <td class="ksm-bulk__cell">
+                            {{-- Il proprio accesso non si sospende ne' si elimina: niente casella. --}}
+                            @unless ($user->is(auth()->user()))
+                                <input type="checkbox" name="ids[]" value="{{ $user->id }}" form="bulk" data-bulk-item
+                                       aria-label="Seleziona {{ $user->name }}">
+                            @endunless
+                        </td>
+                    @endcan
                     <td>
                         <strong>{{ $user->name }}</strong>
                         @if ($user->is(auth()->user()))
@@ -95,7 +119,7 @@
                     </td>
                 </tr>
             @empty
-                <tr><td colspan="6" class="ksm-muted">Nessun utente con questi filtri.</td></tr>
+                <tr><td colspan="7" class="ksm-muted">Nessun utente con questi filtri.</td></tr>
             @endforelse
             </tbody>
         </table>

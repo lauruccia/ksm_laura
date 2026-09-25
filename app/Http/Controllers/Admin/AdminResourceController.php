@@ -3,7 +3,9 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Support\BulkSelection;
 use Illuminate\Contracts\View\View;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -74,11 +76,7 @@ abstract class AdminResourceController extends Controller
 
     public function index(Request $request): View
     {
-        $records = $this->model::query()
-            ->when(
-                $request->string('cerca')->toString(),
-                fn ($q, $term) => $q->where($this->searchColumn, 'like', "%$term%")
-            )
+        $records = $this->filters($this->model::query(), $request)
             ->latest()
             ->paginate(20)
             ->withQueryString();
@@ -86,6 +84,30 @@ abstract class AdminResourceController extends Controller
         $this->prepareRows($records->getCollection());
 
         return view('admin.resource.index', ['records' => $records] + $this->shared());
+    }
+
+    /** I filtri dell'elenco, gli stessi per la pagina e per "tutti i risultati". */
+    public function filters(Builder $query, Request $request): Builder
+    {
+        return $query->when(
+            $request->string('cerca')->toString(),
+            fn ($q, $term) => $q->where($this->searchColumn, 'like', "%$term%")
+        );
+    }
+
+    /**
+     * Elimina piu' elementi insieme, solo fra quelli spuntati.
+     *
+     * Vale per le anagrafiche che registrano la rotta `<prefisso>.bulk`:
+     * le categorie no, perche' la loro eliminazione sposta prima il ramo.
+     */
+    public function bulk(Request $request): RedirectResponse
+    {
+        $request->validate(BulkSelection::rules(['delete'], onlySelected: ['delete']), BulkSelection::messages());
+
+        $count = BulkSelection::deleteEach(BulkSelection::query($request, $this->model::query(), $this->filters(...)));
+
+        return back()->with('success', trans_choice(':count elemento eliminato.|:count elementi eliminati.', $count));
     }
 
     public function create(): View
