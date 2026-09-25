@@ -73,7 +73,7 @@ class AdminDashboardController extends Controller
                 'tone' => 'dark',
                 'value' => number_format($total, 0, ',', '.'),
                 'label' => 'Aziende',
-                'note' => $active.' attive',
+                'note' => self::number($active).' attive',
                 'ratio' => $total > 0 ? $active / $total : 0,
                 'url' => route('admin.companies.index'),
             ];
@@ -85,16 +85,11 @@ class AdminDashboardController extends Controller
                 'tone' => 'accent',
                 'value' => number_format(Product::count(), 0, ',', '.'),
                 'label' => 'Prodotti',
-                'note' => ProductCategory::count().' categorie prodotto',
+                // Le categorie stanno qui come nota: una scheda a se' per un
+                // numero che cambia di rado lasciava la seconda fila mezza vuota.
+                'note' => self::number(ProductCategory::count()).' categorie prodotto, '
+                    .self::number(CompanyCategory::count()).' categorie aziende',
                 'url' => route('admin.products.index'),
-            ];
-
-            $cards[] = [
-                'icon' => 'tag',
-                'tone' => 'muted',
-                'value' => number_format(CompanyCategory::count(), 0, ',', '.'),
-                'label' => 'Categorie aziende',
-                'url' => route('admin.company_categories.index'),
             ];
         }
 
@@ -127,7 +122,7 @@ class AdminDashboardController extends Controller
                 'tone' => 'accent',
                 'value' => number_format(Order::count(), 0, ',', '.'),
                 'label' => 'Ordini',
-                'note' => Order::where('status', 'pending')->count().' da evadere',
+                'note' => self::number(Order::where('status', 'pending')->count()).' da evadere',
                 'url' => route('admin.orders.index'),
             ];
         }
@@ -151,12 +146,18 @@ class AdminDashboardController extends Controller
                     AdminTransaction::where('status', 'completed')->sum('amount')
                 ),
                 'label' => 'Quote abbonamento',
-                'note' => CompanySubscription::query()->active()->count().' abbonamenti attivi',
+                'note' => self::number(CompanySubscription::query()->active()->count()).' abbonamenti attivi',
                 'url' => route('admin.subscriptions.index'),
             ];
         }
 
         return $cards;
+    }
+
+    /** Un conteggio con il punto delle migliaia, come i numeri grandi delle schede. */
+    private static function number(int $value): string
+    {
+        return number_format($value, 0, ',', '.');
     }
 
     /** Ordini per stato, con la quota sul totale per la barra. */

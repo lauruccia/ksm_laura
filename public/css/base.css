@@ -60,7 +60,7 @@ img {
     width: 100%;
     max-width: var(--ksm-width);
     margin: 0 auto;
-    padding: 0 24px;
+    padding: 0 var(--ksm-gutter);
 }
 
 .ksm-section { padding: 72px 0; }
@@ -162,3 +162,16 @@ img {
 
 /* Un fieldset non si restringe sotto il suo contenuto: con una tabella dentro uscirebbe dal modulo. */
 fieldset { min-width: 0; }
+
+/* Telefoni: sotto i 16px Safari ingrandisce la pagina appena si tocca un
+   campo, e poi resta ingrandita. Vale per tutti i campi, anche quelli con
+   una dimensione propria, per questo !important. */
+@media (max-width: 760px) {
+    body { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+
+    input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]),
+    select,
+    textarea { font-size: 16px !important; }
+
+    a, button, label, summary { -webkit-tap-highlight-color: rgba(81, 165, 44, .14); }
+}

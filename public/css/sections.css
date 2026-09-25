@@ -501,7 +501,12 @@
     .ksm-searchbar__filter { flex: 1 1 100%; }
     .ksm-searchbar__submit { flex: 1 1 100%; }
 
-    .ksm-footer__grid { grid-template-columns: 1fr; gap: 32px; padding: 44px 0 36px; }
+    /* Marchio e recapiti a tutta riga; le due liste di link, corte, affiancate. */
+    .ksm-footer__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px 20px; padding: 40px 0 32px; }
+    .ksm-footer__grid > * { grid-column: 1 / -1; }
+    .ksm-footer__grid > :has(> .ksm-footer__links) { grid-column: auto; }
+    .ksm-footer h4 { margin-bottom: 16px; }
+    .ksm-footer li { margin-bottom: 10px; }
     .ksm-footer__bottom-inner p { flex: 1 1 100%; }
 }
 

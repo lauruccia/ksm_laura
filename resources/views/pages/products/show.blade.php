@@ -85,7 +85,7 @@
                         @endif
                         @error('quantita')<p class="ksm-error" style="flex-basis: 100%;">{{ $message }}</p>@enderror
                         <input class="ksm-input" style="width: 90px;" type="number" name="quantita" value="1" min="1" aria-label="{{ __('storefront.quantity') }}">
-                        <button class="ksm-btn ksm-btn--primary" type="submit" @disabled(! $product->isInStock())>
+                        <button class="ksm-btn ksm-btn--primary ksm-product__add" type="submit" @disabled(! $product->isInStock())>
                             {{ __('site.add_to_cart') }}
                         </button>
                     </form>

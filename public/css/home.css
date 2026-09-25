@@ -13,6 +13,25 @@
 }
 
 @media (max-width: 700px) {
+    /* Aziende in evidenza: una fila che si sfoglia col dito. Una sotto l'altra
+       erano otto schede alte, quasi tre schermate prima di arrivare al resto. */
+    .ksm-home .ksm-rail {
+        grid-template-columns: none;
+        grid-auto-flow: column;
+        grid-auto-columns: 84%;
+        gap: 12px;
+        margin-inline: calc(-1 * var(--ksm-gutter));
+        padding: 4px var(--ksm-gutter) 14px;
+        overflow-x: auto;
+        overscroll-behavior-x: contain;
+        scroll-snap-type: x mandatory;
+        scroll-padding-inline: var(--ksm-gutter);
+        scrollbar-width: none;
+    }
+
+    .ksm-home .ksm-rail::-webkit-scrollbar { display: none; }
+    .ksm-home .ksm-rail > * { scroll-snap-align: start; }
+
     .ksm-home .ksm-section { padding: 24px 0; }
     .ksm-home .ksm-section-head { gap: 12px; margin-bottom: 16px; }
     .ksm-home .ksm-steps { gap: 12px; }

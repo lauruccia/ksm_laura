@@ -8,10 +8,11 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Montserrat:wght@600;700;800&display=swap" rel="stylesheet">
 
-    <link rel="stylesheet" href="{{ asset('css/tokens.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/base.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/components.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/panel.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/tokens.css') }}?v={{ filemtime(public_path('css/tokens.css')) }}">
+    <link rel="stylesheet" href="{{ asset('css/base.css') }}?v={{ filemtime(public_path('css/base.css')) }}">
+    <link rel="stylesheet" href="{{ asset('css/components.css') }}?v={{ filemtime(public_path('css/components.css')) }}">
+    <link rel="stylesheet" href="{{ asset('css/panel.css') }}?v={{ filemtime(public_path('css/panel.css')) }}">
+    <script src="{{ asset('js/tables.js') }}?v={{ filemtime(public_path('js/tables.js')) }}" defer></script>
 </head>
 <body>
 {{-- La spunta nascosta apre e chiude la colonna sui telefoni: niente script. --}}
@@ -47,6 +48,8 @@
             </form>
         @endauth
     </aside>
+
+    <label class="ksm-panel__shade" for="ksm-panel-switch" aria-hidden="true"></label>
 
     <div class="ksm-panel__body">
         <header class="ksm-panel__top">

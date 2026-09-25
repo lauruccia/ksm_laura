@@ -19,7 +19,8 @@
     </div>
 
     @if ($cards)
-        <div class="ksm-kpis">
+        {{-- Colonne scelte sul numero di schede: righe piene, mai una scheda sola in fondo. --}}
+        <div class="ksm-kpis" style="--kpi-cols: {{ count($cards) <= 4 ? count($cards) : (int) ceil(count($cards) / 2) }}; --kpi-wide: {{ count($cards) }};">
             @foreach ($cards as $card)
                 <a class="ksm-kpi ksm-kpi--{{ $card['tone'] }}" href="{{ $card['url'] }}">
                     <span class="ksm-kpi__icon"><x-icon :name="$card['icon']" :size="20" /></span>
@@ -38,7 +39,7 @@
         </div>
     @endif
 
-    <div class="ksm-panel-grid">
+    <div class="ksm-panel-grid ksm-panel-grid--even">
         @if ($chart)
             <section class="ksm-box">
                 <div class="ksm-box__head">
@@ -61,9 +62,9 @@
                 </div>
 
                 <div class="ksm-minitiles">
-                    <div><strong>{{ $subscriptions['active'] }}</strong><span>attivi</span></div>
-                    <div><strong>{{ $subscriptions['pending'] }}</strong><span>in attesa</span></div>
-                    <div><strong>{{ $subscriptions['expiring'] }}</strong><span>in scadenza</span></div>
+                    <div><strong>{{ number_format($subscriptions['active'], 0, ',', '.') }}</strong><span>attivi</span></div>
+                    <div><strong>{{ number_format($subscriptions['pending'], 0, ',', '.') }}</strong><span>in attesa</span></div>
+                    <div><strong>{{ number_format($subscriptions['expiring'], 0, ',', '.') }}</strong><span>in scadenza</span></div>
                 </div>
 
                 <ul class="ksm-meterlist">
@@ -71,7 +72,7 @@
                         <li>
                             <span class="ksm-meterlist__top">
                                 <span>{{ $plan['name'] }}</span>
-                                <span class="ksm-muted">{{ $plan['count'] }}</span>
+                                <span class="ksm-muted">{{ number_format($plan['count'], 0, ',', '.') }}</span>
                             </span>
                             <span class="ksm-meter"><i style="width: {{ round($plan['ratio'] * 100) }}%"></i></span>
                         </li>
@@ -125,7 +126,7 @@
         </section>
     @endif
 
-    <div class="ksm-panel-grid">
+    <div class="ksm-panel-grid ksm-panel-grid--even">
         @if ($latestOrders)
             <section class="ksm-box">
                 <div class="ksm-box__head"><h2>Ultimi ordini</h2></div>

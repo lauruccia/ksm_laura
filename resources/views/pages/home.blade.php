@@ -120,7 +120,7 @@
             @if ($companies->isEmpty())
                 <p class="ksm-muted">{{ __('site.no_results') }}</p>
             @else
-                <div class="ksm-grid ksm-grid--4">
+                <div class="ksm-grid ksm-grid--4 ksm-rail">
                     @foreach ($companies as $company)
                         <x-company-card :company="$company" />
                     @endforeach

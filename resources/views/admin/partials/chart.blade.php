@@ -25,8 +25,18 @@
     $points = collect($chart['orders'])
         ->map(fn ($value, $i) => round($padLeft + $slot * $i + $slot / 2, 1).','.round($linePoint($value), 1))
         ->implode(' ');
+
+    $empty = ! array_filter($chart['revenue']) && ! array_filter($chart['orders']);
 @endphp
 
+@if ($empty)
+    {{-- Dodici barre a zero sembrano un grafico rotto: meglio dirlo. --}}
+    <div class="ksm-chart ksm-chart--empty">
+        <x-icon name="chart" :size="28" />
+        <p>Nessun ordine negli ultimi dodici mesi.</p>
+        <span class="ksm-muted">Il grafico si riempie con i primi ordini del marketplace.</span>
+    </div>
+@else
 <div class="ksm-chart">
     <svg viewBox="0 0 {{ $width }} {{ $height }}" role="img"
          aria-label="Incassato e numero di ordini per mese negli ultimi dodici mesi">
@@ -68,3 +78,4 @@
         {{ $maxOrders }} ordini in un mese.
     </p>
 </div>
+@endif

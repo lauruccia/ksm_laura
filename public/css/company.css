@@ -387,8 +387,14 @@
 .ksm-mini__form button { grid-column: 1 / -1; justify-self: start; }
 
 /* ---------- Schermi stretti ---------- */
+/* In una colonna sola contatti, orari e mappa vengono prima dei moduli:
+   chi apre la pagina dal telefono cerca soprattutto il numero e l'indirizzo. */
 @media (max-width: 980px) {
-    .ksm-mini__layout { grid-template-columns: 1fr; }
+    .ksm-mini__layout { grid-template-columns: 1fr; gap: 20px; }
+    .ksm-mini__main,
+    .ksm-mini__side { display: contents; }
+    .ksm-mini__main > #recensioni,
+    .ksm-mini__main > #contatti { order: 1; }
 }
 
 @media (max-width: 720px) {
@@ -403,5 +409,10 @@
     .ksm-mini__name { font-size: 1.6rem; }
     .ksm-mini__actions .ksm-btn { flex: 1 1 calc(50% - 5px); }
     .ksm-mini__form { grid-template-columns: 1fr; }
+    .ksm-mini__form button { justify-self: stretch; }
     .ksm-mini__block { padding: 18px; }
+
+    /* Galleria: due foto per riga, non una sotto l'altra per tutta la pagina. */
+    .ksm-mini__gallery { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+    .ksm-mini__mapcanvas { height: 220px; }
 }

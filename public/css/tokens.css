@@ -42,10 +42,19 @@
 
     --ksm-width: 1320px;
     --ksm-gap: 24px;
+    /* Margine ai lati della pagina: sui telefoni si stringe, lo schermo e' poco. */
+    --ksm-gutter: 24px;
 
     --ksm-ease: cubic-bezier(.2, .7, .3, 1);
 
     --ksm-font: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
     --ksm-font-display: "Montserrat", "Segoe UI", system-ui, sans-serif;
     --ksm-font-script: "Caveat", "Segoe Script", cursive;
+}
+
+@media (max-width: 560px) {
+    :root {
+        --ksm-gap: 16px;
+        --ksm-gutter: 16px;
+    }
 }

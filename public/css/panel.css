@@ -180,15 +180,26 @@
 
 /* Schede in cima -------------------------------------------------------- */
 
+/* Le colonne arrivano dalla pagina (--kpi-cols): righe sempre piene,
+   e sugli schermi larghi tutte le schede su una riga sola (--kpi-wide). */
 .ksm-kpis {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(216px, 1fr));
+    grid-template-columns: repeat(var(--kpi-cols, 3), minmax(0, 1fr));
     gap: 16px;
     margin-bottom: 26px;
 }
 
+@media (min-width: 1800px) {
+    .ksm-kpis { grid-template-columns: repeat(var(--kpi-wide, 3), minmax(0, 1fr)); }
+}
+
+@media (max-width: 1100px) {
+    .ksm-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
 .ksm-kpi {
-    display: block;
+    display: flex;
+    flex-direction: column;
     position: relative;
     background: var(--ksm-surface);
     border: 1px solid var(--ksm-line);
@@ -251,9 +262,12 @@
     height: 5px;
     border-radius: var(--ksm-radius-pill);
     background: var(--ksm-line-soft);
-    margin-top: 12px;
+    margin-top: auto;
     overflow: hidden;
 }
+
+/* La barra resta sul fondo della scheda anche quando le vicine sono piu' alte. */
+.ksm-kpi__note:has(+ .ksm-kpi__bar) { margin-bottom: 12px; }
 
 .ksm-kpi__bar i {
     display: block;
@@ -293,12 +307,17 @@
 
 .ksm-panel-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(340px, 100%), 1fr));
     gap: 22px;
     align-items: start;
 }
 
 .ksm-panel-grid > .ksm-box { margin-bottom: 0; }
+
+/* Riquadri affiancati della stessa altezza, dove stanno uno accanto all'altro per confronto. */
+.ksm-panel-grid--even { align-items: stretch; }
+.ksm-panel-grid--even > .ksm-box { display: flex; flex-direction: column; }
+.ksm-panel-grid--even .ksm-chart--empty { flex: 1; }
 .ksm-panel-grid + .ksm-box,
 .ksm-panel-grid + .ksm-panel-grid { margin-top: 22px; }
 
@@ -312,6 +331,24 @@
 .ksm-chart__dot { fill: var(--ksm-dark); }
 .ksm-chart__label { fill: var(--ksm-muted); font-size: 11px; font-family: var(--ksm-font); }
 .ksm-chart__scale { margin: 10px 0 0; font-size: .82rem; color: var(--ksm-muted); }
+
+.ksm-chart--empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-height: 220px;
+    padding: 24px;
+    text-align: center;
+    border: 1px dashed var(--ksm-line);
+    border-radius: var(--ksm-radius-sm);
+    color: var(--ksm-muted);
+    font-size: .85rem;
+}
+
+.ksm-chart--empty svg { width: 28px; height: 28px; color: var(--ksm-accent-dark); }
+.ksm-chart--empty p { margin: 6px 0 0; font-weight: 600; color: var(--ksm-ink); font-size: .95rem; }
 
 .ksm-legend {
     display: inline-flex;
@@ -476,7 +513,7 @@
 
 .ksm-rolegrid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr));
     gap: 20px;
 }
 
@@ -649,6 +686,74 @@
 
     .ksm-panel__top { padding: 12px 18px; }
     .ksm-panel__main { padding: 20px 18px 40px; }
+}
+
+/* Sotto il menu aperto il resto della pagina si scurisce: un tocco fuori lo chiude. */
+.ksm-panel__shade { display: none; }
+
+@media (max-width: 960px) {
+    .ksm-panel__switch:checked ~ .ksm-panel .ksm-panel__shade {
+        display: block;
+        position: fixed;
+        inset: 0;
+        z-index: 19;
+        background: rgba(7, 54, 77, .45);
+        cursor: pointer;
+    }
+}
+
+@media (max-width: 560px) {
+    .ksm-panel__top { gap: 10px; padding: 10px 14px; }
+    .ksm-panel__crumb {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-size: .7rem;
+    }
+    .ksm-panel__main { padding: 16px 14px 32px; }
+
+    .ksm-panel__head { gap: 12px; margin-bottom: 16px; }
+    .ksm-panel__head h1 { font-size: 1.35rem; }
+
+    /* Due numeri per riga invece di una colonna lunghissima. */
+    .ksm-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-bottom: 18px; }
+    .ksm-kpi { padding: 14px; }
+    .ksm-kpi:last-child:nth-child(odd) { grid-column: 1 / -1; }
+    .ksm-statebar { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+    .ksm-statebar__item:last-child:nth-child(odd) { grid-column: 1 / -1; }
+    .ksm-kpi__icon { width: 32px; height: 32px; margin-bottom: 8px; }
+    .ksm-kpi__value { font-size: 1.25rem; overflow-wrap: anywhere; }
+    .ksm-kpi__label { font-size: .68rem; }
+    .ksm-kpi__note { font-size: .76rem; margin-top: 4px; }
+
+    .ksm-box { padding: 16px; margin-bottom: 16px; }
+    .ksm-panel-grid,
+    .ksm-formpage { gap: 16px; }
+    .ksm-panel-grid + .ksm-box,
+    .ksm-panel-grid + .ksm-panel-grid { margin-top: 16px; }
+
+    .ksm-minitiles { gap: 6px; }
+    .ksm-minitiles div { padding: 10px 6px; }
+    .ksm-minitiles strong { font-size: 1.1rem; overflow-wrap: anywhere; }
+
+    /* Filtri: ogni campo prende la riga intera, il bottone accanto all'ultima tendina. */
+    .ksm-filters .ksm-input,
+    .ksm-filters .ksm-select { flex: 1 1 100%; max-width: none; }
+    .ksm-filters .ksm-select + .ksm-btn,
+    .ksm-filters .ksm-btn { flex: 1 1 auto; }
+
+    .ksm-checkgrid { grid-template-columns: minmax(0, 1fr); }
+    .ksm-thumb--wide { width: 100%; }
+}
+
+/* Elenco aziende come schede: via le misure pensate per la tabella larga. */
+@media (max-width: 640px) {
+    .ksm-table--stack.ksm-table--companies td { min-width: 0; max-width: none; padding-inline: 0; }
+    .ksm-table-wrap > .ksm-table--stack.ksm-table--companies td[data-label] { padding-left: 38%; }
+    .ksm-table--stack.ksm-table--companies .ksm-rowactions { flex-wrap: wrap; }
+    /* Il logo accanto al nome, non su una riga tutta sua. */
+    .ksm-table-wrap > .ksm-table--stack.ksm-table--companies td:first-child { float: right; min-height: 0; margin-left: 10px; }
 }
 
 /* Aziende: miniature, galleria, orari ------------------------------------ */
