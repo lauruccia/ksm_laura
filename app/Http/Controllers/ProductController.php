@@ -57,12 +57,13 @@ class ProductController extends Controller
             ))
             ->when($request->integer('marca'), fn ($q, $id) => $q->where('brand_id', $id))
             ->when($request->string('cerca')->toString(), fn ($q, $term) => $q->where('name', 'like', "%$term%"))
-            ->when($request->float('prezzo_min'), fn ($q, $min) => $q->where('price', '>=', $min))
-            ->when($request->float('prezzo_max'), fn ($q, $max) => $q->where('price', '<=', $max))
+            // Il prezzo filtrato è quello che si paga, sconto incluso, come sulla scheda.
+            ->when($request->float('prezzo_min'), fn ($q, $min) => $q->whereRaw(Product::FINAL_PRICE_SQL.' >= ?', [$min]))
+            ->when($request->float('prezzo_max'), fn ($q, $max) => $q->whereRaw(Product::FINAL_PRICE_SQL.' <= ?', [$max]))
             ->when($request->boolean('disponibili'), fn ($q) => $q->available())
             ->when($request->boolean('kmoney'), fn ($q) => $q->where('kmoney_percent', '>', 0))
             ->when($request->boolean('offerta'), fn ($q) => $q->where('discount_price', '>', 0)->whereColumn('discount_price', '<', 'price'))
-            ->orderBy($this->sortColumn($request->string('ordina')->toString()), $this->sortDirection($request->string('ordina')->toString()))
+            ->orderByRaw($this->sortColumn($request->string('ordina')->toString()).' '.$this->sortDirection($request->string('ordina')->toString()))
             ->paginate($this->perPage($request))
             ->withQueryString();
 
@@ -228,9 +229,9 @@ class ProductController extends Controller
     private function sortColumn(string $sort): string
     {
         return match ($sort) {
-            'prezzo', 'prezzo_desc' => 'price',
-            'nome' => 'name',
-            default => 'created_at',
+            'prezzo', 'prezzo_desc' => Product::FINAL_PRICE_SQL,
+            'nome' => 'products.name',
+            default => 'products.created_at',
         };
     }
 

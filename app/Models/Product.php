@@ -82,6 +82,9 @@ class Product extends Model
             : rtrim(rtrim(number_format($kg, 2, ',', ''), '0'), ',').' kg';
     }
 
+    /** Prezzo effettivo in SQL, stessa regola di final_price: per filtri e ordinamenti. */
+    public const FINAL_PRICE_SQL = 'CASE WHEN products.discount_price > 0 AND products.discount_price < products.price THEN products.discount_price ELSE products.price END';
+
     /** Prezzo effettivo di vendita, sconto incluso. */
     public function getFinalPriceAttribute(): float
     {
