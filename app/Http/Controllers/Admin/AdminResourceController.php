@@ -149,7 +149,7 @@ abstract class AdminResourceController extends Controller
         return $this->model::query()->findOrFail($key);
     }
 
-    private function shared(): array
+    protected function shared(): array
     {
         return [
             'title' => $this->title,

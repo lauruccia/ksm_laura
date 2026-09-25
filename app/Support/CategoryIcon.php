@@ -34,9 +34,35 @@ final class CategoryIcon
         'altro' => 'grid',
     ];
 
+    /** Le icone che l'amministratore puo' scegliere per una categoria: nome => descrizione. */
+    public const CHOICES = [
+        'palette' => 'Arte',
+        'hammer' => 'Artigiani',
+        'car' => 'Auto e moto',
+        'home' => 'Casa',
+        'bed' => 'Dormire',
+        'monitor' => 'Tecnologia',
+        'utensils' => 'Mangiare e bere',
+        'paw' => 'Animali',
+        'briefcase' => 'Professionisti',
+        'gift' => 'Regali',
+        'heart' => 'Salute e bellezza',
+        'wrench' => 'Servizi',
+        'shirt' => 'Abbigliamento',
+        'ball' => 'Sport',
+        'truck' => 'Trasporti',
+        'leaf' => 'Natura',
+        'building' => 'Aziende',
+        'star' => 'In evidenza',
+        'tag' => 'Generica',
+        'grid' => 'Altro',
+    ];
+
     /**
      * Risale dalla categoria verso la radice. Le madri vanno caricate
      * prima (`category.parent.parent`), altrimenti ogni gradino e' una query.
+     *
+     * Vince l'icona scelta in amministrazione, poi quella legata allo slug.
      */
     public static function for(?CompanyCategory $category): string
     {
@@ -46,6 +72,10 @@ final class CategoryIcon
             // Un giro chiuso rimasto nei dati vecchi non manda in loop.
             if (in_array($current->id, $seen, true)) {
                 break;
+            }
+
+            if (isset(self::CHOICES[$current->icon ?? ''])) {
+                return $current->icon;
             }
 
             if (isset(self::BY_SLUG[$current->slug])) {

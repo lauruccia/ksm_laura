@@ -4,9 +4,12 @@ namespace App\Http\Controllers\Admin;
 
 use App\Support\CategoryTree;
 use Closure;
+use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
@@ -17,13 +20,140 @@ use Illuminate\Validation\Rule;
  * ogni livello ammesso con il percorso completo, cosi' anche una categoria
  * al terzo livello ritrova la sua madre, e il salvataggio rifiuta giri
  * chiusi e rami piu' profondi del consentito.
+ *
+ * L'elenco e' l'albero intero, non una pagina di righe: si aprono i rami,
+ * si aggiunge una sottocategoria dalla riga della madre e si vede quante
+ * aziende o quanti prodotti stanno in ogni ramo.
  */
 abstract class AdminCategoryController extends AdminResourceController
 {
     /** Livelli ammessi, categoria principale compresa. */
     protected int $maxLevels = 2;
 
+    /** Relazione con cio' che sta nella categoria, per contarlo: companies o products. */
+    protected string $itemsRelation;
+
+    /** Come si chiamano, al plurale e al singolare. */
+    protected string $itemsLabel;
+
+    protected string $itemLabel;
+
     private ?CategoryTree $tree = null;
+
+    public function index(Request $request): View
+    {
+        $model = $this->model;
+        $rows = $model::query()->withCount($this->itemsRelation)->get()->keyBy('id');
+        $tree = $this->tree();
+
+        // Con una ricerca restano le categorie trovate e le loro madri, per non perdere il ramo.
+        $term = Str::lower(trim($request->string('cerca')->toString()));
+        $visible = null;
+
+        if ($term !== '') {
+            $visible = [];
+
+            foreach ($rows as $row) {
+                if (Str::contains(Str::lower($row->name.' '.$row->slug), $term)) {
+                    array_push($visible, ...$tree->lineage($row->id));
+                }
+            }
+
+            $visible = array_flip($visible);
+        }
+
+        $build = function (?int $parent) use (&$build, $rows, $tree, $visible): array {
+            $nodes = [];
+
+            foreach (array_keys($tree->children($parent)) as $id) {
+                if ($visible !== null && ! isset($visible[$id])) {
+                    continue;
+                }
+
+                $row = $rows[$id];
+                $children = $build($id);
+
+                $nodes[] = [
+                    'record' => $row,
+                    'level' => $tree->level($id),
+                    'parent' => $parent !== null ? $rows[$parent]->name : null,
+                    'count' => (int) $row->{$this->itemsRelation.'_count'},
+                    'total' => (int) $row->{$this->itemsRelation.'_count'} + array_sum(array_map(
+                        fn (int $child) => (int) $rows[$child]->{$this->itemsRelation.'_count'},
+                        $tree->descendants($id)
+                    )),
+                    'children' => $children,
+                ];
+            }
+
+            return $nodes;
+        };
+
+        $roots = count($tree->children());
+
+        return view('admin.categories.index', [
+            'title' => $this->title,
+            'routePrefix' => $this->routePrefix,
+            'nodes' => $build(null),
+            'search' => $term,
+            'maxLevels' => $this->maxLevels,
+            'parentOptions' => $tree->parentOptions(null, $this->maxLevels),
+            'itemsLabel' => $this->itemsLabel,
+            'itemLabel' => $this->itemLabel,
+            'stats' => [
+                'total' => $rows->count(),
+                'roots' => $roots,
+                'children' => $rows->count() - $roots,
+                'empty' => $rows->filter(fn ($row) => ! $row->{$this->itemsRelation.'_count'})->count(),
+            ],
+        ]);
+    }
+
+    /** "Nuova sottocategoria" arriva con la madre gia' scelta. */
+    public function create(): View
+    {
+        $record = new $this->model;
+        $parent = request()->integer('madre');
+
+        if ($parent && $this->tree()->parentProblem(null, $parent, $this->maxLevels) === null) {
+            $record->parent_id = $parent;
+        }
+
+        return view('admin.resource.form', ['record' => $record] + $this->shared());
+    }
+
+    public function store(Request $request): RedirectResponse
+    {
+        $data = $this->transform($request->validate($this->rules($request)), $request);
+        $record = $this->model::create($data);
+
+        return redirect()->to(route("$this->routePrefix.index").'#categoria-'.$record->getKey())
+            ->with('success', __('Categoria «:name» creata.', ['name' => $record->name]));
+    }
+
+    /**
+     * Elimina la categoria senza portarsi dietro il ramo.
+     *
+     * Nel database le sottocategorie cadrebbero insieme alla madre: qui
+     * salgono prima di un livello, e aziende o prodotti passano alla
+     * categoria superiore invece di restare senza.
+     */
+    public function destroy(Request $request): RedirectResponse
+    {
+        $record = $this->record($request);
+        $parent = $record->parent_id;
+
+        DB::transaction(function () use ($record, $parent) {
+            $this->model::query()->where('parent_id', $record->getKey())->update(['parent_id' => $parent]);
+            $record->{$this->itemsRelation}()->update(['category_id' => $parent]);
+            $record->delete();
+        });
+
+        CategoryTree::forget($this->model);
+
+        return redirect()->route("$this->routePrefix.index")
+            ->with('success', __('Categoria «:name» eliminata.', ['name' => $record->name]));
+    }
 
     protected function columns(): array
     {

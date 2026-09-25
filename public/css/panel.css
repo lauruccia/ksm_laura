@@ -1128,3 +1128,129 @@ a.ksm-panel__me:hover { background: var(--ksm-line-soft); color: inherit; }
     .ksm-table--companies tbody tr:last-child td:last-child { box-shadow: -8px 0 12px -10px rgba(16, 32, 43, .35); }
     .ksm-table--companies tbody tr:hover td:last-child { background: var(--ksm-line-soft); }
 }
+
+/* Albero delle categorie ------------------------------------------------- */
+
+.ksm-cattree__quick {
+    display: grid;
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) auto;
+    gap: 14px;
+    align-items: end;
+}
+
+.ksm-cattree__quick .ksm-field { margin: 0; }
+
+.ksm-cattree__bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
+}
+
+.ksm-cattree__search { position: relative; flex: 0 1 380px; }
+.ksm-cattree__search .ksm-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--ksm-muted); }
+.ksm-panel__main .ksm-cattree__search .ksm-input { padding-left: 38px; }
+
+.ksm-cattree { list-style: none; margin: 0; padding: 0; }
+
+/* I rami interni rientrano con una linea guida, come in un esplora file. */
+.ksm-cattree .ksm-cattree {
+    margin-left: 17px;
+    padding-left: 14px;
+    border-left: 1px solid var(--ksm-line);
+}
+
+.ksm-cattree__row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 50px;
+    padding: 6px 8px;
+    border-radius: var(--ksm-radius-sm);
+    transition: background .15s var(--ksm-ease);
+}
+
+.ksm-cattree__row:hover { background: var(--ksm-line-soft); }
+
+/* Le categorie principali si distinguono dalle sottocategorie. */
+.ksm-cattree[role="tree"] > .ksm-cattree__item + .ksm-cattree__item { border-top: 1px solid var(--ksm-line-soft); }
+.ksm-cattree[role="tree"] > .ksm-cattree__item > .ksm-cattree__row .ksm-cattree__name { font-weight: 700; }
+
+.ksm-cattree__item.is-new > .ksm-cattree__row { background: var(--ksm-accent-soft); }
+
+.ksm-cattree__toggle {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 26px;
+    height: 26px;
+    padding: 0;
+    border: 0;
+    border-radius: 6px;
+    background: none;
+    color: var(--ksm-muted);
+    cursor: pointer;
+}
+
+.ksm-cattree__toggle:hover { background: #fff; color: var(--ksm-ink); }
+.ksm-cattree__toggle .ksm-icon { transition: transform .15s var(--ksm-ease); }
+.ksm-cattree__toggle[aria-expanded="false"] .ksm-icon { transform: rotate(-90deg); }
+.ksm-cattree__toggle--leaf { cursor: default; }
+.ksm-cattree__toggle--leaf::before { content: ""; width: 5px; height: 5px; border-radius: 50%; background: var(--ksm-line); }
+
+.ksm-cattree__icon {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: var(--ksm-accent-soft);
+    color: var(--ksm-accent-dark);
+}
+
+.ksm-cattree__label { display: flex; align-items: baseline; gap: 10px; min-width: 0; flex: 1 1 auto; flex-wrap: wrap; }
+.ksm-cattree__name { color: var(--ksm-ink); font-weight: 600; }
+.ksm-cattree__name:hover { color: var(--ksm-accent-dark); }
+.ksm-cattree__slug { color: var(--ksm-muted); font-size: .78rem; font-family: ui-monospace, "Cascadia Mono", monospace; }
+
+.ksm-cattree__meta { display: flex; gap: 6px; flex: none; }
+.ksm-cattree__meta .ksm-badge { white-space: nowrap; }
+
+.ksm-cattree__actions { display: flex; align-items: center; gap: 6px; flex: none; }
+.ksm-cattree__actions form { display: inline; }
+.ksm-cattree__delete:hover { color: var(--ksm-danger); border-color: #F2C4C7; }
+
+/* "+ Sottocategoria" apre un piccolo modulo sotto il bottone. */
+.ksm-cattree__add { position: relative; }
+.ksm-cattree__add > summary { list-style: none; }
+.ksm-cattree__add > summary::-webkit-details-marker { display: none; }
+.ksm-cattree__add[open] > summary { background: var(--ksm-accent-soft); color: var(--ksm-accent-dark); }
+
+.ksm-cattree__addform {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 6px);
+    z-index: 6;
+    width: 340px;
+    padding: 14px;
+    background: #fff;
+    border: 1px solid var(--ksm-line);
+    border-radius: var(--ksm-radius);
+    box-shadow: 0 12px 30px rgba(16, 32, 43, .14);
+}
+
+@media (max-width: 900px) {
+    .ksm-cattree__quick { grid-template-columns: minmax(0, 1fr); }
+    .ksm-cattree__row { flex-wrap: wrap; }
+    .ksm-cattree__label { flex-basis: calc(100% - 80px); }
+    .ksm-cattree__meta,
+    .ksm-cattree__actions { margin-left: 36px; }
+    .ksm-cattree__actions { flex: 1 1 calc(100% - 36px); flex-wrap: wrap; }
+    .ksm-cattree .ksm-cattree { margin-left: 8px; padding-left: 8px; }
+    /* Sul telefono il modulo si apre nella riga, sotto i bottoni. */
+    .ksm-cattree__add[open] { flex: 1 1 100%; order: 10; }
+    .ksm-cattree__addform { position: static; width: 100%; margin-top: 8px; box-shadow: none; }
+}

@@ -123,14 +123,78 @@ class AdminCategoryTreeTest extends TestCase
         $this->assertDatabaseHas('product_categories', ['name' => 'Formaggi', 'slug' => 'formaggi', 'parent_id' => $food->id]);
     }
 
-    public function test_l_elenco_mostra_categoria_superiore_e_livello(): void
+    public function test_l_elenco_e_l_albero_con_le_aziende_di_ogni_ramo(): void
     {
-        $this->branch();
+        [$root, $middle, $leaf] = $this->branch();
+        $owner = User::create(['name' => 'Titolare', 'email' => 'titolare@example.test', 'password' => 'password', 'user_type' => 'vendor']);
+        \App\Models\Company::create(['user_id' => $owner->id, 'name' => 'Bonifiche Srl', 'slug' => 'bonifiche', 'category_id' => $leaf->id]);
 
         $this->actingAs($this->admin())
-            ->get(route('admin.company_categories.index', ['cerca' => 'Amianto']))
+            ->get(route('admin.company_categories.index'))
             ->assertOk()
-            ->assertSeeInOrder(['Categoria superiore', 'Livello', 'Amianto', 'Edilizia › Imprese Edili', '3']);
+            ->assertSeeInOrder(['Edilizia', 'Imprese Edili', 'Amianto'])
+            ->assertSee('1 azienda')
+            ->assertSee('value="'.$root->id.'">Edilizia</option>', false)
+            // Al terzo livello non si aggiungono altre sottocategorie.
+            ->assertSee('id="sub-'.$middle->id.'"', false)
+            ->assertDontSee('id="sub-'.$leaf->id.'"', false);
+    }
+
+    public function test_la_ricerca_tiene_le_madri_della_categoria_trovata(): void
+    {
+        $this->branch();
+        CompanyCategory::create(['name' => 'Ristoranti', 'slug' => 'ristoranti']);
+
+        $this->actingAs($this->admin())
+            ->get(route('admin.company_categories.index', ['cerca' => 'amianto']))
+            ->assertOk()
+            ->assertSeeInOrder(['Edilizia', 'Imprese Edili', 'Amianto'])
+            ->assertDontSee('ristoranti');
+    }
+
+    public function test_la_sottocategoria_nasce_dalla_riga_della_madre(): void
+    {
+        [, $middle] = $this->branch();
+
+        $this->actingAs($this->admin())
+            ->get(route('admin.company_categories.create', ['madre' => $middle->id]))
+            ->assertSee('<option value="'.$middle->id.'" selected>Edilizia › Imprese Edili</option>', false);
+
+        $response = $this->post(route('admin.company_categories.store'), ['name' => 'Cartongesso', 'parent_id' => $middle->id]);
+
+        $created = CompanyCategory::where('name', 'Cartongesso')->firstOrFail();
+        $response->assertRedirect(route('admin.company_categories.index').'#categoria-'.$created->id);
+        $this->assertSame($middle->id, $created->parent_id);
+        $this->assertSame('cartongesso', $created->slug);
+    }
+
+    public function test_eliminare_una_categoria_non_elimina_il_suo_ramo(): void
+    {
+        [$root, $middle, $leaf] = $this->branch();
+        $owner = User::create(['name' => 'Titolare', 'email' => 'titolare@example.test', 'password' => 'password', 'user_type' => 'vendor']);
+        $company = \App\Models\Company::create(['user_id' => $owner->id, 'name' => 'Impresa Rossi', 'slug' => 'impresa-rossi', 'category_id' => $middle->id]);
+
+        $this->actingAs($this->admin())
+            ->delete(route('admin.company_categories.destroy', $middle))
+            ->assertRedirect(route('admin.company_categories.index'));
+
+        $this->assertDatabaseMissing('company_categories', ['id' => $middle->id]);
+        $this->assertSame($root->id, $leaf->fresh()->parent_id);
+        $this->assertSame($root->id, $company->fresh()->category_id);
+    }
+
+    public function test_l_icona_scelta_vale_sui_biglietti(): void
+    {
+        [$root, , $leaf] = $this->branch();
+
+        $this->actingAs($this->admin())
+            ->put(route('admin.company_categories.update', $root), ['name' => 'Edilizia', 'slug' => 'edilizia', 'icon' => 'truck'])
+            ->assertSessionHasNoErrors();
+
+        $this->assertSame('truck', \App\Support\CategoryIcon::for($leaf->fresh()->load('parent.parent')));
+
+        $this->put(route('admin.company_categories.update', $root), ['name' => 'Edilizia', 'slug' => 'edilizia', 'icon' => 'bomba'])
+            ->assertSessionHasErrors('icon');
     }
 
     public function test_i_banner_di_una_categoria_principale_arrivano_al_terzo_livello(): void

@@ -18,6 +18,12 @@ class AdminProductCategoryController extends AdminCategoryController
     /** La barra laterale del catalogo mostra solo categorie e sottocategorie. */
     protected int $maxLevels = 2;
 
+    protected string $itemsRelation = 'products';
+
+    protected string $itemsLabel = 'prodotti';
+
+    protected string $itemLabel = 'prodotto';
+
     protected function fields(): array
     {
         return parent::fields() + [
