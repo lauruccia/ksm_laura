@@ -61,6 +61,8 @@
         <span data-bulk-banner-text></span>
         <button type="button" data-bulk-banner-button></button>
     </p>
+
+    @error('ids')<p class="ksm-bulk__error">{{ $message }}</p>@enderror
+    {{-- Dentro il modulo: fuori starebbe fra la barra e la tabella e la staccherebbe. --}}
+    <script src="{{ asset('js/bulk.js') }}?v={{ filemtime(public_path('js/bulk.js')) }}" defer></script>
 </form>
-@error('ids')<p class="ksm-error">{{ $message }}</p>@enderror
-<script src="{{ asset('js/bulk.js') }}?v={{ filemtime(public_path('js/bulk.js')) }}" defer></script>

@@ -7,35 +7,38 @@
 @section('content')
     @php($canManage = auth()->user()->can(\App\Support\Permissions::CATALOG_MANAGE))
 
-    <div class="ksm-panel__head">
-        <div>
-            <h1>Prodotti</h1>
-            <p class="ksm-panel__lead">{{ number_format($products->total(), 0, ',', '.') }} {{ $products->total() === 1 ? 'prodotto' : 'prodotti' }}{{ request()->hasAny(['cerca', 'stato', 'azienda']) ? ' trovati' : '' }}</p>
-        </div>
-    </div>
+    {{-- Titolo, numero e filtri su una riga sola: l'elenco parte subito sotto. --}}
+    <div class="ksm-listhead">
+        <h1>Prodotti <span class="ksm-listhead__count">{{ number_format($products->total(), 0, ',', '.') }}</span></h1>
 
-    <form method="GET" class="ksm-filters">
-        <input class="ksm-input" name="cerca" value="{{ request('cerca') }}" placeholder="Cerca per nome" aria-label="Cerca per nome">
-        <select class="ksm-select" name="stato" aria-label="Stato">
-            <option value="">Tutti gli stati</option>
-            <option value="active" @selected(request('stato') === 'active')>Attivi</option>
-            <option value="inactive" @selected(request('stato') === 'inactive')>Non attivi</option>
-        </select>
         @if ($company)
-            <input type="hidden" name="azienda" value="{{ $company->id }}">
+            <span class="ksm-listhead__chip">
+                {{ $company->name }}
+                <a href="{{ route('admin.products.index', array_filter(request()->only(['cerca', 'stato']))) }}" aria-label="Mostra tutte le aziende">
+                    <x-icon name="close" :size="14" />
+                </a>
+            </span>
         @endif
-        <button class="ksm-btn ksm-btn--ghost" type="submit">Filtra</button>
-        @if (request()->hasAny(['cerca', 'stato']))
-            <a class="ksm-btn ksm-btn--ghost" href="{{ route('admin.products.index', array_filter(['azienda' => $company?->id])) }}">Azzera</a>
-        @endif
-    </form>
 
-    @if ($company)
-        <p class="ksm-muted">
-            Prodotti di <strong>{{ $company->name }}</strong> ·
-            <a href="{{ route('admin.products.index', array_filter(['cerca' => request('cerca')])) }}">tutte le aziende</a>
-        </p>
-    @endif
+        <form method="GET" class="ksm-listhead__filters" role="search">
+            <span class="ksm-listhead__search">
+                <x-icon name="search" :size="16" />
+                <input class="ksm-input" type="search" name="cerca" value="{{ request('cerca') }}" placeholder="Cerca per nome" aria-label="Cerca per nome">
+            </span>
+            <select class="ksm-select" name="stato" aria-label="Stato" onchange="this.form.submit()">
+                <option value="">Tutti gli stati</option>
+                <option value="active" @selected(request('stato') === 'active')>Attivi</option>
+                <option value="inactive" @selected(request('stato') === 'inactive')>Non attivi</option>
+            </select>
+            @if ($company)
+                <input type="hidden" name="azienda" value="{{ $company->id }}">
+            @endif
+            <button class="ksm-btn ksm-btn--ghost ksm-btn--sm" type="submit">Cerca</button>
+            @if (request()->hasAny(['cerca', 'stato']))
+                <a class="ksm-btn ksm-btn--ghost ksm-btn--sm" href="{{ route('admin.products.index', array_filter(['azienda' => $company?->id])) }}">Azzera</a>
+            @endif
+        </form>
+    </div>
 
     @if ($canManage && $products->isNotEmpty())
         @include('partials.bulk-bar', [

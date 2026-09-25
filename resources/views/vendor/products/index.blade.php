@@ -5,26 +5,33 @@
 @section('nav')@include('vendor.nav')@endsection
 
 @section('content')
-    <div class="ksm-panel__head">
-        <h1>Prodotti</h1>
-        <a class="ksm-btn ksm-btn--primary" href="{{ route('vendor.products.create') }}">Nuovo prodotto</a>
-    </div>
+    {{-- Titolo, numero e filtri su una riga sola: l'elenco parte subito sotto. --}}
+    <div class="ksm-listhead">
+        <h1>Prodotti <span class="ksm-listhead__count">{{ number_format($products->total(), 0, ',', '.') }}</span></h1>
 
-    <form method="GET" class="ksm-filters">
-        <input class="ksm-input" name="cerca" value="{{ request('cerca') }}" placeholder="Cerca per nome" aria-label="Cerca per nome">
-        <select class="ksm-select" name="stato" aria-label="Stato">
-            <option value="">Tutti gli stati</option>
-            <option value="active" @selected(request('stato') === 'active')>Attivi</option>
-            <option value="inactive" @selected(request('stato') === 'inactive')>Non attivi</option>
-        </select>
-        <button class="ksm-btn ksm-btn--ghost" type="submit">Filtra</button>
-        @if (request()->hasAny(['cerca', 'stato']))
-            <a class="ksm-btn ksm-btn--ghost" href="{{ route('vendor.products.index') }}">Azzera</a>
-        @endif
-        @unless ($inDebt)
-            <a class="ksm-btn ksm-btn--ghost" href="{{ route('vendor.kmoney.edit') }}" style="margin-left: auto;">Quote KMoney per categoria</a>
-        @endunless
-    </form>
+        <form method="GET" class="ksm-listhead__filters" role="search">
+            <span class="ksm-listhead__search">
+                <x-icon name="search" :size="16" />
+                <input class="ksm-input" type="search" name="cerca" value="{{ request('cerca') }}" placeholder="Cerca per nome" aria-label="Cerca per nome">
+            </span>
+            <select class="ksm-select" name="stato" aria-label="Stato" onchange="this.form.submit()">
+                <option value="">Tutti gli stati</option>
+                <option value="active" @selected(request('stato') === 'active')>Attivi</option>
+                <option value="inactive" @selected(request('stato') === 'inactive')>Non attivi</option>
+            </select>
+            <button class="ksm-btn ksm-btn--ghost ksm-btn--sm" type="submit">Cerca</button>
+            @if (request()->hasAny(['cerca', 'stato']))
+                <a class="ksm-btn ksm-btn--ghost ksm-btn--sm" href="{{ route('vendor.products.index') }}">Azzera</a>
+            @endif
+        </form>
+
+        <span class="ksm-listhead__actions">
+            @unless ($inDebt)
+                <a class="ksm-btn ksm-btn--ghost ksm-btn--sm" href="{{ route('vendor.kmoney.edit') }}">Quote KMoney</a>
+            @endunless
+            <a class="ksm-btn ksm-btn--primary ksm-btn--sm" href="{{ route('vendor.products.create') }}">Nuovo prodotto</a>
+        </span>
+    </div>
 
     @if ($inDebt)
         <p class="ksm-alert ksm-alert--error">
