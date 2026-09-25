@@ -450,7 +450,9 @@
 .ksm-store-category__icon { display: grid; place-items: center; width: 48px; height: 48px; flex: none; color: var(--ksm-accent-dark); background: var(--ksm-accent-soft); border-radius: 10px; }
 .ksm-store-category:hover, .ksm-store-category[aria-current] { border-color: var(--ksm-accent); }
 .ksm-store-category--offer { background: linear-gradient(110deg, var(--ksm-accent-soft), white); }
-.ksm-store-catalog { padding-top: 16px; scroll-margin-top: 90px; }
+.ksm-store-catalog { scroll-margin-top: 90px; }
+/* Sui domini segue i blocchi della vetrina; sul sito principale apre la pagina come la directory. */
+.ksm-store-catalog--after-blocks { padding-top: 16px; }
 .ksm-shop__head { align-items: center; margin-bottom: 16px; }
 .ksm-store-search { display: flex; align-items: center; gap: 10px; width: min(100%, 470px); }
 .ksm-store-search > .ksm-icon { display: none; }

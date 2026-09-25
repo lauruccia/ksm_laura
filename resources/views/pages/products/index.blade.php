@@ -70,7 +70,7 @@
     {{-- Stessa impostazione della directory aziende: categorie a sinistra;
          ricerca, banner e griglia a destra. --}}
     @if (! $onDomain || $catalog['enabled'] || request()->hasAny(['categoria', 'cerca', 'marca', 'offerta', 'page']))
-    <section class="ksm-section ksm-store-catalog" id="catalogo">
+    <section class="ksm-section ksm-store-catalog @if ($onDomain) ksm-store-catalog--after-blocks @endif" id="catalogo">
         {{-- A tutta larghezza come la directory; sui domini resta nella colonna
              dei blocchi che gli stanno sopra. --}}
         <div class="ksm-container @unless ($onDomain) ksm-directory__container @endunless">
