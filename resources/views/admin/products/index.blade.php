@@ -7,14 +7,27 @@
 @section('content')
     @php($canManage = auth()->user()->can(\App\Support\Permissions::CATALOG_MANAGE))
 
-    <div class="ksm-panel__head"><h1>Prodotti</h1></div>
+    <div class="ksm-panel__head">
+        <div>
+            <h1>Prodotti</h1>
+            <p class="ksm-panel__lead">{{ number_format($products->total(), 0, ',', '.') }} {{ $products->total() === 1 ? 'prodotto' : 'prodotti' }}{{ request()->hasAny(['cerca', 'stato', 'azienda']) ? ' trovati' : '' }}</p>
+        </div>
+    </div>
 
     <form method="GET" class="ksm-filters">
-        <input class="ksm-input" name="cerca" value="{{ request('cerca') }}" placeholder="Cerca">
+        <input class="ksm-input" name="cerca" value="{{ request('cerca') }}" placeholder="Cerca per nome" aria-label="Cerca per nome">
+        <select class="ksm-select" name="stato" aria-label="Stato">
+            <option value="">Tutti gli stati</option>
+            <option value="active" @selected(request('stato') === 'active')>Attivi</option>
+            <option value="inactive" @selected(request('stato') === 'inactive')>Non attivi</option>
+        </select>
         @if ($company)
             <input type="hidden" name="azienda" value="{{ $company->id }}">
         @endif
-        <button class="ksm-btn ksm-btn--ghost" type="submit">Cerca</button>
+        <button class="ksm-btn ksm-btn--ghost" type="submit">Filtra</button>
+        @if (request()->hasAny(['cerca', 'stato']))
+            <a class="ksm-btn ksm-btn--ghost" href="{{ route('admin.products.index', array_filter(['azienda' => $company?->id])) }}">Azzera</a>
+        @endif
     </form>
 
     @if ($company)
@@ -24,27 +37,29 @@
         </p>
     @endif
 
-    {{-- Quota KMoney su piu' prodotti insieme: le caselle delle righe appartengono a questo modulo. --}}
-    @if ($canManage)
-        <form id="kmoney-bulk" method="POST" action="{{ route('admin.products.kmoney') }}" class="ksm-filters">
-            @csrf @method('PATCH')
-            <label class="ksm-label" for="bulk_percent" style="margin: 0;">Quota KMoney dei prodotti selezionati</label>
-            <select class="ksm-select" id="bulk_percent" name="percent">
-                <option value="auto">Automatica</option>
-                @foreach (\App\Payments\KMoney\KMoneyShare::STEPS as $step)
-                    <option value="{{ $step }}">{{ $step }}%</option>
-                @endforeach
-            </select>
-            <button class="ksm-btn ksm-btn--ghost" type="submit">Applica</button>
-        </form>
-        @error('products')<p class="ksm-error">{{ $message }}</p>@enderror
+    @if ($canManage && $products->isNotEmpty())
+        @include('partials.bulk-bar', [
+            'action' => route('admin.products.bulk'),
+            'paginator' => $products,
+            'noun' => 'prodotti',
+            'nounOne' => 'prodotto',
+            'actions' => [
+                'activate' => 'Attiva',
+                'deactivate' => 'Disattiva',
+                'kmoney' => 'Cambia quota KMoney',
+                'delete' => 'Elimina',
+            ],
+            'percentSteps' => \App\Payments\KMoney\KMoneyShare::STEPS,
+        ])
     @endif
 
     <div class="ksm-table-wrap">
         <table class="ksm-table">
             <thead>
             <tr>
-                @if ($canManage)<th aria-label="Seleziona"></th>@endif
+                @if ($canManage)
+                    <th class="ksm-bulk__cell"><input type="checkbox" data-bulk-page aria-label="Seleziona tutti in questa pagina"></th>
+                @endif
                 <th>Prodotto</th>
                 <th>Azienda</th>
                 <th>Prezzo</th>
@@ -57,8 +72,8 @@
             @forelse ($products as $product)
                 <tr>
                     @if ($canManage)
-                        <td>
-                            <input type="checkbox" name="products[]" value="{{ $product->id }}" form="kmoney-bulk"
+                        <td class="ksm-bulk__cell">
+                            <input type="checkbox" name="ids[]" value="{{ $product->id }}" form="bulk" data-bulk-item
                                    aria-label="Seleziona {{ $product->name }}">
                         </td>
                     @endif

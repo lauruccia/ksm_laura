@@ -9,8 +9,10 @@ use App\Models\ProductBrand;
 use App\Models\ProductCategory;
 use App\Payments\KMoney\KMoneyPercentages;
 use App\Payments\KMoney\KMoneyShare;
+use App\Support\BulkSelection;
 use App\Support\ProductForm;
 use Illuminate\Contracts\View\View;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -20,14 +22,43 @@ class AdminProductController extends Controller
     public function index(Request $request): View
     {
         return view('admin.products.index', [
-            'products' => Product::with(['company', 'category'])
-                ->when($request->string('cerca')->toString(), fn ($q, $t) => $q->where('name', 'like', "%$t%"))
-                ->when($request->integer('azienda'), fn ($q, $id) => $q->where('company_id', $id))
+            'products' => $this->filters(Product::with(['company', 'category']), $request)
                 ->latest()
                 ->paginate(25)
                 ->withQueryString(),
             'company' => $request->integer('azienda') ? Company::find($request->integer('azienda')) : null,
         ]);
+    }
+
+    /** I filtri dell'elenco, gli stessi per la pagina e per "tutti i risultati". */
+    public function filters(Builder $query, Request $request): Builder
+    {
+        return $query
+            ->when($request->string('cerca')->toString(), fn ($q, $t) => $q->where('name', 'like', "%$t%"))
+            ->when($request->integer('azienda'), fn ($q, $id) => $q->where('company_id', $id))
+            ->when(in_array($request->input('stato'), ['active', 'inactive'], true), fn ($q) => $q->where('status', $request->input('stato')));
+    }
+
+    /**
+     * Attiva, disattiva, cambia la quota KMoney o elimina piu' prodotti insieme:
+     * quelli spuntati o tutti i risultati della ricerca, su ogni pagina.
+     */
+    public function bulk(Request $request, KMoneyPercentages $percentages): RedirectResponse
+    {
+        $request->validate(BulkSelection::rules() + [
+            'percent' => ['required_if:action,kmoney', 'nullable', Rule::in(array_merge(['auto'], KMoneyShare::STEPS))],
+        ], BulkSelection::messages());
+
+        $query = BulkSelection::query($request, Product::query(), $this->filters(...));
+
+        $message = match ($request->input('action')) {
+            'activate' => trans_choice(':count prodotto attivato.|:count prodotti attivati.', $query->update(['status' => 'active'])),
+            'deactivate' => trans_choice(':count prodotto disattivato.|:count prodotti disattivati.', $query->update(['status' => 'inactive'])),
+            'delete' => trans_choice(':count prodotto eliminato.|:count prodotti eliminati.', $this->deleteAll($query)),
+            'kmoney' => $this->applyKMoney($percentages, $query->pluck('id')->all(), $request->input('percent')),
+        };
+
+        return back()->with('success', $message);
     }
 
     public function show(Product $product): View
@@ -76,11 +107,16 @@ class AdminProductController extends Controller
             'products.required' => __('Seleziona almeno un prodotto.'),
         ]);
 
-        $percent = $data['percent'] === 'auto' ? null : (int) $data['percent'];
+        return back()->with('success', $this->applyKMoney($percentages, $data['products'], $data['percent']));
+    }
+
+    private function applyKMoney(KMoneyPercentages $percentages, array $ids, string $choice): string
+    {
+        $percent = $choice === 'auto' ? null : (int) $choice;
         $count = 0;
         $skipped = 0;
 
-        Product::whereKey($data['products'])
+        Product::whereKey($ids)
             ->with('company.paymentSettings')
             ->get(['id', 'company_id'])
             ->groupBy('company_id')
@@ -105,7 +141,20 @@ class AdminProductController extends Controller
             ]);
         }
 
-        return back()->with('success', $message);
+        return $message;
+    }
+
+    /** Uno per uno, cosi' partono gli eventi del modello come nell'eliminazione singola. */
+    private function deleteAll(Builder $query): int
+    {
+        $count = 0;
+
+        $query->chunkById(200, function ($products) use (&$count) {
+            $products->each->delete();
+            $count += $products->count();
+        });
+
+        return $count;
     }
 
     public function destroy(Product $product): RedirectResponse

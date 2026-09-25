@@ -110,6 +110,8 @@ Route::middleware(['auth', 'admin'])
                 ->name('products.status');
             Route::patch('/prodotti-kmoney', [AdminProductController::class, 'kmoney'])
                 ->name('products.kmoney');
+            Route::patch('/prodotti-in-blocco', [AdminProductController::class, 'bulk'])
+                ->name('products.bulk');
 
             Route::resource('categorie-prodotti', AdminProductCategoryController::class)
                 ->parameters(['categorie-prodotti' => 'category'])->names('product_categories')

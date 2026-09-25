@@ -55,6 +55,8 @@ Route::middleware(['auth', 'vendor'])
                 ->names('products');
             Route::patch('/prodotti/{product}/stato', [VendorProductController::class, 'toggleStatus'])
                 ->name('products.status');
+            Route::patch('/prodotti-in-blocco', [VendorProductController::class, 'bulk'])
+                ->name('products.bulk');
 
             // Quote KMoney: su piu' prodotti selezionati e per categoria.
             Route::patch('/prodotti-kmoney', [VendorKMoneyController::class, 'bulk'])->name('products.kmoney');

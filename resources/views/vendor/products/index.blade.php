@@ -10,32 +10,50 @@
         <a class="ksm-btn ksm-btn--primary" href="{{ route('vendor.products.create') }}">Nuovo prodotto</a>
     </div>
 
-    {{-- Quota KMoney su piu' prodotti insieme: le caselle delle righe appartengono a questo modulo. --}}
+    <form method="GET" class="ksm-filters">
+        <input class="ksm-input" name="cerca" value="{{ request('cerca') }}" placeholder="Cerca per nome" aria-label="Cerca per nome">
+        <select class="ksm-select" name="stato" aria-label="Stato">
+            <option value="">Tutti gli stati</option>
+            <option value="active" @selected(request('stato') === 'active')>Attivi</option>
+            <option value="inactive" @selected(request('stato') === 'inactive')>Non attivi</option>
+        </select>
+        <button class="ksm-btn ksm-btn--ghost" type="submit">Filtra</button>
+        @if (request()->hasAny(['cerca', 'stato']))
+            <a class="ksm-btn ksm-btn--ghost" href="{{ route('vendor.products.index') }}">Azzera</a>
+        @endif
+        @unless ($inDebt)
+            <a class="ksm-btn ksm-btn--ghost" href="{{ route('vendor.kmoney.edit') }}" style="margin-left: auto;">Quote KMoney per categoria</a>
+        @endunless
+    </form>
+
     @if ($inDebt)
         <p class="ksm-alert ksm-alert--error">
             Il conto KMoney è in debito: tutti i prodotti si pagano al 100% in KMoney finché non torna in positivo.
         </p>
-    @else
-        <form id="kmoney-bulk" method="POST" action="{{ route('vendor.products.kmoney') }}" class="ksm-filters">
-            @csrf @method('PATCH')
-            <label class="ksm-label" for="bulk_percent" style="margin: 0;">Quota KMoney dei prodotti selezionati</label>
-            <select class="ksm-select" id="bulk_percent" name="percent">
-                <option value="auto">Automatica</option>
-                @foreach ($kmoneySteps as $step)
-                    <option value="{{ $step }}">{{ $step }}%</option>
-                @endforeach
-            </select>
-            <button class="ksm-btn ksm-btn--ghost" type="submit">Applica</button>
-            <a class="ksm-btn ksm-btn--ghost" href="{{ route('vendor.kmoney.edit') }}">Quote per categoria</a>
-        </form>
-        @error('products')<p class="ksm-error">{{ $message }}</p>@enderror
+    @endif
+
+    {{-- Azioni su piu' prodotti insieme: le caselle delle righe appartengono al modulo della barra. --}}
+    @if ($products->isNotEmpty())
+        @include('partials.bulk-bar', [
+            'action' => route('vendor.products.bulk'),
+            'paginator' => $products,
+            'noun' => 'prodotti',
+            'nounOne' => 'prodotto',
+            'actions' => array_filter([
+                'activate' => 'Attiva',
+                'deactivate' => 'Disattiva',
+                'kmoney' => $inDebt ? null : 'Cambia quota KMoney',
+                'delete' => 'Elimina',
+            ]),
+            'percentSteps' => $kmoneySteps,
+        ])
     @endif
 
     <div class="ksm-table-wrap">
         <table class="ksm-table">
             <thead>
             <tr>
-                <th aria-label="Seleziona"></th>
+                <th class="ksm-bulk__cell"><input type="checkbox" data-bulk-page aria-label="Seleziona tutti in questa pagina"></th>
                 <th>Nome</th>
                 <th>Categoria</th>
                 <th>Prezzo</th>
@@ -48,11 +66,9 @@
             <tbody>
             @forelse ($products as $product)
                 <tr>
-                    <td>
-                        @unless ($inDebt)
-                            <input type="checkbox" name="products[]" value="{{ $product->id }}" form="kmoney-bulk"
-                                   aria-label="Seleziona {{ $product->name }}">
-                        @endunless
+                    <td class="ksm-bulk__cell">
+                        <input type="checkbox" name="ids[]" value="{{ $product->id }}" form="bulk" data-bulk-item
+                               aria-label="Seleziona {{ $product->name }}">
                     </td>
                     <td>{{ $product->name }}</td>
                     <td>{{ $product->category?->name }}</td>
@@ -66,7 +82,7 @@
                     <td>{{ $product->product_type === 'variable' ? 'Per variante' : ($product->stock ?? 'Non gestito') }}</td>
                     <td>
                         <span class="ksm-badge @if ($product->status !== 'active') ksm-badge--muted @endif">
-                            {{ $product->status }}
+                            {{ $product->status === 'active' ? 'Attivo' : 'Non attivo' }}
                         </span>
                     </td>
                     <td style="text-align: right; white-space: nowrap;">

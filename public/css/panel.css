@@ -1254,3 +1254,107 @@ a.ksm-panel__me:hover { background: var(--ksm-line-soft); color: inherit; }
     .ksm-cattree__add[open] { flex: 1 1 100%; order: 10; }
     .ksm-cattree__addform { position: static; width: 100%; margin-top: 8px; box-shadow: none; }
 }
+
+/* Azioni in blocco sugli elenchi ------------------------------------------ */
+
+.ksm-bulk {
+    position: sticky;
+    top: 64px;
+    z-index: 4;
+    margin-bottom: 14px;
+}
+
+.ksm-bulk__bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    padding: 10px 12px;
+    background: var(--ksm-surface);
+    border: 1px solid var(--ksm-line);
+    border-radius: var(--ksm-radius);
+    box-shadow: var(--ksm-shadow-xs);
+    transition: border-color .15s var(--ksm-ease), box-shadow .15s var(--ksm-ease);
+}
+
+/* Con qualcosa di selezionato la barra si fa notare. */
+.ksm-bulk.has-selection .ksm-bulk__bar {
+    border-color: var(--ksm-accent);
+    box-shadow: 0 0 0 3px var(--ksm-accent-soft), 0 8px 20px rgba(16, 32, 43, .08);
+}
+
+.ksm-bulk__count { font-size: .9rem; color: var(--ksm-muted); }
+.ksm-bulk.has-selection .ksm-bulk__count { color: var(--ksm-ink); font-weight: 600; }
+
+.ksm-bulk__do { display: flex; align-items: center; gap: 8px; margin-left: auto; flex-wrap: wrap; }
+.ksm-panel__main .ksm-bulk__do .ksm-select { width: auto; min-width: 150px; padding-block: 8px; }
+
+.ksm-bulk__menu { position: relative; }
+.ksm-bulk__menu > summary { list-style: none; gap: 6px; }
+.ksm-bulk__menu > summary::-webkit-details-marker { display: none; }
+
+.ksm-bulk__options {
+    position: absolute;
+    left: 0;
+    top: calc(100% + 6px);
+    z-index: 6;
+    display: grid;
+    min-width: 230px;
+    padding: 6px;
+    background: #fff;
+    border: 1px solid var(--ksm-line);
+    border-radius: var(--ksm-radius);
+    box-shadow: 0 12px 30px rgba(16, 32, 43, .14);
+}
+
+.ksm-bulk__options button {
+    padding: 9px 12px;
+    border: 0;
+    border-radius: 6px;
+    background: none;
+    color: var(--ksm-ink);
+    font: inherit;
+    font-size: .9rem;
+    text-align: left;
+    cursor: pointer;
+}
+
+.ksm-bulk__options button:hover { background: var(--ksm-line-soft); }
+
+.ksm-bulk__banner {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin: 8px 0 0;
+    padding: 9px 14px;
+    border-radius: var(--ksm-radius-sm);
+    background: var(--ksm-accent-soft);
+    color: var(--ksm-accent-dark);
+    font-size: .88rem;
+    text-align: center;
+}
+
+.ksm-bulk [hidden] { display: none; }
+
+.ksm-bulk__banner button {
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--ksm-accent-dark);
+    font: inherit;
+    font-weight: 700;
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+.ksm-bulk__cell { width: 44px; }
+.ksm-bulk__cell input { width: 17px; height: 17px; accent-color: var(--ksm-accent); cursor: pointer; }
+.ksm-table tbody tr.is-selected td { background: #F4FAF0; }
+
+@media (max-width: 720px) {
+    .ksm-bulk { top: 58px; }
+    .ksm-bulk__do { margin-left: 0; width: 100%; }
+    .ksm-panel__main .ksm-bulk__do .ksm-select { flex: 1 1 140px; }
+}
