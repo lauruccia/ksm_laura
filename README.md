@@ -34,16 +34,21 @@ Con `APP_DEBUG=true` un errore mostra a chiunque percorsi, query e parte del
 codice. Dopo ogni modifica del `.env` va rilanciato `artisan optimize`.
 
 `vendor/` non e' nel repository e sul server Composer non gira: si prepara
-in locale e si carica a mano, senza i pacchetti di sviluppo e con la mappa
-delle classi gia' fatta, che rende piu' veloce ogni richiesta:
+in locale, in una cartella a parte con solo `composer.json` e
+`composer.lock`, senza i pacchetti di sviluppo e con la mappa delle classi
+gia' fatta, e si carica a mano:
 
 ```bash
-composer install --no-dev --classmap-authoritative
+composer install --no-dev --optimize-autoloader --no-scripts
 ```
 
-Poi, per tornare a lavorare in locale, `composer install`.
+Non `--classmap-authoritative`: congelerebbe l'elenco delle classi di
+`app/` al giorno della preparazione, e la prima classe nuova arrivata con
+un deploy non si troverebbe piu'. Appena caricato `vendor/` si fa subito
+"Deploy HEAD Commit": il suo `optimize:clear` butta l'elenco dei pacchetti
+in cache, che nomina ancora quelli di sviluppo tolti.
 
-Serve un solo cron, ogni minuto:
+Serve un solo cron, ogni minuto (impostato su ilnetwork il 25/09/2026):
 
     * * * * * /usr/local/bin/ea-php83 /home2/ilnetwork/ksm-next/artisan schedule:run >> /dev/null 2>&1
 
