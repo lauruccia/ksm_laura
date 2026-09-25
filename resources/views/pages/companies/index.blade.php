@@ -13,7 +13,7 @@
                         <a class="ksm-dirnav__item ksm-dirnav__all @empty($filters['category']) is-current @endempty"
                            href="{{ route('companies.index', request()->only(['cerca', 'regione', 'citta'])) }}"
                            @empty($filters['category']) aria-current="page" @endempty>{{ __('site.search_all_categories') }}</a>
-                        @include('pages.companies.partials.category-nav', ['parent' => null])
+                        @include('partials.category-nav', ['nodes' => $categoryNav])
                     </nav>
                 </aside>
 

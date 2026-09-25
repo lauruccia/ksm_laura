@@ -75,11 +75,41 @@ class CompanyController extends Controller
         return view('pages.companies.index', [
             'companies' => $companies,
             'categories' => $tree->labels(),
-            'tree' => $tree,
-            // La categoria scelta e le sue madri: nel menu laterale restano aperte.
-            'openCategories' => ($filters['category'] ?? null) ? $tree->lineage((int) $filters['category']) : [],
+            'categoryNav' => $this->categoryNav(
+                $tree,
+                null,
+                (int) ($filters['category'] ?? 0),
+                // La categoria scelta e le sue madri: nel menu laterale restano aperte.
+                ($filters['category'] ?? null) ? $tree->lineage((int) $filters['category']) : [],
+                $request->only(['cerca', 'regione', 'citta']),
+            ),
             'filters' => $filters,
         ]);
+    }
+
+    /**
+     * Voci del menu laterale da un livello in giu'. Ricerca e luogo restano
+     * quelli scelti: il link cambia solo la categoria.
+     *
+     * @param  list<int>  $open
+     * @return list<array{id: int, name: string, url: string, current: bool, open: bool, children: array}>
+     */
+    private function categoryNav(CategoryTree $tree, ?int $parent, int $current, array $open, array $keep): array
+    {
+        $nodes = [];
+
+        foreach ($tree->children($parent) as $id => $name) {
+            $nodes[] = [
+                'id' => $id,
+                'name' => $name,
+                'url' => route('companies.index', $keep + ['categoria' => $id]),
+                'current' => $current === $id,
+                'open' => in_array($id, $open, true),
+                'children' => $this->categoryNav($tree, $id, $current, $open, $keep),
+            ];
+        }
+
+        return $nodes;
     }
 
     /**

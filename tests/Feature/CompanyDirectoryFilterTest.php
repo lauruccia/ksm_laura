@@ -88,11 +88,14 @@ class CompanyDirectoryFilterTest extends TestCase
 
         $html = $this->get(route('companies.index', ['categoria' => $leaf->id, 'cerca' => 'edil']))
             ->assertOk()
-            ->assertSeeInOrder(['Costruire e Abitare', 'Tutto in Costruire e Abitare', 'Imprese Edili', 'Ristoranti'])
+            ->assertSeeInOrder(['Costruire e Abitare', 'Imprese Edili', 'Ristoranti'])
             ->getContent();
 
         // Il ramo della categoria scelta e' aperto, gli altri no.
-        $this->assertMatchesRegularExpression('/<details class="ksm-dirnav__group"\s+open\s*>\s*<summary[^>]*>\s*<span>Costruire e Abitare/', $html);
+        $this->assertMatchesRegularExpression('/<details class="ksm-dirnav__group"\s+open\s*>\s*<summary[^>]*>\s*<a class="ksm-dirnav__link"[^>]*>Costruire e Abitare/', $html);
+
+        // Il nome della categoria madre porta alla pagina filtrata per la categoria.
+        $this->assertMatchesRegularExpression('/<a class="ksm-dirnav__link" href="[^"]*categoria='.$root->id.'[^"]*"/', $html);
 
         // La voce attiva e' segnata e i link cambiano solo la categoria.
         $this->assertMatchesRegularExpression('/is-current[^>]*href="[^"]*categoria='.$leaf->id.'[^"]*"\s+aria-current="page"/', $html);

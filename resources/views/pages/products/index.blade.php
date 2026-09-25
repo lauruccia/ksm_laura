@@ -40,6 +40,24 @@
 
         // Il catalogo con i filtri si puo' spegnere per dominio, ma resta se si sta gia' filtrando.
         $catalog = $tenant->content()->catalog();
+
+        // Menu laterale come quello delle aziende: solo le categorie con prodotti,
+        // aperta quella scelta o la madre della sottocategoria scelta.
+        $categoryNav = $categories->filter(fn ($category) => $category->visible_count)->map(fn ($category) => [
+            'id' => $category->id,
+            'name' => $category->name,
+            'url' => $shopUrl(['categoria' => $category->id]),
+            'current' => $currentCategory?->id === $category->id,
+            'open' => in_array($currentCategory?->id, [$category->id, ...$category->children->pluck('id')], true),
+            'children' => $category->children->filter(fn ($child) => $child->visible_count)->map(fn ($child) => [
+                'id' => $child->id,
+                'name' => $child->name,
+                'url' => $shopUrl(['categoria' => $child->id]),
+                'current' => $currentCategory?->id === $child->id,
+                'open' => false,
+                'children' => [],
+            ])->values()->all(),
+        ])->values()->all();
     @endphp
 
     {{-- Apertura, vantaggi, riquadri e vetrina sono il sito di un dominio: li
@@ -74,38 +92,11 @@
                         </button>
                     </div>
 
-                    <nav class="ksm-shop__block" aria-label="{{ __('site.shop_categories') }}">
-                        <h2 class="ksm-shop__block-title">{{ __('site.shop_categories') }}</h2>
-                        <ul class="ksm-catlist">
-                            <li>
-                                <a href="{{ $shopUrl([], ['categoria']) }}" @if (! $currentCategory) aria-current="page" @endif>
-                                    <span>{{ __('site.shop_all_products') }}</span>
-                                    <span class="ksm-catlist__count">{{ $catalogTotal }}</span>
-                                </a>
-                            </li>
-                            @foreach ($categories as $category)
-                                @continue(! $category->visible_count)
-                                <li>
-                                    <a href="{{ $shopUrl(['categoria' => $category->id]) }}" @if ($currentCategory?->id === $category->id) aria-current="page" @endif>
-                                        <span>{{ $category->name }}</span>
-                                        <span class="ksm-catlist__count">{{ $category->visible_count }}</span>
-                                    </a>
-                                    @if ($category->children->contains(fn ($child) => $child->visible_count > 0))
-                                        <ul>
-                                            @foreach ($category->children as $child)
-                                                @continue(! $child->visible_count)
-                                                <li>
-                                                    <a href="{{ $shopUrl(['categoria' => $child->id]) }}" @if ($currentCategory?->id === $child->id) aria-current="page" @endif>
-                                                        <span>{{ $child->name }}</span>
-                                                        <span class="ksm-catlist__count">{{ $child->visible_count }}</span>
-                                                    </a>
-                                                </li>
-                                            @endforeach
-                                        </ul>
-                                    @endif
-                                </li>
-                            @endforeach
-                        </ul>
+                    <nav class="ksm-shop__cats" aria-labelledby="ksm-shop-cats-title">
+                        <h2 class="ksm-dirnav__title" id="ksm-shop-cats-title">{{ __('site.shop_categories') }}</h2>
+                        <a class="ksm-dirnav__item ksm-dirnav__all @unless ($currentCategory) is-current @endunless"
+                           href="{{ $shopUrl([], ['categoria']) }}" @unless ($currentCategory) aria-current="page" @endunless>{{ __('site.shop_all_products') }}</a>
+                        @include('partials.category-nav', ['nodes' => $categoryNav])
                     </nav>
 
                     {{-- Il modulo raccoglie anche i campi della scheda di ricerca e della

@@ -99,7 +99,6 @@ class ProductController extends Controller
             'featuredProducts' => $featuredProducts,
             'currentCategory' => $categoryId ? ProductCategory::find($categoryId) : null,
             'onDomain' => $onDomain,
-            'catalogTotal' => $counts->sum(),
             // Sui domini solo le marche dei prodotti che ci sono: le altre porterebbero a zero risultati.
             'brands' => ProductBrand::query()
                 ->when($scope->isRestricted(), fn ($q) => $q->whereIn('id', (clone $visible)->whereNotNull('brand_id')->select('brand_id')))

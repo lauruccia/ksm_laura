@@ -848,15 +848,38 @@ a.ksm-pagination__page:hover {
 
 .ksm-dirnav__all { font-weight: 600; }
 
-.ksm-dirnav__group > summary .ksm-icon {
-    flex: none;
-    color: var(--ksm-muted);
-    transition: transform .2s var(--ksm-ease);
+/* Categoria con sottocategorie: il nome porta alla pagina filtrata,
+   la freccia (il resto della riga) apre e chiude il sottomenu. */
+.ksm-dirnav__row { padding: 0; gap: 0; }
+
+.ksm-dirnav__link {
+    flex: 1;
+    min-width: 0;
+    padding: 9px 4px 9px 12px;
+    border-radius: var(--ksm-radius);
+    color: inherit;
 }
 
-.ksm-dirnav__group[open] > summary .ksm-icon { transform: rotate(180deg); }
+.ksm-dirnav__list--nested .ksm-dirnav__link { padding-block: 7px; }
 
-.ksm-dirnav__item:focus-visible { outline: none; box-shadow: var(--ksm-ring); }
+.ksm-dirnav__toggle {
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: 34px;
+    align-self: stretch;
+    border-radius: var(--ksm-radius);
+    color: var(--ksm-muted);
+}
+
+.ksm-dirnav__row:hover .ksm-dirnav__toggle:hover { background: var(--ksm-line-soft); color: var(--ksm-ink); }
+
+.ksm-dirnav__toggle .ksm-icon { transition: transform .2s var(--ksm-ease); }
+
+.ksm-dirnav__group[open] > summary .ksm-dirnav__toggle .ksm-icon { transform: rotate(180deg); }
+
+.ksm-dirnav__item:focus-visible,
+.ksm-dirnav__link:focus-visible { outline: none; box-shadow: var(--ksm-ring); }
 
 /* Ricerca: la categoria si sceglie dal menu, la tendina serve solo senza. */
 .ksm-directory__search {

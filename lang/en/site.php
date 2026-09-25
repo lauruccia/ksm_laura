@@ -51,7 +51,7 @@ return [
     'search_all_regions' => 'All regions',
     'search_category' => 'Category',
     'search_all_categories' => 'All categories',
-    'search_all_in_category' => 'All in :name',
+    'directory_subcategories' => 'Show subcategories',
     'directory_categories' => 'Categories',
     'search_submit' => 'Search',
 

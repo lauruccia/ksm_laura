@@ -55,6 +55,13 @@
     background: linear-gradient(100deg, rgba(7, 54, 77, .9) 0%, rgba(7, 54, 77, .3) 40%, rgba(7, 54, 77, 0) 100%);
 }
 
+/* Apertura e vantaggi usano tutta la larghezza, con i margini del menu. */
+.ksm-hero__grid,
+.ksm-usp-wrap {
+    max-width: none;
+    padding-inline: clamp(16px, 2.6vw, 52px);
+}
+
 .ksm-hero__grid {
     position: relative;
     display: grid;
