@@ -81,7 +81,9 @@ class ProductForm
             'discount_price' => ['nullable', 'numeric', 'min:0', 'lt:price'],
             // Quota KMoney scelta sul prodotto; vuoto vuol dire automatica, da categoria o contratto.
             'kmoney_discount_percent' => ['nullable', Rule::in($this->kmoneySteps($company))],
-            'stock' => ['nullable', 'integer', 'min:0'],
+            // Di norma il prodotto e' sempre disponibile; la giacenza conta solo se l'azienda la gestisce.
+            'manage_stock' => ['boolean'],
+            'stock' => ['nullable', 'integer', 'min:0', Rule::requiredIf(fn () => $request->boolean('manage_stock') && $request->input('product_type') === 'simple')],
             'weight_kg' => ['nullable', 'numeric', 'min:0'],
             'fixed_shipping_cost' => ['nullable', 'numeric', 'min:0'],
             'product_type' => ['required', 'in:simple,variable'],
@@ -94,6 +96,8 @@ class ProductForm
             'variants.*.price' => ['nullable', 'numeric', 'min:0'],
             'variants.*.stock' => ['nullable', 'integer', 'min:0'],
             'variants.*.sku' => ['nullable', 'string', 'max:100'],
+        ], [
+            'stock.required' => 'Indica la quantità disponibile, oppure togli la gestione della disponibilità.',
         ]);
 
         if ($data['product_type'] === 'variable') {
@@ -104,6 +108,13 @@ class ProductForm
                 ]);
             }
         }
+
+        // Disponibilita' non gestita: giacenza vuota sul prodotto e sulle varianti, cioe' sempre disponibile.
+        if (! $request->boolean('manage_stock')) {
+            $data['stock'] = null;
+            $data['variants'] = array_map(fn ($row) => ['stock' => null] + $row, $data['variants'] ?? []);
+        }
+        unset($data['manage_stock']);
 
         // L'editor manda HTML: si salva solo la formattazione ammessa.
         if (array_key_exists('description', $data)) {

@@ -1339,6 +1339,9 @@ a.ksm-panel__me:hover { background: var(--ksm-line-soft); color: inherit; }
 
 .ksm-bulk [hidden] { display: none; }
 
+/* Scheda prodotto: quantita' nascosta finche' l'azienda non gestisce la disponibilita'. */
+[data-stock-field][hidden] { display: none !important; }
+
 .ksm-bulk__banner button {
     padding: 0;
     border: 0;

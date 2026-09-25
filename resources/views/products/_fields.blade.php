@@ -18,6 +18,10 @@
         'sku' => $variant->variant_sku,
     ])->all()));
 
+    // Di norma il prodotto e' sempre disponibile: la quantita' si mostra solo se l'azienda gestisce la disponibilita'.
+    $manageStock = (bool) old('manage_stock', $product->exists
+        && ($product->stock !== null || $product->variants->contains(fn ($variant) => filled($variant->variant_stock))));
+
     // Tre righe libere per aggiungere varianti senza script.
     for ($blank = 0; $blank < 3; $blank++) {
         $variantRows[] = [];
@@ -75,10 +79,18 @@
                     @error('discount_price')<span class="ksm-error">{{ $message }}</span>@enderror
                 </div>
                 <div class="ksm-field">
-                    <label class="ksm-label" for="stock">Giacenza (facoltativa)</label>
+                    <label class="ksm-label" style="display: flex; gap: 8px; align-items: center;">
+                        <input type="hidden" name="manage_stock" value="0">
+                        <input id="manage_stock" name="manage_stock" type="checkbox" value="1" @checked($manageStock)>
+                        Gestisci la disponibilità
+                    </label>
+                    <small class="ksm-muted">Se non la gestisci il prodotto è sempre disponibile.</small>
+                </div>
+                <div class="ksm-field" data-stock-field @unless ($manageStock) hidden @endunless>
+                    <label class="ksm-label" for="stock">Quantità disponibile</label>
                     <input class="ksm-input" id="stock" name="stock" type="number" min="0"
-                           value="{{ old('stock', $product->stock) }}" placeholder="Stock non gestito">
-                    <small class="ksm-muted">Vuota = sempre disponibile, 0 = esaurito. Con le varianti conta quella di ogni variante.</small>
+                           value="{{ old('stock', $product->stock) }}">
+                    <small class="ksm-muted">0 = esaurito. Con le varianti conta quella di ogni variante.</small>
                     @error('stock')<span class="ksm-error">{{ $message }}</span>@enderror
                 </div>
                 <div class="ksm-field">
@@ -94,7 +106,8 @@
             <div class="ksm-box__head"><h2>Varianti</h2></div>
             <p class="ksm-box__hint">
                 Valgono solo se il tipo del prodotto è «Con varianti». Una riga per variante, per esempio Taglia e M;
-                per toglierne una svuota tipo e valore. Prezzo vuoto = prezzo del prodotto, disponibilità vuota = stock non gestito.
+                per toglierne una svuota tipo e valore. Prezzo vuoto = prezzo del prodotto.
+                <span data-stock-field @unless ($manageStock) hidden @endunless>Disponibilità vuota = sempre disponibile.</span>
             </p>
             @error('variants')<p class="ksm-error">{{ $message }}</p>@enderror
 
@@ -105,7 +118,7 @@
                         <th>Tipo</th>
                         <th>Valore</th>
                         <th>Prezzo (€)</th>
-                        <th>Disponibilità</th>
+                        <th data-stock-field @unless ($manageStock) hidden @endunless>Disponibilità</th>
                         <th>Codice</th>
                     </tr>
                     </thead>
@@ -125,7 +138,7 @@
                                 <input class="ksm-input" name="variants[{{ $i }}][price]" type="number" step="0.01" min="0"
                                        value="{{ $row['price'] ?? '' }}" aria-label="Prezzo della variante {{ $i + 1 }}">
                             </td>
-                            <td>
+                            <td data-stock-field @unless ($manageStock) hidden @endunless>
                                 <input class="ksm-input" name="variants[{{ $i }}][stock]" type="number" min="0"
                                        value="{{ $row['stock'] ?? '' }}" aria-label="Disponibilità della variante {{ $i + 1 }}">
                             </td>
@@ -241,3 +254,16 @@
         <button class="ksm-btn ksm-btn--primary" type="submit">{{ $product->exists ? 'Salva le modifiche' : 'Crea prodotto' }}</button>
     </div>
 </div>
+
+<script>
+    // La quantita' compare solo se l'azienda gestisce la disponibilita'.
+    (function () {
+        var toggle = document.getElementById('manage_stock');
+        if (!toggle) return;
+        toggle.addEventListener('change', function () {
+            document.querySelectorAll('[data-stock-field]').forEach(function (el) {
+                el.hidden = !toggle.checked;
+            });
+        });
+    })();
+</script>

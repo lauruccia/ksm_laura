@@ -108,6 +108,38 @@ class VendorProductVariantsTest extends TestCase
         $this->post(route('cart.add', $product->slug))->assertSessionHas('error');
     }
 
+    public function test_il_nuovo_prodotto_e_disponibile_finche_l_azienda_non_gestisce_la_disponibilita(): void
+    {
+        $this->actingAs($this->vendor)->get(route('vendor.products.create'))->assertOk()
+            ->assertSee('Gestisci la disponibilità')
+            ->assertDontSee('name="manage_stock" type="checkbox" value="1" checked', false);
+
+        // Senza gestione la quantita' inviata non conta: sempre disponibile, anche sulle varianti.
+        $this->post(route('vendor.products.store'), $this->payload([
+            'product_type' => 'simple', 'stock' => '0', 'manage_stock' => '0',
+        ]))->assertSessionHasNoErrors();
+        $product = $this->company->products()->latest('id')->firstOrFail();
+        $this->assertNull($product->stock);
+        $this->assertTrue($product->isInStock());
+
+        // Con la gestione attiva la quantita' e' obbligatoria e vale.
+        $this->put(route('vendor.products.update', $product), $this->payload([
+            'product_type' => 'simple', 'stock' => '', 'manage_stock' => '1',
+        ]))->assertSessionHasErrors('stock');
+        $this->put(route('vendor.products.update', $product), $this->payload([
+            'product_type' => 'simple', 'stock' => '0', 'manage_stock' => '1',
+        ]))->assertSessionHasNoErrors();
+        $this->assertSame(0, $product->fresh()->stock);
+        $this->get(route('vendor.products.edit', $product))->assertOk()
+            ->assertSee('name="manage_stock" type="checkbox" value="1" checked', false);
+
+        $this->put(route('vendor.products.update', $product), $this->payload([
+            'variants' => [['type' => 'Formato', 'value' => '250 g', 'stock' => '3']],
+        ]))->assertSessionHasNoErrors();
+        $this->assertNull($product->fresh()->stock);
+        $this->assertNull($product->variants()->first()->variant_stock);
+    }
+
     public function test_varianti_separate_nel_carrello_con_prezzi_e_limiti_di_giacenza(): void
     {
         $product = Product::create($this->payload(['company_id' => $this->company->id, 'slug' => 'variabile', 'stock' => 0]));
