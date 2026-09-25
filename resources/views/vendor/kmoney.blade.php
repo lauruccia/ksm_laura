@@ -9,7 +9,8 @@
 
     <div class="ksm-panel__head"><h1>KMoney</h1></div>
 
-    <section class="ksm-box" style="margin-bottom: 22px; max-width: 780px;">
+    <div class="ksm-panel-grid">
+    <section class="ksm-box">
         <div class="ksm-box__head"><h2>Il tuo contratto</h2></div>
 
         <ul class="ksm-meta">
@@ -36,7 +37,7 @@
         </small>
     </section>
 
-    <form class="ksm-box" style="max-width: 780px;" method="POST" action="{{ route('vendor.kmoney.update') }}">
+    <form class="ksm-box" method="POST" action="{{ route('vendor.kmoney.update') }}">
         @csrf @method('PUT')
         <div class="ksm-box__head"><h2>Quote per categoria</h2></div>
 
@@ -70,4 +71,5 @@
             @endunless
         @endif
     </form>
+    </div>
 @endsection

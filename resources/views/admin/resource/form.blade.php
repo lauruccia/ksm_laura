@@ -10,7 +10,7 @@
         <a class="ksm-btn ksm-btn--ghost" href="{{ route($routePrefix.'.index') }}">Torna all'elenco</a>
     </div>
 
-    <form class="ksm-card" style="padding: 24px; max-width: 780px;" method="POST"
+    <form method="POST"
           action="{{ $record->exists ? route($routePrefix.'.update', $record) : route($routePrefix.'.store') }}"
           enctype="multipart/form-data">
         @csrf
@@ -18,11 +18,13 @@
             @method('PUT')
         @endif
 
+        <section class="ksm-box">
+        <div class="ksm-formgrid">
         @foreach ($fields as $name => $field)
             @php($value = old($name, $record->$name))
             @php($type = $field['type'])
 
-            <div class="ksm-field">
+            <div class="ksm-field @if (in_array($type, ['textarea', 'checkboxes', 'list'], true)) ksm-field--wide @endif">
                 @if ($type !== 'checkbox')
                     <label class="ksm-label" for="{{ $name }}">{{ $field['label'] }}</label>
                 @endif
@@ -68,10 +70,12 @@
                     @case('list')
                         @php($values = array_values((array) old($name, $record->$name ?? [])))
                         {{-- Tutte le voci salvate piu' tre righe libere: con un tetto fisso le ultime si perdevano al salvataggio. --}}
-                        @for ($i = 0; $i < max(6, count($values) + 3); $i++)
-                            <input class="ksm-input" style="margin-bottom: 6px;" name="{{ $name }}[]"
-                                   value="{{ $values[$i] ?? '' }}">
-                        @endfor
+                        <div class="ksm-formgrid" style="gap: 8px 18px;">
+                            @for ($i = 0; $i < max(6, count($values) + 3); $i++)
+                                <input class="ksm-input" name="{{ $name }}[]" value="{{ $values[$i] ?? '' }}"
+                                       aria-label="{{ $field['label'] }} {{ $i + 1 }}">
+                            @endfor
+                        </div>
                         @break
 
                     @case('file')
@@ -93,7 +97,12 @@
                 @enderror
             </div>
         @endforeach
+        </div>
+        </section>
 
-        <button class="ksm-btn ksm-btn--primary" type="submit">Salva</button>
+        <div class="ksm-savebar">
+            <a class="ksm-btn ksm-btn--ghost" href="{{ route($routePrefix.'.index') }}">Annulla</a>
+            <button class="ksm-btn ksm-btn--primary" type="submit">{{ $record->exists ? 'Salva le modifiche' : 'Crea' }}</button>
+        </div>
     </form>
 @endsection

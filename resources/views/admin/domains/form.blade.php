@@ -30,7 +30,7 @@
     @endphp
 
     <style>
-        .ksm-domain-form { display: grid; grid-template-columns: 190px minmax(0, 1fr); gap: 24px; align-items: start; max-width: 1180px; }
+        .ksm-domain-form { display: grid; grid-template-columns: 190px minmax(0, 1fr); gap: 24px; align-items: start; }
         .ksm-domain-form__nav { position: sticky; top: 18px; display: grid; gap: 2px; }
         .ksm-domain-form__nav a { padding: 8px 12px; border-radius: 8px; color: var(--ksm-ink); font-size: .9rem; }
         .ksm-domain-form__nav a:hover { background: var(--ksm-accent-soft); }

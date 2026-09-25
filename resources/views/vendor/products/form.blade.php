@@ -6,20 +6,25 @@
 
 @section('content')
     <div class="ksm-panel__head">
-        <h1>{{ $product->exists ? 'Modifica prodotto' : 'Nuovo prodotto' }}</h1>
-        <a class="ksm-btn ksm-btn--ghost" href="{{ route('vendor.products.index') }}">Torna all'elenco</a>
+        <div>
+            <h1>{{ $product->exists ? $product->name : 'Nuovo prodotto' }}</h1>
+            <p class="ksm-panel__lead">{{ $product->exists ? 'Modifica i dati del prodotto e salva.' : 'Compila i dati e salva: potrai cambiarli quando vuoi.' }}</p>
+        </div>
+        <div class="ksm-rowactions">
+            @if ($product->exists && $product->status === 'active' && $product->slug)
+                <a class="ksm-btn ksm-btn--ghost" href="{{ route('products.show', $product->slug) }}" target="_blank" rel="noopener">Vedi sul sito</a>
+            @endif
+            <a class="ksm-btn ksm-btn--ghost" href="{{ route('vendor.products.index') }}">Torna all'elenco</a>
+        </div>
     </div>
 
-    <form class="ksm-card" style="padding: 24px; max-width: 820px;" method="POST"
-          action="{{ $product->exists ? route('vendor.products.update', $product) : route('vendor.products.store') }}"
-          enctype="multipart/form-data">
+    <form method="POST" enctype="multipart/form-data"
+          action="{{ $product->exists ? route('vendor.products.update', $product) : route('vendor.products.store') }}">
         @csrf
         @if ($product->exists)
             @method('PUT')
         @endif
 
-        @include('products._fields')
-
-        <button class="ksm-btn ksm-btn--primary" type="submit">Salva</button>
+        @include('products._fields', ['cancelUrl' => route('vendor.products.index')])
     </form>
 @endsection

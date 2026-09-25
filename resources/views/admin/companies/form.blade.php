@@ -402,9 +402,9 @@
             <small class="ksm-muted">Senza un piano l'azienda non compare nella directory, anche se attiva.</small>
         </section>
 
-        <div class="ksm-formpage__wide" style="display: flex; gap: 10px; flex-wrap: wrap;">
-            <button class="ksm-btn ksm-btn--primary" type="submit">{{ $company->exists ? 'Salva le modifiche' : 'Crea azienda' }}</button>
+        <div class="ksm-savebar">
             <a class="ksm-btn ksm-btn--ghost" href="{{ route('admin.companies.index') }}">Annulla</a>
+            <button class="ksm-btn ksm-btn--primary" type="submit">{{ $company->exists ? 'Salva le modifiche' : 'Crea azienda' }}</button>
         </div>
     </form>
 

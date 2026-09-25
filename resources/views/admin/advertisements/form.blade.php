@@ -19,14 +19,14 @@
         <a class="ksm-btn ksm-btn--ghost" href="{{ route('admin.advertisements.index') }}">Torna alle campagne</a>
     </div>
 
-    <form method="POST" enctype="multipart/form-data" style="max-width: 980px;"
+    <form class="ksm-formpage" method="POST" enctype="multipart/form-data"
           action="{{ $campaign->exists ? route('admin.advertisements.update', $campaign) : route('admin.advertisements.store') }}">
         @csrf
         @if ($campaign->exists)
             @method('PUT')
         @endif
 
-        <section class="ksm-box" style="margin-bottom: 22px;">
+        <section class="ksm-box">
             <div class="ksm-box__head"><h2>Campagna</h2></div>
 
             <div class="ksm-formgrid">
@@ -79,7 +79,7 @@
             </label>
         </section>
 
-        <section class="ksm-box" style="margin-bottom: 22px;">
+        <section class="ksm-box">
             <div class="ksm-box__head"><h2>Posizioni</h2></div>
 
             <div class="ksm-checkgrid">
@@ -93,7 +93,7 @@
             @error('locations')<span class="ksm-error">{{ $message }}</span>@enderror
         </section>
 
-        <section class="ksm-box" style="margin-bottom: 22px;">
+        <section class="ksm-box">
             <div class="ksm-box__head"><h2>Come si paga</h2></div>
 
             <div style="display: flex; gap: 18px; flex-wrap: wrap; margin-bottom: 14px;">
@@ -140,7 +140,7 @@
             </div>
         </section>
 
-        <section class="ksm-box" style="margin-bottom: 22px;">
+        <section class="ksm-box">
             <div class="ksm-box__head"><h2>Dove compare</h2></div>
             <p class="ksm-muted" style="margin-top: 0;">Lasciato vuoto, un bersaglio vale ovunque.</p>
 
@@ -187,9 +187,9 @@
             </div>
         </section>
 
-        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-            <button class="ksm-btn ksm-btn--primary" type="submit">{{ $campaign->exists ? 'Salva le modifiche' : 'Crea campagna' }}</button>
+        <div class="ksm-savebar">
             <a class="ksm-btn ksm-btn--ghost" href="{{ route('admin.advertisements.index') }}">Annulla</a>
+            <button class="ksm-btn ksm-btn--primary" type="submit">{{ $campaign->exists ? 'Salva le modifiche' : 'Crea campagna' }}</button>
         </div>
     </form>
 

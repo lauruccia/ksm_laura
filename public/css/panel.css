@@ -480,6 +480,117 @@
 .ksm-formpage > .ksm-box { margin-bottom: 0; }
 .ksm-formpage__wide { grid-column: 1 / -1; }
 
+/* Nei pannelli i campi sono piu' compatti che sul sito: le pagine sono
+   fatte di moduli lunghi, e con i campi alti si scorre il doppio. */
+.ksm-panel__main .ksm-input,
+.ksm-panel__main .ksm-select,
+.ksm-panel__main .ksm-textarea { padding: 10px 13px; font-size: .94rem; border-radius: var(--ksm-radius-sm); }
+.ksm-panel__main .ksm-field { margin-bottom: 16px; }
+.ksm-panel__main .ksm-field > small.ksm-muted { display: block; margin-top: 6px; font-size: .8rem; line-height: 1.45; }
+
+/* Un modulo non e' una scheda del catalogo: non si solleva sotto il mouse. */
+.ksm-panel__main form.ksm-card:hover,
+.ksm-panel__main section.ksm-card:hover { transform: none; border-color: var(--ksm-line); box-shadow: var(--ksm-shadow-xs); }
+
+.ksm-panel__lead { margin: 6px 0 0; color: var(--ksm-muted); font-size: .92rem; }
+.ksm-box__hint { margin: -8px 0 16px; color: var(--ksm-muted); font-size: .85rem; line-height: 1.5; }
+.ksm-box > :last-child { margin-bottom: 0; }
+
+/* Colonne fisse per i campi, quando auto-fit ne farebbe troppe. */
+.ksm-formgrid--2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.ksm-formgrid--3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.ksm-formgrid > .ksm-field--wide { grid-column: 1 / -1; }
+
+@media (max-width: 720px) {
+    .ksm-formgrid--2,
+    .ksm-formgrid--3 { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* Scheda di modifica: il contenuto a sinistra, le impostazioni a destra. */
+.ksm-editor {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(300px, 360px);
+    gap: 22px;
+    align-items: start;
+}
+
+.ksm-editor__main,
+.ksm-editor__side { display: grid; gap: 22px; min-width: 0; }
+.ksm-editor .ksm-box { margin-bottom: 0; }
+
+@media (max-width: 1180px) {
+    .ksm-editor { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* Il bottone Salva resta a portata di mano anche in fondo a un modulo lungo. */
+.ksm-savebar {
+    grid-column: 1 / -1;
+    position: sticky;
+    bottom: 12px;
+    z-index: 4;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 22px;
+    padding: 12px 16px;
+    background: rgba(255, 255, 255, .95);
+    backdrop-filter: blur(6px);
+    border: 1px solid var(--ksm-line);
+    border-radius: var(--ksm-radius);
+    box-shadow: 0 10px 30px rgba(16, 32, 43, .12);
+}
+
+.ksm-formpage > .ksm-savebar,
+.ksm-editor > .ksm-savebar { margin-top: 0; }
+.ksm-savebar__note { margin-right: auto; color: var(--ksm-muted); font-size: .85rem; }
+
+@media (max-width: 560px) {
+    .ksm-savebar { bottom: 8px; padding: 10px 12px; }
+    .ksm-savebar .ksm-btn { flex: 1 1 auto; }
+    .ksm-savebar__note { flex: 1 1 100%; }
+}
+
+/* Immagine attuale di un prodotto, accanto alla scelta del file. */
+.ksm-media-current {
+    display: block;
+    width: 100%;
+    aspect-ratio: 1;
+    object-fit: contain;
+    margin-bottom: 12px;
+    border: 1px solid var(--ksm-line);
+    border-radius: var(--ksm-radius-sm);
+    background: var(--ksm-line-soft);
+}
+
+.ksm-media-empty {
+    display: grid;
+    place-items: center;
+    aspect-ratio: 16 / 9;
+    margin-bottom: 12px;
+    border: 1px dashed var(--ksm-line);
+    border-radius: var(--ksm-radius-sm);
+    color: var(--ksm-muted);
+    font-size: .85rem;
+}
+
+/* Tabella di righe da compilare: campi senza bordo doppio, celle strette. */
+.ksm-table--inputs td { padding: 6px 8px; vertical-align: top; }
+.ksm-table--inputs th { padding: 8px; }
+.ksm-table--inputs .ksm-input { min-width: 90px; }
+
+/* Riepilogo di sola lettura: etichetta e valore in colonna. */
+.ksm-facts {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 16px 22px;
+    margin: 0;
+}
+
+.ksm-facts dt { font-size: .74rem; letter-spacing: .08em; text-transform: uppercase; color: var(--ksm-muted); font-weight: 600; }
+.ksm-facts dd { margin: 4px 0 0; color: var(--ksm-ink); font-weight: 500; overflow-wrap: anywhere; }
+
 .ksm-rowactions {
     display: flex;
     gap: 6px;

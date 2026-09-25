@@ -10,7 +10,7 @@
         <a class="ksm-btn ksm-btn--primary" href="{{ route($routePrefix.'.create') }}">Nuovo</a>
     </div>
 
-    <form method="GET" style="display: flex; gap: 8px; margin-bottom: 18px; max-width: 420px;">
+    <form method="GET" class="ksm-filters">
         <input class="ksm-input" name="cerca" value="{{ request('cerca') }}" placeholder="Cerca">
         <button class="ksm-btn ksm-btn--ghost" type="submit">Cerca</button>
     </form>

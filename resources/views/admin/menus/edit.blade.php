@@ -6,7 +6,7 @@
 
 @section('content')
     <style>
-        .ksm-menus { display: grid; gap: 20px; max-width: 900px; }
+        .ksm-menus { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(560px, 100%), 1fr)); gap: 20px; align-items: start; }
         .ksm-menus__card { padding: 22px 24px; scroll-margin-top: 20px; }
         .ksm-menus__head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 4px; }
         .ksm-menus__head h2 { margin: 0; font-size: 1.05rem; }

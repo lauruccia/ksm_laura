@@ -10,7 +10,8 @@
         <h1>Dati e indirizzo</h1>
     </div>
 
-    <form class="ksm-box" style="max-width: 760px;" method="POST" action="{{ route('account.profile.update') }}">
+    <div class="ksm-panel-grid">
+    <form class="ksm-box" method="POST" action="{{ route('account.profile.update') }}">
         @csrf @method('PUT')
 
         <div class="ksm-formgrid">
@@ -73,7 +74,7 @@
         <button class="ksm-btn ksm-btn--primary" type="submit">Salva</button>
     </form>
 
-    <form class="ksm-box" style="max-width: 760px;" method="POST" action="{{ route('account.profile.password') }}">
+    <form class="ksm-box" method="POST" action="{{ route('account.profile.password') }}">
         @csrf @method('PUT')
 
         <div class="ksm-box__head"><h2>Cambio password</h2></div>
@@ -101,4 +102,5 @@
 
         <button class="ksm-btn ksm-btn--primary" type="submit">Cambia password</button>
     </form>
+    </div>
 @endsection

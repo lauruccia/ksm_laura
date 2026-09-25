@@ -71,7 +71,7 @@ class AdminProductEditTest extends TestCase
         $this->actingAs($this->admin())
             ->get(route('admin.products.edit', $product))
             ->assertOk()
-            ->assertSee('Modifica prodotto')
+            ->assertSee('Salva le modifiche')
             ->assertSee('value="Mozzarella"', false)
             ->assertSee('Caseificio Rossi');
 

@@ -13,14 +13,16 @@
         <a class="ksm-btn ksm-btn--ghost" href="{{ route('admin.roles.index') }}">Torna all'elenco</a>
     </div>
 
-    <form class="ksm-box" style="max-width: 820px;" method="POST"
+    <form class="ksm-formpage" method="POST"
           action="{{ $role->exists ? route('admin.roles.update', $role) : route('admin.roles.store') }}">
         @csrf
         @if ($role->exists)
             @method('PUT')
         @endif
 
-        <div class="ksm-formgrid">
+        <section class="ksm-box ksm-formpage__wide">
+        <div class="ksm-box__head"><h2>Ruolo</h2></div>
+        <div class="ksm-formgrid ksm-formgrid--2">
             <div class="ksm-field">
                 <label class="ksm-label" for="name">Nome del ruolo</label>
                 <input class="ksm-input" id="name" name="name" value="{{ old('name', $role->name) }}" required>
@@ -36,12 +38,17 @@
             </div>
         </div>
 
+        </section>
+
+        <section class="ksm-box ksm-formpage__wide">
+        <div class="ksm-box__head"><h2>Permessi</h2></div>
         @if ($role->is_system)
             <div class="ksm-alert ksm-alert--success">
-                Questo e il ruolo di sistema: concede tutto e i permessi non si possono togliere.
+                Questo è il ruolo di sistema: concede tutto e i permessi non si possono togliere.
                 Si può cambiare solo il nome.
             </div>
         @else
+            <div class="ksm-panel-grid" style="gap: 0 22px;">
             @foreach ($groups as $group => $permissions)
                 <fieldset class="ksm-permgroup">
                     <legend>{{ $group }}</legend>
@@ -58,10 +65,15 @@
                     @endforeach
                 </fieldset>
             @endforeach
+            </div>
 
             @error('permissions')<span class="ksm-error">{{ $message }}</span>@enderror
         @endif
+        </section>
 
-        <button class="ksm-btn ksm-btn--primary" type="submit">Salva</button>
+        <div class="ksm-savebar">
+            <a class="ksm-btn ksm-btn--ghost" href="{{ route('admin.roles.index') }}">Annulla</a>
+            <button class="ksm-btn ksm-btn--primary" type="submit">{{ $role->exists ? 'Salva le modifiche' : 'Crea ruolo' }}</button>
+        </div>
     </form>
 @endsection

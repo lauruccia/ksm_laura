@@ -9,7 +9,7 @@
 
     <div class="ksm-panel__head"><h1>Prodotti</h1></div>
 
-    <form method="GET" style="display: flex; gap: 8px; margin-bottom: 18px; max-width: 420px;">
+    <form method="GET" class="ksm-filters">
         <input class="ksm-input" name="cerca" value="{{ request('cerca') }}" placeholder="Cerca">
         @if ($company)
             <input type="hidden" name="azienda" value="{{ $company->id }}">
@@ -45,7 +45,7 @@
             <thead>
             <tr>
                 @if ($canManage)<th aria-label="Seleziona"></th>@endif
-                <th>Nome</th>
+                <th>Prodotto</th>
                 <th>Azienda</th>
                 <th>Prezzo</th>
                 <th>KMoney</th>
@@ -62,9 +62,21 @@
                                    aria-label="Seleziona {{ $product->name }}">
                         </td>
                     @endif
-                    <td><a href="{{ route($canManage ? 'admin.products.edit' : 'admin.products.show', $product) }}">{{ $product->name }}</a></td>
+                    <td>
+                        <a href="{{ route($canManage ? 'admin.products.edit' : 'admin.products.show', $product) }}"
+                           style="display: flex; gap: 12px; align-items: center; color: var(--ksm-ink); font-weight: 600;">
+                            <span class="ksm-thumb" aria-hidden="true"
+                                  @if ($product->featured_image) style="background-image: url('{{ asset('storage/'.$product->featured_image) }}'); background-size: cover;" @endif></span>
+                            <span>
+                                {{ $product->name }}
+                                @if ($product->category)
+                                    <small class="ksm-muted" style="display: block; font-weight: 400;">{{ $product->category->name }}</small>
+                                @endif
+                            </span>
+                        </a>
+                    </td>
                     <td>{{ $product->company?->name }}</td>
-                    <td>{{ \App\Support\Money::format($product->price) }}</td>
+                    <td style="white-space: nowrap;">{{ \App\Support\Money::format($product->price) }}</td>
                     <td style="white-space: nowrap;">
                         {{ $product->kmoney_percent }}%
                         @if ($product->kmoney_discount_percent !== null)
@@ -73,21 +85,23 @@
                     </td>
                     <td>
                         <span class="ksm-badge @if ($product->status !== 'active') ksm-badge--muted @endif">
-                            {{ $product->status }}
+                            {{ $product->status === 'active' ? 'Attivo' : 'Non attivo' }}
                         </span>
                     </td>
-                    <td style="text-align: right; white-space: nowrap;">
+                    <td>
                         @if ($canManage)
-                            <a class="ksm-btn ksm-btn--ghost" href="{{ route('admin.products.edit', $product) }}">Modifica</a>
-                            <form method="POST" action="{{ route('admin.products.status', $product) }}" style="display: inline;">
-                                @csrf @method('PATCH')
-                                <button class="ksm-btn ksm-btn--ghost" type="submit">Cambia stato</button>
-                            </form>
-                            <form method="POST" action="{{ route('admin.products.destroy', $product) }}"
-                                  style="display: inline;" onsubmit="return confirm('Eliminare il prodotto?');">
-                                @csrf @method('DELETE')
-                                <button class="ksm-btn ksm-btn--ghost" type="submit">Elimina</button>
-                            </form>
+                            <div class="ksm-rowactions" style="flex-wrap: nowrap;">
+                                <a class="ksm-btn ksm-btn--primary ksm-btn--sm" href="{{ route('admin.products.edit', $product) }}">Modifica</a>
+                                <form method="POST" action="{{ route('admin.products.status', $product) }}">
+                                    @csrf @method('PATCH')
+                                    <button class="ksm-btn ksm-btn--ghost ksm-btn--sm" type="submit">{{ $product->status === 'active' ? 'Disattiva' : 'Attiva' }}</button>
+                                </form>
+                                <form method="POST" action="{{ route('admin.products.destroy', $product) }}"
+                                      onsubmit="return confirm('Eliminare il prodotto?');">
+                                    @csrf @method('DELETE')
+                                    <button class="ksm-btn ksm-btn--ghost ksm-btn--sm" type="submit">Elimina</button>
+                                </form>
+                            </div>
                         @endif
                     </td>
                 </tr>

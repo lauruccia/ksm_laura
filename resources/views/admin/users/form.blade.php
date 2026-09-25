@@ -11,13 +11,15 @@
         <a class="ksm-btn ksm-btn--ghost" href="{{ route('admin.users.index') }}">Torna all'elenco</a>
     </div>
 
-    <form class="ksm-box" style="max-width: 780px;" method="POST"
+    <form class="ksm-formpage" method="POST"
           action="{{ $user->exists ? route('admin.users.update', $user) : route('admin.users.store') }}">
         @csrf
         @if ($user->exists)
             @method('PUT')
         @endif
 
+        <section class="ksm-box">
+        <div class="ksm-box__head"><h2>Dati personali</h2></div>
         <div class="ksm-formgrid">
             <div class="ksm-field">
                 <label class="ksm-label" for="name">Nome e cognome</label>
@@ -37,7 +39,12 @@
                 <input class="ksm-input" id="phone" name="phone" value="{{ old('phone', $user->phone) }}">
                 @error('phone')<span class="ksm-error">{{ $message }}</span>@enderror
             </div>
+        </div>
+        </section>
 
+        <section class="ksm-box">
+        <div class="ksm-box__head"><h2>Accesso</h2></div>
+        <div class="ksm-formgrid">
             <div class="ksm-field">
                 <label class="ksm-label" for="user_type">Tipo</label>
                 <select class="ksm-select" id="user_type" name="user_type">
@@ -48,7 +55,6 @@
                 <small class="ksm-muted">Il ruolo vale solo per chi entra in amministrazione.</small>
                 @error('user_type')<span class="ksm-error">{{ $message }}</span>@enderror
             </div>
-        </div>
 
         <div class="ksm-field">
             <label class="ksm-label" for="role_id">Ruolo in amministrazione</label>
@@ -62,6 +68,7 @@
             </select>
             <small class="ksm-muted">Obbligatorio per il tipo Amministrazione: decide cosa si vede nel pannello.</small>
             @error('role_id')<span class="ksm-error">{{ $message }}</span>@enderror
+        </div>
         </div>
 
         <div class="ksm-field">
@@ -91,12 +98,10 @@
                        type="password" autocomplete="new-password">
             </div>
         </div>
-
-        <button class="ksm-btn ksm-btn--primary" type="submit">Salva</button>
-    </form>
+        </section>
 
     @if ($user->exists && $user->role)
-        <section class="ksm-box" style="max-width: 780px; margin-top: 22px;">
+        <section class="ksm-box ksm-formpage__wide">
             <div class="ksm-box__head"><h2>Cosa concede il ruolo {{ $user->role->name }}</h2></div>
             <ul class="ksm-taglist">
                 @foreach ($user->role->permissionLabels() as $label)
@@ -105,4 +110,10 @@
             </ul>
         </section>
     @endif
+
+        <div class="ksm-savebar">
+            <a class="ksm-btn ksm-btn--ghost" href="{{ route('admin.users.index') }}">Annulla</a>
+            <button class="ksm-btn ksm-btn--primary" type="submit">{{ $user->exists ? 'Salva le modifiche' : 'Crea utente' }}</button>
+        </div>
+    </form>
 @endsection

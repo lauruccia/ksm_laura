@@ -23,14 +23,14 @@
         </div>
     </div>
 
-    <form method="POST" style="max-width: 860px;"
+    <form class="ksm-formpage" method="POST"
           action="{{ $advertiser->exists ? route('admin.advertisers.update', $advertiser) : route('admin.advertisers.store') }}">
         @csrf
         @if ($advertiser->exists)
             @method('PUT')
         @endif
 
-        <section class="ksm-box" style="margin-bottom: 22px;">
+        <section class="ksm-box">
             <div class="ksm-box__head"><h2>Chi è</h2></div>
 
             <div style="display: flex; gap: 18px; flex-wrap: wrap; margin-bottom: 14px;">
@@ -82,7 +82,7 @@
             <small class="ksm-muted">Sospeso, le sue campagne non compaiono e l'area non si apre.</small>
         </section>
 
-        <section class="ksm-box" style="margin-bottom: 22px;">
+        <section class="ksm-box">
             <div class="ksm-box__head"><h2>Accesso dell'esterno</h2></div>
             <p class="ksm-muted" style="margin-top: 0;">
                 Non serve per un'azienda del sito, che entra con l'accesso della sua azienda.
@@ -109,9 +109,9 @@
             </div>
         </section>
 
-        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-            <button class="ksm-btn ksm-btn--primary" type="submit">{{ $advertiser->exists ? 'Salva le modifiche' : 'Crea inserzionista' }}</button>
+        <div class="ksm-savebar">
             <a class="ksm-btn ksm-btn--ghost" href="{{ route('admin.advertisers.index') }}">Annulla</a>
+            <button class="ksm-btn ksm-btn--primary" type="submit">{{ $advertiser->exists ? 'Salva le modifiche' : 'Crea inserzionista' }}</button>
         </div>
     </form>
 
