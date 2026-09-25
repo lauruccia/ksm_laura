@@ -22,6 +22,11 @@
     height: 100vh;
 }
 
+.ksm-panel__brandrow {
+    padding: 4px 8px 18px;
+    border-bottom: 1px solid rgba(255, 255, 255, .08);
+}
+
 .ksm-panel__brand {
     display: block;
     font-family: var(--ksm-font-display);
@@ -47,90 +52,79 @@
     min-height: 0;
     overflow-y: auto;
     overscroll-behavior: contain;
-    margin-right: -8px;
-    padding-right: 8px;
+    margin-right: -10px;
+    padding-right: 10px;
     scrollbar-width: thin;
-    scrollbar-color: rgba(255, 255, 255, .24) transparent;
+    scrollbar-color: transparent transparent;
 }
 
+/* La barra compare solo quando serve: con il mouse sopra la colonna. */
+.ksm-panel__navwrap:hover { scrollbar-color: rgba(255, 255, 255, .22) transparent; }
 .ksm-panel__navwrap::-webkit-scrollbar { width: 6px; }
 .ksm-panel__navwrap::-webkit-scrollbar-track { background: transparent; }
-
-.ksm-panel__navwrap::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, .24);
-    border-radius: 3px;
-}
-
-.ksm-panel__navwrap:hover::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, .38); }
+.ksm-panel__navwrap::-webkit-scrollbar-thumb { background: transparent; border-radius: 3px; }
+.ksm-panel__navwrap:hover::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, .22); }
 
 .ksm-panel__nav {
     list-style: none;
     margin: 0;
-    padding: 0;
-    font-size: .92rem;
+    padding: 0 0 12px;
+    font-size: .9rem;
 }
 
 .ksm-panel__nav a {
-    display: block;
-    padding: 9px 12px;
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    padding: 8px 12px;
     border-radius: var(--ksm-radius-sm);
-    color: rgba(255, 255, 255, .8);
+    color: rgba(255, 255, 255, .72);
     transition: background .15s var(--ksm-ease), color .15s var(--ksm-ease);
 }
 
+.ksm-panel__nav a .ksm-icon { flex: none; color: rgba(255, 255, 255, .5); transition: color .15s var(--ksm-ease); }
+
 .ksm-panel__nav a:hover {
-    background: rgba(255, 255, 255, .08);
+    background: rgba(255, 255, 255, .06);
     color: #fff;
 }
 
+.ksm-panel__nav a:hover .ksm-icon { color: rgba(255, 255, 255, .85); }
+
 .ksm-panel__nav a[aria-current="page"] {
-    background: var(--ksm-accent);
+    background: rgba(255, 255, 255, .1);
     color: #fff;
     font-weight: 600;
 }
 
-.ksm-panel__nav li + li { margin-top: 2px; }
+.ksm-panel__nav a[aria-current="page"] .ksm-icon { color: var(--ksm-accent-light); }
 
-.ksm-panel__sep {
-    margin: 16px 0 8px;
-    font-size: .7rem;
+/* La voce aperta ha il segno verde sul bordo, non tutto il blocco colorato. */
+.ksm-panel__nav a[aria-current="page"]::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 8px;
+    bottom: 8px;
+    width: 3px;
+    border-radius: 3px;
+    background: var(--ksm-accent);
+}
+
+.ksm-panel__nav li + li { margin-top: 1px; }
+
+.ksm-panel__nav .ksm-panel__sep {
+    margin: 20px 0 6px;
+    padding: 0 12px;
+    font-size: .66rem;
+    font-weight: 600;
     letter-spacing: .16em;
     text-transform: uppercase;
-    color: rgba(255, 255, 255, .45);
+    color: rgba(255, 255, 255, .38);
 }
 
-/* Chi ha fatto accesso, in fondo alla colonna. */
-.ksm-panel__me {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 10px;
-    border-radius: var(--ksm-radius-sm);
-    background: rgba(255, 255, 255, .06);
-}
-
-.ksm-panel__avatar {
-    flex: none;
-    width: 34px;
-    height: 34px;
-    display: grid;
-    place-items: center;
-    border-radius: 50%;
-    background: var(--ksm-accent);
-    color: #fff;
-    font-weight: 700;
-}
-
-.ksm-panel__meinfo { min-width: 0; line-height: 1.3; }
-.ksm-panel__meinfo strong {
-    display: block;
-    color: #fff;
-    font-size: .9rem;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-.ksm-panel__meinfo small { color: rgba(255, 255, 255, .55); font-size: .76rem; }
+.ksm-panel__nav > .ksm-panel__sep:first-child { margin-top: 4px; }
 
 /* Barra in alto --------------------------------------------------------- */
 
@@ -140,7 +134,8 @@
     display: flex;
     align-items: center;
     gap: 14px;
-    padding: 12px 30px;
+    min-height: 64px;
+    padding: 10px 30px;
     background: var(--ksm-surface);
     border-bottom: 1px solid var(--ksm-line);
     position: sticky;
@@ -160,7 +155,92 @@
     margin-left: auto;
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
+    min-width: 0;
+}
+
+.ksm-panel__toplink,
+.ksm-panel__logout {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    height: 38px;
+    padding: 0 12px;
+    border: 1px solid transparent;
+    border-radius: var(--ksm-radius-sm);
+    background: none;
+    color: var(--ksm-body);
+    font: inherit;
+    font-size: .88rem;
+    font-weight: 500;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background .15s var(--ksm-ease), color .15s var(--ksm-ease), border-color .15s var(--ksm-ease);
+}
+
+.ksm-panel__toplink:hover { background: var(--ksm-line-soft); color: var(--ksm-ink); }
+.ksm-panel__logout { border-color: var(--ksm-line); }
+.ksm-panel__logout:hover { border-color: #F2C4C7; background: #FDF1F1; color: var(--ksm-danger); }
+
+.ksm-panel__divider { width: 1px; height: 26px; margin: 0 6px; background: var(--ksm-line); }
+
+/* Chi ha fatto accesso. */
+.ksm-panel__me {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+    padding: 4px 10px 4px 4px;
+    border-radius: var(--ksm-radius-pill);
+    color: inherit;
+    transition: background .15s var(--ksm-ease);
+}
+
+a.ksm-panel__me:hover { background: var(--ksm-line-soft); color: inherit; }
+
+.ksm-panel__avatar {
+    flex: none;
+    width: 34px;
+    height: 34px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    background: var(--ksm-accent);
+    color: #fff;
+    font-weight: 700;
+    font-size: .9rem;
+}
+
+.ksm-panel__meinfo { min-width: 0; line-height: 1.25; }
+.ksm-panel__meinfo strong {
+    display: block;
+    max-width: 200px;
+    color: var(--ksm-ink);
+    font-size: .88rem;
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.ksm-panel__meinfo small {
+    display: block;
+    max-width: 200px;
+    color: var(--ksm-muted);
+    font-size: .74rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Sui telefoni restano le icone e l'iniziale: il nome non ci sta. */
+@media (max-width: 720px) {
+    .ksm-panel__toplink span,
+    .ksm-panel__logout span,
+    .ksm-panel__meinfo { display: none; }
+    .ksm-panel__toplink,
+    .ksm-panel__logout { width: 38px; padding: 0; justify-content: center; }
+    .ksm-panel__me { padding: 2px; }
+    .ksm-panel__divider { margin: 0 2px; }
 }
 
 .ksm-panel__burger { display: none; }

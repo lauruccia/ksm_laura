@@ -32,21 +32,6 @@
                 @yield('nav')
             </ul>
         </nav>
-
-        @auth
-            <div class="ksm-panel__me">
-                <span class="ksm-panel__avatar" aria-hidden="true">{{ mb_strtoupper(mb_substr(auth()->user()->name, 0, 1)) }}</span>
-                <span class="ksm-panel__meinfo">
-                    <strong>{{ auth()->user()->name }}</strong>
-                    <small>@yield('me', auth()->user()->role?->name ?? auth()->user()->typeLabel())</small>
-                </span>
-            </div>
-
-            <form method="POST" action="{{ route('logout') }}">
-                @csrf
-                <button class="ksm-btn ksm-btn--on-dark ksm-btn--block" type="submit">Esci</button>
-            </form>
-        @endauth
     </aside>
 
     <label class="ksm-panel__shade" for="ksm-panel-switch" aria-hidden="true"></label>
@@ -66,8 +51,44 @@
             </span>
 
             <div class="ksm-panel__topactions">
-                <a class="ksm-btn ksm-btn--ghost ksm-btn--sm" href="{{ route('home') }}">Vai al sito</a>
                 @yield('topactions')
+                <a class="ksm-panel__toplink" href="{{ route('home') }}" title="Vai al sito">
+                    <x-icon name="external" :size="17" /><span>Vai al sito</span>
+                </a>
+
+                @auth
+                    {{-- Chi ha fatto accesso e l'uscita, in alto a destra come in ogni gestionale. --}}
+                    @php
+                        $profileUrl = match (true) {
+                            request()->routeIs('admin.*') => route('admin.profile.edit'),
+                            request()->routeIs('account.*') => route('account.profile.edit'),
+                            default => null,
+                        };
+                    @endphp
+                    <span class="ksm-panel__divider" aria-hidden="true"></span>
+                    @if ($profileUrl)
+                        <a class="ksm-panel__me" href="{{ $profileUrl }}" title="Il mio profilo">
+                    @else
+                        <span class="ksm-panel__me">
+                    @endif
+                        <span class="ksm-panel__avatar" aria-hidden="true">{{ mb_strtoupper(mb_substr(auth()->user()->name, 0, 1)) }}</span>
+                        <span class="ksm-panel__meinfo">
+                            <strong>{{ auth()->user()->name }}</strong>
+                            <small>@yield('me', auth()->user()->role?->name ?? auth()->user()->typeLabel())</small>
+                        </span>
+                    @if ($profileUrl)
+                        </a>
+                    @else
+                        </span>
+                    @endif
+
+                    <form method="POST" action="{{ route('logout') }}">
+                        @csrf
+                        <button class="ksm-panel__logout" type="submit" title="Esci">
+                            <x-icon name="logout" :size="17" /><span>Esci</span>
+                        </button>
+                    </form>
+                @endauth
             </div>
         </header>
 
