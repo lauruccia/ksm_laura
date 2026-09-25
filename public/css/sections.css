@@ -8,20 +8,6 @@
     padding: 84px 0 132px;
 }
 
-/* Trama a puntini sul lato sinistro. */
-.ksm-hero::before {
-    content: "";
-    position: absolute;
-    inset: 0 auto 0 0;
-    width: 46%;
-    background: radial-gradient(rgba(255, 255, 255, .10) 1px, transparent 1.2px) 0 0 / 14px 14px;
-    -webkit-mask-image: linear-gradient(90deg, #000 0%, #000 40%, transparent 100%);
-    mask-image: linear-gradient(90deg, #000 0%, #000 40%, transparent 100%);
-    opacity: .85;
-    pointer-events: none;
-    z-index: -1;
-}
-
 /* Immagine a vivo sul lato destro, sfumata verso il testo. Agganciata al
    bordo destro: il riquadro cambia forma con lo schermo (2:1 a 1920px) e
    quello che avanza si rifila a sinistra, nella parte gia' sfumata. */
@@ -41,14 +27,11 @@
     background: linear-gradient(100deg, rgba(7, 54, 77, .9) 0%, rgba(7, 54, 77, .42) 34%, rgba(7, 54, 77, .12) 100%);
 }
 
-/* Senza fotografia: trama discreta al posto dello scatto. */
+/* Senza fotografia: due aloni verdi al posto dello scatto. */
 .ksm-hero__media--empty {
     background-image:
         radial-gradient(circle at 74% 30%, rgba(81, 165, 44, .2) 0%, transparent 58%),
-        radial-gradient(circle at 92% 80%, rgba(111, 191, 69, .12) 0%, transparent 52%),
-        radial-gradient(rgba(255, 255, 255, .10) 1px, transparent 1px);
-    background-size: auto, auto, 26px 26px;
-    background-position: 0 0, 0 0, 0 0;
+        radial-gradient(circle at 92% 80%, rgba(111, 191, 69, .12) 0%, transparent 52%);
 }
 
 .ksm-hero__media--empty::after {
