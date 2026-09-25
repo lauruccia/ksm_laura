@@ -41,6 +41,7 @@ class SubscriptionController extends Controller
         }
 
         $plans = Plan::active()->byRank()->get();
+        $current = $company->activeSubscription();
 
         return view('vendor.subscription.index', [
             'company' => $company,
@@ -48,9 +49,9 @@ class SubscriptionController extends Controller
             // Il preventivo accanto a ogni piano: chi cambia a meta'
             // periodo deve vedere la differenza prima di decidere.
             'quotes' => $plans->mapWithKeys(fn ($plan) => [
-                $plan->id => $this->pricing->quote($company, $plan),
+                $plan->id => $this->pricing->quote($company, $plan, $current),
             ]),
-            'current' => $company->activeSubscription(),
+            'current' => $current,
             'pending' => $company->pendingSubscription(),
             'history' => $company->subscriptions()->with('plan')->latest()->take(10)->get(),
         ]);

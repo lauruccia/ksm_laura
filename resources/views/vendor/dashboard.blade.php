@@ -71,7 +71,7 @@
             <span class="ksm-kpi__value">{{ $reviewCount }}</span>
             <span class="ksm-kpi__label">Recensioni</span>
             @if ($reviewCount)
-                <span class="ksm-kpi__note">media {{ $company->average_rating }} su 5</span>
+                <span class="ksm-kpi__note">media {{ round((float) $company->reviews_avg_rating, 1) }} su 5</span>
             @endif
         </div>
     </div>

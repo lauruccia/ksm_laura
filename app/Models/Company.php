@@ -160,9 +160,4 @@ class Company extends Model
             Plan::query()->whereJsonContains('capabilities', PlanCapabilities::SHOP)->select('plans.id')
         );
     }
-
-    public function getAverageRatingAttribute(): float
-    {
-        return round((float) $this->reviews()->avg('rating'), 1);
-    }
 }

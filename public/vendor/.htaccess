@@ -1,5 +1,5 @@
-# Librerie esterne ospitate qui (Leaflet): cambiano solo con un aggiornamento,
-# che mette la versione nel link. Un mese di cache basta e non blocca nessuno.
+# Librerie esterne ospitate qui (Leaflet): i link portano la versione
+# (?v=1.9.4), che cambia con l'aggiornamento. Un anno di cache come CSS e JS.
 <IfModule mod_headers.c>
-    Header set Cache-Control "public, max-age=2592000"
+    Header set Cache-Control "public, max-age=31536000, immutable"
 </IfModule>

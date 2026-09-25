@@ -19,7 +19,7 @@
         {{-- Sul sito principale l'immagine e' uguale per tutti: la foto di un prodotto
              metterebbe in vetrina una sola azienda fra tutte quelle del circuito. --}}
         @if ($hero['image'])
-            <img class="ksm-store-hero__image" src="{{ $hero['image'] }}" alt="" aria-hidden="true">
+            <img class="ksm-store-hero__image" src="{{ $hero['image'] }}" alt="" aria-hidden="true" fetchpriority="high">
         @endif
         <div class="ksm-container">
             <div class="ksm-store-hero__copy">
@@ -36,6 +36,7 @@
         </div>
         @if ($hero['script'])
             <p class="ksm-store-hero__script">{{ $hero['script'] }}</p>
+            @include('partials.font-caveat')
         @endif
         @if ($hero['badge_title'] || $hero['badge_text'])
             <div class="ksm-store-hero__badge">

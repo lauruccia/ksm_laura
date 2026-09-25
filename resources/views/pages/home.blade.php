@@ -46,7 +46,13 @@
             <div></div>
         </div>
 
-        <p class="ksm-hero__script">{{ $site->get('hero.script', $tenant->isNetworkSite() ? '' : __('site.hero_script')) }}</p>
+        @php
+            $heroScript = $site->get('hero.script', $tenant->isNetworkSite() ? '' : __('site.hero_script'));
+        @endphp
+        <p class="ksm-hero__script">{{ $heroScript }}</p>
+        @if (filled($heroScript))
+            @include('partials.font-caveat')
+        @endif
     </section>
 
     @php

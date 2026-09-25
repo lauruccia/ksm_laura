@@ -12,8 +12,13 @@
             <h1>{{ $page->title }}</h1>
 
             @if ($page->banner_image)
-                <img src="{{ asset('storage/'.$page->banner_image) }}" alt="{{ $page->title }}"
-                     style="border-radius: var(--ksm-radius); margin-bottom: 24px;">
+                @php
+                    $banner = \App\Support\Images\ImageStore::responsive($page->banner_image);
+                @endphp
+                <img src="{{ $banner['src'] }}" alt="{{ $page->title }}"
+                     @if ($banner['srcset']) srcset="{{ $banner['srcset'] }}" sizes="(max-width: 900px) 100vw, 860px" @endif
+                     @if ($banner['width']) width="{{ $banner['width'] }}" height="{{ $banner['height'] }}" @endif
+                     style="border-radius: var(--ksm-radius); margin-bottom: 24px; height: auto;">
             @endif
 
             <div class="ksm-card" style="padding: 26px;">

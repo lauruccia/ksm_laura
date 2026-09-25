@@ -31,7 +31,7 @@
 </div>
 
 @once
-    <link rel="stylesheet" href="{{ asset('vendor/leaflet/leaflet.css') }}">
-    <script src="{{ asset('vendor/leaflet/leaflet.js') }}" defer></script>
+    <link rel="stylesheet" href="{{ asset('vendor/leaflet/leaflet.css') }}?v=1.9.4">
+    <script src="{{ asset('vendor/leaflet/leaflet.js') }}?v=1.9.4" defer></script>
     <script src="{{ asset('js/maps.js') }}?v={{ filemtime(public_path('js/maps.js')) }}" defer></script>
 @endonce

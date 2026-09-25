@@ -129,6 +129,20 @@ class CompanyMinisiteTest extends TestCase
         Mail::assertSent(ContactMessage::class);
     }
 
+    public function test_se_la_posta_non_parte_il_testo_scritto_resta(): void
+    {
+        $company = $this->company($this->full());
+        Mail::shouldReceive('to')->andThrow(new \RuntimeException('smtp giu'));
+
+        $this->from(route('companies.show', $company->slug))->post(route('companies.contact', $company->slug), [
+            'name' => 'Giulia',
+            'email' => 'giulia@example.test',
+            'message' => 'Avete posto sabato sera?',
+        ])->assertRedirect(route('companies.show', $company->slug))
+            ->assertSessionHasErrors('message')
+            ->assertSessionHasInput('message', 'Avete posto sabato sera?');
+    }
+
     public function test_senza_le_voci_del_piano_le_sezioni_non_compaiono(): void
     {
         $company = $this->company([PlanCapabilities::DIRECTORY, PlanCapabilities::SHOWCASE]);

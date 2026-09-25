@@ -132,6 +132,8 @@ class ProductController extends Controller
                 ->where('company_id', $product->company_id)
                 ->whereKeyNot($product->id)
                 ->with('variants')
+                ->withAvg('reviews', 'rating')
+                ->withCount('reviews')
                 ->take(4)
                 ->get()
                 ->each(fn (Product $other) => $other->setRelation('company', $product->company)),

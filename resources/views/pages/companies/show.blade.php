@@ -97,14 +97,14 @@
     @endif
     <link rel="stylesheet" href="{{ asset('css/company.css') }}?v={{ filemtime(public_path('css/company.css')) }}">
     @if ($hasMap)
-        <link rel="stylesheet" href="{{ asset('vendor/leaflet/leaflet.css') }}">
+        <link rel="stylesheet" href="{{ asset('vendor/leaflet/leaflet.css') }}?v=1.9.4">
     @endif
 @endpush
 
 @push('scripts')
     <script src="{{ asset('js/company.js') }}?v={{ filemtime(public_path('js/company.js')) }}" defer></script>
     @if ($hasMap)
-        <script src="{{ asset('vendor/leaflet/leaflet.js') }}" defer></script>
+        <script src="{{ asset('vendor/leaflet/leaflet.js') }}?v=1.9.4" defer></script>
         <script src="{{ asset('js/maps.js') }}?v={{ filemtime(public_path('js/maps.js')) }}" defer></script>
     @endif
 @endpush

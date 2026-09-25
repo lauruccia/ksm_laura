@@ -170,7 +170,7 @@ class CompanyController extends Controller
         $products = null;
 
         if ($company->allows(PlanCapabilities::SHOP)) {
-            $products = $tenant->scope()->products($company->products()->active()->getQuery())->with('variants')->latest()->paginate(12);
+            $products = $tenant->scope()->products($company->products()->active()->getQuery())->with('variants')->withAvg('reviews', 'rating')->withCount('reviews')->latest()->paginate(12);
             // Le schede leggono l'azienda: e' questa, non serve rileggerla per ogni prodotto.
             $products->getCollection()->each(fn ($product) => $product->setRelation('company', $company));
         }

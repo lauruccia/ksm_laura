@@ -22,6 +22,40 @@ manca un piano la directory resta vuota, perche' un'azienda si vede solo se
 ne ha uno attivo. Per accendere le aziende di prova, da **Abbonamenti** si
 assegna loro un piano.
 
+## In produzione
+
+Nel `.env` del server, diverso da quello di sviluppo:
+
+    APP_ENV=production
+    APP_DEBUG=false
+    LOG_LEVEL=warning
+
+Con `APP_DEBUG=true` un errore mostra a chiunque percorsi, query e parte del
+codice. Dopo ogni modifica del `.env` va rilanciato `artisan optimize`.
+
+`vendor/` non e' nel repository e sul server Composer non gira: si prepara
+in locale e si carica a mano, senza i pacchetti di sviluppo e con la mappa
+delle classi gia' fatta, che rende piu' veloce ogni richiesta:
+
+```bash
+composer install --no-dev --classmap-authoritative
+```
+
+Poi, per tornare a lavorare in locale, `composer install`.
+
+Serve un solo cron, ogni minuto:
+
+    * * * * * /usr/local/bin/ea-php83 /home2/ilnetwork/ksm-next/artisan schedule:run >> /dev/null 2>&1
+
+Da li' partono rinnovi, controllo dei domini, KMoney, pulizia della cache e
+la coda (`routes/console.php`). I giri girano dentro il processo di
+`schedule:run`, perche' sull'hosting `proc_open()` e' disabilitato.
+
+Sul server i CSS e i JS tengono la cache del browser per un anno (i
+`.htaccess` di `public/css`, `public/js` e `public/vendor`): i link portano
+`?v=` con la data del file, e il deploy copia i file tenendo le date, cosi'
+cambia solo il link di quelli modificati.
+
 ## Dati del sito originale
 
 Al posto dei dati di prova si possono caricare aziende e prodotti veri dal
@@ -746,6 +780,8 @@ online.
 ## Note
 
 Le chiavi dei gateway e le password SMTP si inseriscono dai moduli di
-amministrazione e restano nel database. I campi lasciati vuoti non
+amministrazione e restano nel database (la password SMTP cifrata con la
+chiave dell'app). La posta in uscita scritta in **Impostazioni** vale solo
+se e' accesa la sua casella; spenta, valgono i `MAIL_*` del `.env`. I campi lasciati vuoti non
 sovrascrivono i valori gia salvati, e i valori esistenti non vengono
 ristampati nelle pagine.

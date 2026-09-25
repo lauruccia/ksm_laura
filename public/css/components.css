@@ -35,13 +35,6 @@
     box-shadow: 0 10px 22px rgba(111, 168, 79, .36);
 }
 
-.ksm-btn--dark {
-    background: var(--ksm-dark);
-    color: #fff;
-}
-
-.ksm-btn--dark:hover { background: var(--ksm-dark-deep); color: #fff; }
-
 .ksm-btn--ghost {
     background: #fff;
     border-color: var(--ksm-line);
@@ -97,8 +90,6 @@
     box-shadow: var(--ksm-shadow-md);
 }
 
-.ksm-card__body { padding: 20px; }
-
 .ksm-card__title {
     font-size: 1.02rem;
     font-weight: 700;
@@ -109,96 +100,6 @@
 
 .ksm-card__title a { color: inherit; }
 .ksm-card__title a:hover { color: var(--ksm-accent-dark); }
-
-/* ============ Scheda azienda ============ */
-.ksm-company__cover {
-    position: relative;
-    aspect-ratio: 16 / 9;
-    background: linear-gradient(135deg, #DCE6E4 0%, #EFF4F2 55%, #E7EEEA 100%) center/cover no-repeat;
-}
-
-.ksm-company__cover::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(180deg, rgba(22, 35, 43, 0) 45%, rgba(22, 35, 43, .18) 100%);
-}
-
-.ksm-card:hover .ksm-company__cover { filter: saturate(1.06); }
-
-.ksm-company__logo {
-    position: absolute;
-    left: 18px;
-    bottom: -28px;
-    z-index: 1;
-    width: 64px;
-    height: 64px;
-    border-radius: var(--ksm-radius);
-    border: 3px solid #fff;
-    background: #fff center/cover no-repeat;
-    box-shadow: var(--ksm-shadow);
-}
-
-.ksm-company__logo--empty {
-    display: grid;
-    place-items: center;
-    background: var(--ksm-accent-soft);
-    color: var(--ksm-accent-dark);
-    font-family: var(--ksm-font-display);
-    font-weight: 800;
-    font-size: 1.55rem;
-    line-height: 1;
-}
-
-.ksm-company__body {
-    padding: 40px 20px 18px;
-    display: flex;
-    flex-direction: column;
-    flex: 1;
-}
-
-.ksm-company__head {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 12px;
-}
-
-.ksm-company__city {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    margin: 2px 0 0;
-    font-size: .86rem;
-    color: var(--ksm-muted);
-}
-
-.ksm-company__city .ksm-icon { color: var(--ksm-accent); }
-
-.ksm-company__foot {
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    margin-top: auto;
-    padding-top: 12px;
-}
-
-.ksm-company__more {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 34px;
-    height: 34px;
-    border-radius: var(--ksm-radius-sm);
-    background: var(--ksm-accent-soft);
-    color: var(--ksm-accent-dark);
-    transition: background .2s var(--ksm-ease), color .2s var(--ksm-ease);
-}
-
-.ksm-company__more:hover {
-    background: var(--ksm-accent);
-    color: #fff;
-}
 
 /* ============ Biglietto azienda, negli elenchi ============ */
 /* Alto quanto il suo contenuto: a pareggiare le schede di una stessa riga
@@ -235,8 +136,16 @@
        Il tetto vale per i biglietti a tutta larghezza sui telefoni. */
     aspect-ratio: 16 / 9;
     max-height: 210px;
+    overflow: hidden;
     background: var(--ksm-line-soft) center / cover no-repeat;
     transition: filter .28s var(--ksm-ease);
+}
+
+.ksm-bizcard__cover img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
 }
 
 .ksm-bizcard__cover--plain {
@@ -262,6 +171,14 @@
     border: 3px solid #fff;
     box-shadow: var(--ksm-shadow);
     background: #fff center / contain no-repeat;
+    overflow: hidden;
+}
+
+.ksm-bizcard__logo img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
 }
 
 .ksm-bizcard__logo--empty {
@@ -419,8 +336,18 @@
     height: 82px;
     flex: 0 0 92px;
     border-radius: var(--ksm-radius);
+    position: relative;
+    overflow: hidden;
     background: var(--ksm-canvas) center/cover no-repeat;
     border: 1px solid var(--ksm-line-soft);
+}
+
+.ksm-product__img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
 }
 
 .ksm-product__thumb--empty {
@@ -676,20 +603,6 @@
     .ksm-table--stack td > .ksm-btn:only-child { margin-top: 6px; }
     .ksm-table--stack .ksm-input,
     .ksm-table--stack .ksm-select { min-width: 0; }
-}
-
-/* ============ Banner pubblicitari ============ */
-.ksm-banner {
-    display: block;
-    border-radius: var(--ksm-radius-lg);
-    overflow: hidden;
-    box-shadow: var(--ksm-shadow-xs);
-    transition: transform .28s var(--ksm-ease), box-shadow .28s var(--ksm-ease);
-}
-
-.ksm-banner:hover {
-    transform: translateY(-3px);
-    box-shadow: var(--ksm-shadow-md);
 }
 
 /* Circuito banner ------------------------------------------------------- */

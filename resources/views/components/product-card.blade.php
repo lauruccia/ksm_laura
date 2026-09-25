@@ -7,9 +7,12 @@
 <article class="ksm-card ksm-product">
     <a class="ksm-product__thumb @if (! $hasImage) ksm-product__thumb--empty @endif"
        href="{{ route('products.show', $product->slug) }}"
-       @if ($hasImage) style="background-image: url('{{ asset('storage/'.\App\Support\Images\ImageStore::thumb($product->featured_image)) }}')" @endif
        aria-label="{{ $product->name }}">
-        @if (! $hasImage)
+        {{-- Un'immagine vera e non uno sfondo: il browser la scarica solo quando la scheda arriva a schermo. --}}
+        @if ($hasImage)
+            <img class="ksm-product__img" src="{{ asset('storage/'.\App\Support\Images\ImageStore::thumb($product->featured_image)) }}"
+                 alt="" loading="lazy" decoding="async" width="600" height="600">
+        @else
             <x-icon name="box" :size="26" />
         @endif
         @if ($storefront)

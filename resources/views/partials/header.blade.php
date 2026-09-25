@@ -71,7 +71,15 @@
 
         <a href="{{ route('home') }}" class="brand-header__brand" aria-label="{{ $siteName }}">
             @if ($logoUrl)
-                <img src="{{ $logoUrl }}" alt="{{ $siteName }}" class="brand-header__logo">
+                @php
+                    // Le misure vere fanno tenere al browser il posto del logo mentre arriva.
+                    $storageUrl = asset('storage').'/';
+                    $logoSize = str_starts_with($logoUrl, $storageUrl)
+                        ? @getimagesize(\Illuminate\Support\Facades\Storage::disk('public')->path(substr($logoUrl, strlen($storageUrl))))
+                        : false;
+                @endphp
+                <img src="{{ $logoUrl }}" alt="{{ $siteName }}" class="brand-header__logo"
+                     @if ($logoSize) width="{{ $logoSize[0] }}" height="{{ $logoSize[1] }}" @endif>
             @else
                 <span class="brand-header__fallback @if (mb_strlen($siteName) > 12) brand-header__fallback--long @endif">{{ $siteName }}</span>
             @endif

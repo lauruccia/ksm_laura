@@ -8,7 +8,7 @@
             <button type="submit" aria-label="Chiudi">&times;</button>
         </form>
         <a href="{{ route('ads.click', $campaign) }}" rel="sponsored noopener" target="_blank">
-            <img src="{{ asset('storage/'.$campaign->img) }}" alt="{{ $campaign->name }}">
+            <img src="{{ asset('storage/'.$campaign->img) }}" alt="{{ $campaign->name }}" loading="lazy" decoding="async">
         </a>
         <small class="ksm-ad__label">Pubblicità</small>
     </dialog>

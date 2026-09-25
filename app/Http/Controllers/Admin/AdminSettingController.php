@@ -122,11 +122,12 @@ class AdminSettingController extends Controller
 
         $data = $request->validate([
             'mail_mailer' => ['required', 'string', 'max:50'],
-            'mail_host' => ['nullable', 'string', 'max:255'],
-            'mail_port' => ['nullable', 'integer', 'min:1', 'max:65535'],
+            // Accese, spediscono tutte le mail del sito: senza server e porta non si parte.
+            'mail_host' => ['nullable', 'required_if:is_active,1', 'string', 'max:255'],
+            'mail_port' => ['nullable', 'required_if:is_active,1', 'integer', 'min:1', 'max:65535'],
             'mail_username' => ['nullable', 'string', 'max:255'],
             'mail_password' => ['nullable', 'string', 'max:255'],
-            'mail_encryption' => ['nullable', 'string', 'max:20'],
+            'mail_encryption' => ['nullable', 'in:ssl,tls'],
             'mail_from_address' => ['nullable', 'email', 'max:255'],
             'mail_from_name' => ['nullable', 'string', 'max:255'],
             'reply_to_address' => ['nullable', 'email', 'max:255'],
@@ -134,6 +135,8 @@ class AdminSettingController extends Controller
         ]);
 
         $mail->fill(array_filter($data, fn ($v) => $v !== null && $v !== ''));
+        // "Automatica" e' il valore vuoto: va salvato anche lui.
+        $mail->mail_encryption = $data['mail_encryption'] ?? null;
         $mail->is_active = $request->boolean('is_active');
         $mail->save();
 

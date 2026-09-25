@@ -58,6 +58,9 @@ class HomeController extends Controller
         $products = $scope->products(Product::query()
             ->active()
             ->with(['company', 'variants'])
+            // Le stelline della scheda, come nello shop.
+            ->withAvg('reviews', 'rating')
+            ->withCount('reviews')
             ->whereHas('company', fn ($q) => $q->active()->selling()))
             ->latest()
             ->take(8)

@@ -170,6 +170,27 @@ final class ImageStore
         return Storage::disk($disk)->exists($thumb) ? $thumb : $path;
     }
 
+    /**
+     * Attributi per un <img> che dal telefono scarica la copia piccola:
+     * src, srcset (se c'e' la miniatura), width e height dell'originale,
+     * che tengono il posto all'immagine mentre arriva.
+     *
+     * @return array{src: string, srcset: ?string, width: ?int, height: ?int}
+     */
+    public static function responsive(string $path, string $disk = 'public'): array
+    {
+        $storage = Storage::disk($disk);
+        $size = @getimagesize($storage->path($path)) ?: [null, null];
+        $thumb = self::thumbPath($path);
+        $srcset = null;
+
+        if ($size[0] && $storage->exists($thumb) && ($small = @getimagesize($storage->path($thumb))) && $small[0] < $size[0]) {
+            $srcset = asset('storage/'.$thumb).' '.$small[0].'w, '.asset('storage/'.$path).' '.$size[0].'w';
+        }
+
+        return ['src' => asset('storage/'.$path), 'srcset' => $srcset, 'width' => $size[0], 'height' => $size[1]];
+    }
+
     public static function thumbPath(string $path): string
     {
         $dot = strrpos($path, '.');

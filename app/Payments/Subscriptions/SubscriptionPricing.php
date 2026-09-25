@@ -24,9 +24,15 @@ use App\Models\Plan;
  */
 class SubscriptionPricing
 {
-    public function quote(Company $company, Plan $plan): SubscriptionQuote
+    /**
+     * @param  CompanySubscription|false|null  $current  il periodo in corso, se chi chiama
+     *                                                  lo ha gia' letto (false: da leggere)
+     */
+    public function quote(Company $company, Plan $plan, CompanySubscription|false|null $current = false): SubscriptionQuote
     {
-        $current = $company->activeSubscription();
+        if ($current === false) {
+            $current = $company->activeSubscription();
+        }
 
         if (! $current) {
             return new SubscriptionQuote(

@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Models\SmtpSetting;
 use App\Support\Ads\AdServer;
 use App\Support\Domains\CpanelHostingPanel;
 use App\Support\Domains\HostingPanel;
@@ -19,6 +20,9 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->app->singleton(TenantContext::class);
         $this->app->scoped(AdServer::class);
+
+        // La posta in uscita scritta in Amministrazione vale piu' del .env.
+        $this->app->afterResolving('mail.manager', fn () => SmtpSetting::applyToMailer());
 
         // Solo con un token cPanel i domini si aggiungono da soli all'account.
         $this->app->singleton(HostingPanel::class, function () {

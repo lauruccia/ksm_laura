@@ -9,6 +9,7 @@ use App\Support\TenantContext;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 
 class ContactController extends Controller
@@ -39,8 +40,8 @@ class ContactController extends Controller
         // Il messaggio va a chi gestisce il sito: l'email del dominio, se c'e', altrimenti KSM.
         $recipient = $tenant->domain()?->email ?: AdminSetting::current()->website_email;
 
-        if ($recipient) {
-            Mail::to($recipient)->send(new ContactMessage($data));
+        if ($recipient && ! $this->deliver($recipient, new ContactMessage($data))) {
+            return $this->failed();
         }
 
         return back()->with('success', __('Messaggio inviato.'));
@@ -53,11 +54,36 @@ class ContactController extends Controller
 
         $data = $this->validated($request);
 
-        if ($company->email) {
-            Mail::to($company->email)->send(new ContactMessage($data, $company->name));
+        if ($company->email && ! $this->deliver($company->email, new ContactMessage($data, $company->name))) {
+            return $this->failed();
         }
 
         return back()->with('success', __('Messaggio inviato all azienda.'));
+    }
+
+    /**
+     * Spedisce subito, senza coda: chi scrive deve sapere se e' partito.
+     * Se il server di posta non risponde si scrive nel log e si avvisa,
+     * invece di una pagina di errore che fa perdere il testo scritto.
+     */
+    private function deliver(string $recipient, ContactMessage $message): bool
+    {
+        try {
+            Mail::to($recipient)->send($message);
+
+            return true;
+        } catch (\Throwable $e) {
+            Log::error('Messaggio del modulo contatti non spedito', ['to' => $recipient, 'error' => $e->getMessage()]);
+
+            return false;
+        }
+    }
+
+    private function failed(): RedirectResponse
+    {
+        return back()->withInput()->withErrors([
+            'message' => __('Non siamo riusciti a spedire il messaggio. Riprova tra qualche minuto.'),
+        ]);
     }
 
     private function validated(Request $request): array

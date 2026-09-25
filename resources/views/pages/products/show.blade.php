@@ -24,7 +24,12 @@
             <div class="ksm-grid ksm-grid--2">
                 <div class="ksm-product-detail__image">
                     @if ($product->featured_image && \Illuminate\Support\Facades\Storage::disk('public')->exists($product->featured_image))
-                        <img src="{{ asset('storage/'.$product->featured_image) }}" alt="{{ $product->name }}">
+                        @php
+                            $photo = \App\Support\Images\ImageStore::responsive($product->featured_image);
+                        @endphp
+                        <img src="{{ $photo['src'] }}" alt="{{ $product->name }}" fetchpriority="high"
+                             @if ($photo['srcset']) srcset="{{ $photo['srcset'] }}" sizes="(max-width: 760px) 100vw, 50vw" @endif
+                             @if ($photo['width']) width="{{ $photo['width'] }}" height="{{ $photo['height'] }}" @endif>
                     @else
                         <x-icon name="box" :size="100" />
                     @endif

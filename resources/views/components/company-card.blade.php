@@ -30,13 +30,21 @@
 
 <article class="ksm-card ksm-bizcard @unless ($hasPage) ksm-bizcard--compact @endunless">
     @if ($hasPage)
-        <div class="ksm-bizcard__cover @unless ($showBanner) ksm-bizcard__cover--plain @endunless"
-             @if ($showBanner) style="background-image: url('{{ asset('storage/'.\App\Support\Images\ImageStore::thumb($company->banner)) }}')" @endif></div>
+        {{-- Immagini vere e non sfondi: il browser le scarica solo quando la scheda arriva a schermo. --}}
+        <div class="ksm-bizcard__cover @unless ($showBanner) ksm-bizcard__cover--plain @endunless">
+            @if ($showBanner)
+                <img src="{{ asset('storage/'.\App\Support\Images\ImageStore::thumb($company->banner)) }}"
+                     alt="" loading="lazy" decoding="async" width="800" height="450">
+            @endif
+        </div>
     @endif
 
     <div class="ksm-bizcard__top">
         @if ($showLogo)
-            <span class="ksm-bizcard__logo" style="background-image: url('{{ asset('storage/'.\App\Support\Images\ImageStore::thumb($company->logo)) }}')"></span>
+            <span class="ksm-bizcard__logo">
+                <img src="{{ asset('storage/'.\App\Support\Images\ImageStore::thumb($company->logo)) }}"
+                     alt="" loading="lazy" decoding="async" width="56" height="56">
+            </span>
         @else
             <span class="ksm-bizcard__logo ksm-bizcard__logo--empty" aria-hidden="true">{{ mb_strtoupper(mb_substr($company->name, 0, 1)) }}</span>
         @endif

@@ -21,7 +21,7 @@
             <div>
                 <a class="ksm-footer__brand" href="{{ route('home') }}">
                     @if ($settings->site_logo)
-                        <img src="{{ asset('storage/'.$settings->site_logo) }}" alt="{{ $siteName }}">
+                        <img src="{{ asset('storage/'.$settings->site_logo) }}" alt="{{ $siteName }}" loading="lazy" decoding="async">
                     @else
                         {{ $tenant->brandName() }}
                     @endif

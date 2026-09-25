@@ -22,14 +22,17 @@ class VendorDashboardController extends Controller
     {
         $company = $request->user()->company;
         $sells = $company->allows(PlanCapabilities::SHOP);
+        $productCount = $sells ? $company->products()->count() : 0;
+        // La media delle recensioni, per il riquadro in alto.
+        $company->loadAvg('reviews', 'rating');
 
         return view('vendor.dashboard', [
             'company' => $company,
             'sells' => $sells,
             'subscription' => $company->activeSubscription(),
             'pendingSubscription' => $company->pendingSubscription(),
-            'todo' => $this->todo($company, $sells),
-            'productCount' => $sells ? $company->products()->count() : 0,
+            'todo' => $this->todo($company, $sells, $productCount),
+            'productCount' => $productCount,
             'activeProducts' => $sells ? $company->products()->active()->count() : 0,
             'orderCount' => $sells ? $company->orders()->count() : 0,
             'pending' => $sells ? $company->orders()->where('status', 'pending')->count() : 0,
@@ -50,7 +53,7 @@ class VendorDashboardController extends Controller
      * Elenco corto e concreto: ogni voce e' una cosa che si puo' fare
      * subito, con il collegamento alla pagina che la risolve.
      */
-    private function todo($company, bool $sells): array
+    private function todo($company, bool $sells, int $productCount): array
     {
         $todo = [];
 
@@ -66,7 +69,7 @@ class VendorDashboardController extends Controller
             $todo[] = ['text' => 'Aggiungi un recapito', 'url' => route('vendor.profile.edit')];
         }
 
-        if ($sells && $company->products()->count() === 0) {
+        if ($sells && $productCount === 0) {
             $todo[] = ['text' => 'Inserisci il primo prodotto', 'url' => route('vendor.products.create')];
         }
 

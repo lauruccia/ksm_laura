@@ -243,6 +243,28 @@
                     <input class="ksm-input" id="mail_password" name="mail_password" type="password"
                            placeholder="{{ $mail->mail_password ? 'già impostata' : '' }}">
                 </div>
+                <div class="ksm-field">
+                    <label class="ksm-label" for="mail_encryption">Cifratura</label>
+                    <select class="ksm-select" id="mail_encryption" name="mail_encryption">
+                        @foreach (['' => 'Automatica (cifrata sulla 465, STARTTLS sulle altre)', 'ssl' => 'SSL/TLS dall\'inizio (di solito porta 465)'] as $value => $label)
+                            <option value="{{ $value }}" @selected(old('mail_encryption', $mail->mail_encryption) === $value)>{{ $label }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="ksm-field">
+                    <label class="ksm-label" for="mail_from_address">Mittente (indirizzo)</label>
+                    <input class="ksm-input" id="mail_from_address" name="mail_from_address" type="email"
+                           value="{{ old('mail_from_address', $mail->mail_from_address) }}">
+                </div>
+                <div class="ksm-field">
+                    <label class="ksm-label" for="mail_from_name">Mittente (nome)</label>
+                    <input class="ksm-input" id="mail_from_name" name="mail_from_name"
+                           value="{{ old('mail_from_name', $mail->mail_from_name) }}">
+                </div>
+                <label class="ksm-label" style="display: flex; gap: 8px; align-items: center;">
+                    <input type="checkbox" name="is_active" value="1" @checked(old('is_active', $mail->is_active))>
+                    Usa queste impostazioni per spedire (spento: valgono quelle del file .env del server)
+                </label>
 
                 <button class="ksm-btn ksm-btn--primary" type="submit">Salva</button>
             </form>
