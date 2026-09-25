@@ -5,6 +5,7 @@ namespace App\Support\Ads;
 use App\Models\Advertisement;
 use App\Models\AdvertisementStat;
 use App\Support\TenantContext;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -18,20 +19,32 @@ use Illuminate\Support\Facades\DB;
  */
 class AdServer
 {
+    /** Le campagne in corso, lette una volta per richiesta: una pagina ha piu' posizioni. */
+    private ?Collection $running = null;
+
+    private ?Request $runningFor = null;
+
     public function pick(string $placement, AdContext $context): ?Advertisement
     {
         if (app(TenantContext::class)->isCompanySite()) {
             return null;
         }
 
-        return Advertisement::query()
-            ->running()
-            ->whereNotNull('img')
-            ->inLocation($placement)
-            ->get()
-            ->filter(fn (Advertisement $campaign) => $campaign->matches($context))
+        return $this->running()
+            ->filter(fn (Advertisement $campaign) => in_array($placement, (array) $campaign->locations, true)
+                && $campaign->matches($context))
             ->shuffle()
             ->first();
+    }
+
+    private function running(): Collection
+    {
+        if ($this->running === null || $this->runningFor !== request()) {
+            $this->runningFor = request();
+            $this->running = Advertisement::query()->running()->whereNotNull('img')->get();
+        }
+
+        return $this->running;
     }
 
     public function recordView(Advertisement $campaign): void

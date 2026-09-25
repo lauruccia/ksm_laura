@@ -167,11 +167,17 @@ class CompanyController extends Controller
 
         $company->load(['category', 'plan'])->loadAvg('reviews', 'rating')->loadCount('reviews');
 
+        $products = null;
+
+        if ($company->allows(PlanCapabilities::SHOP)) {
+            $products = $tenant->scope()->products($company->products()->active()->getQuery())->with('variants')->latest()->paginate(12);
+            // Le schede leggono l'azienda: e' questa, non serve rileggerla per ogni prodotto.
+            $products->getCollection()->each(fn ($product) => $product->setRelation('company', $company));
+        }
+
         return view('pages.companies.show', [
             'company' => $company,
-            'products' => $company->allows(PlanCapabilities::SHOP)
-                ? $tenant->scope()->products($company->products()->active()->getQuery())->latest()->paginate(12)
-                : null,
+            'products' => $products,
             'reviews' => $company->allows(PlanCapabilities::REVIEWS)
                 ? $company->reviews()->latest()->take(10)->get()
                 : collect(),

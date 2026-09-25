@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\Company;
+use App\Models\CompanyPaymentSetting;
 use App\Payments\KMoney\KMoneyPairing;
 use App\Payments\PaymentException;
 use Illuminate\Console\Command;
@@ -24,9 +25,11 @@ class CheckKMoneyPairings extends Command
     {
         $counts = [];
 
-        $companies = Company::query()->whereHas(
-            'paymentSettings',
-            fn ($q) => $q->where('kmoney_pairing_status', KMoneyPairing::PENDING)
+        // Si parte dai collegamenti in attesa (pochi, e lo stato ha l'indice),
+        // non dalle aziende: gira ogni cinque minuti su tutto l'archivio.
+        $companies = Company::query()->whereIn(
+            'id',
+            CompanyPaymentSetting::query()->where('kmoney_pairing_status', KMoneyPairing::PENDING)->select('company_id')
         );
 
         foreach ($companies->lazyById(100) as $company) {

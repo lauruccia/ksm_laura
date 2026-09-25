@@ -84,7 +84,7 @@
                         <a href="{{ route($canManage ? 'admin.products.edit' : 'admin.products.show', $product) }}"
                            style="display: flex; gap: 12px; align-items: center; color: var(--ksm-ink); font-weight: 600;">
                             <span class="ksm-thumb" aria-hidden="true"
-                                  @if ($product->featured_image) style="background-image: url('{{ asset('storage/'.$product->featured_image) }}'); background-size: cover;" @endif></span>
+                                  @if ($product->featured_image) style="background-image: url('{{ asset('storage/'.\App\Support\Images\ImageStore::thumb($product->featured_image)) }}'); background-size: cover;" @endif></span>
                             <span>
                                 {{ $product->name }}
                                 @if ($product->category)

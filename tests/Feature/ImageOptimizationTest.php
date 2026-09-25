@@ -145,7 +145,8 @@ class ImageOptimizationTest extends TestCase
 
         $this->assertSame([800, 800], array_slice(getimagesize($disk->path($company->logo)), 0, 2));
         $this->assertSame([2000, 1125], array_slice(getimagesize($disk->path($company->banner)), 0, 2));
-        $disk->assertMissing(ImageStore::thumbPath($company->logo));
+        // Anche il logo ha la copia piccola, per schede ed elenchi.
+        $this->assertSame([240, 240], array_slice(getimagesize($disk->path(ImageStore::thumbPath($company->logo))), 0, 2));
         $disk->assertExists(ImageStore::thumbPath($company->banner));
     }
 
@@ -189,5 +190,21 @@ class ImageOptimizationTest extends TestCase
         $this->assertSame('companies/galleria/manca.jpg', $gallery[1]);
 
         $this->artisan('images:optimize')->expectsOutputToContain('Immagini convertite: 0')->assertSuccessful();
+    }
+
+    public function test_il_comando_aggiunge_la_miniatura_ai_loghi_gia_in_webp(): void
+    {
+        $disk = Storage::disk('public');
+        $image = imagecreatetruecolor(800, 800);
+        $disk->put('companies/logo.webp', ImageStore::encode($image, 'webp'));
+        $this->company->update(['logo' => 'companies/logo.webp']);
+
+        $this->artisan('images:optimize', ['--only' => 'aziende'])
+            ->expectsOutputToContain('Miniature aggiunte: 1')
+            ->assertSuccessful();
+
+        $this->assertSame('companies/logo.webp', $this->company->fresh()->logo);
+        $this->assertSame([240, 240], array_slice(getimagesize($disk->path('companies/logo@sm.webp')), 0, 2));
+        $this->assertSame('companies/logo@sm.webp', ImageStore::thumb('companies/logo.webp'));
     }
 }

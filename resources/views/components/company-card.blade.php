@@ -36,7 +36,7 @@
 
     <div class="ksm-bizcard__top">
         @if ($showLogo)
-            <span class="ksm-bizcard__logo" style="background-image: url('{{ asset('storage/'.$company->logo) }}')"></span>
+            <span class="ksm-bizcard__logo" style="background-image: url('{{ asset('storage/'.\App\Support\Images\ImageStore::thumb($company->logo)) }}')"></span>
         @else
             <span class="ksm-bizcard__logo ksm-bizcard__logo--empty" aria-hidden="true">{{ mb_strtoupper(mb_substr($company->name, 0, 1)) }}</span>
         @endif

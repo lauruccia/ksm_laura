@@ -80,7 +80,7 @@
                     @endif
                     <td class="ksm-table__logo">
                         <span class="ksm-thumb"
-                              @if ($company->logo) style="background-image: url('{{ asset('storage/'.$company->logo) }}')" @endif></span>
+                              @if ($company->logo) style="background-image: url('{{ asset('storage/'.\App\Support\Images\ImageStore::thumb($company->logo)) }}')" @endif></span>
                     </td>
                     <td class="ksm-table__name">
                         <strong>{{ $company->name }}</strong>

@@ -410,7 +410,10 @@ scalata una volta sola.
 La firma si verifica subito, dentro la richiesta del gestore. La chiusura del
 pagamento va in coda con `ProcessPaymentNotification`: il gestore riceve
 risposta in pochi millisecondi, e una verifica non riuscita viene ripetuta
-fino a cinque volte. In produzione deve girare un lavoratore della coda.
+fino a cinque volte. La coda la svuota ogni minuto lo scheduler
+(`routes/console.php`), perche' sull'hosting condiviso non c'e' un processo
+sempre acceso: basta il cron di `php artisan schedule:run`. Su un server con
+supervisor si puo' tenere acceso un lavoratore al suo posto.
 
 ```bash
 php artisan queue:work

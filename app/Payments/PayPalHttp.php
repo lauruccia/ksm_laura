@@ -3,6 +3,7 @@
 namespace App\Payments;
 
 use Illuminate\Http\Client\PendingRequest;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 
 /**
@@ -30,13 +31,28 @@ final class PayPalHttp
 
         $base = $live ? self::LIVE : self::SANDBOX;
 
-        $token = Http::asForm()
-            ->withBasicAuth($keys['client_id'], $keys['secret'])
-            ->post("$base/v1/oauth2/token", ['grant_type' => 'client_credentials'])
-            ->json('access_token');
+        // Il token vale ore (expires_in): si tiene da parte invece di chiederne
+        // uno nuovo a ogni chiamata, che raddoppiava i giri verso PayPal.
+        $cacheKey = 'paypal-token:'.sha1($base.'|'.$keys['client_id'].'|'.$keys['secret']);
+        $token = Cache::get($cacheKey);
 
         if (blank($token)) {
-            throw new PaymentException('PayPal non ha rilasciato il token di accesso.');
+            $response = Http::asForm()
+                ->withBasicAuth($keys['client_id'], $keys['secret'])
+                ->connectTimeout(5)
+                ->timeout(15)
+                ->post("$base/v1/oauth2/token", ['grant_type' => 'client_credentials']);
+            $token = $response->json('access_token');
+
+            if (blank($token)) {
+                throw new PaymentException('PayPal non ha rilasciato il token di accesso.');
+            }
+
+            $ttl = (int) $response->json('expires_in', 0) - 300;
+
+            if ($ttl > 0) {
+                Cache::put($cacheKey, $token, $ttl);
+            }
         }
 
         return Http::baseUrl($base)->withToken($token)->acceptJson()->timeout(20);

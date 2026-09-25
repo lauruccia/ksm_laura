@@ -120,7 +120,7 @@ class ProductController extends Controller
             404
         );
 
-        $product->load(['company', 'category', 'brand', 'variants']);
+        $product->loadMissing(['company', 'category', 'brand', 'variants']);
 
         return view('pages.products.show', [
             'product' => $product,
@@ -131,8 +131,10 @@ class ProductController extends Controller
             'related' => $this->tenant->scope()->products(Product::active())
                 ->where('company_id', $product->company_id)
                 ->whereKeyNot($product->id)
+                ->with('variants')
                 ->take(4)
-                ->get(),
+                ->get()
+                ->each(fn (Product $other) => $other->setRelation('company', $product->company)),
         ]);
     }
 
@@ -166,7 +168,11 @@ class ProductController extends Controller
     {
         $top = array_slice($this->ranking($visible, self::BESTSELLER_BADGES, soldOnly: true), 0, self::BESTSELLER_BADGES);
 
-        $shown->each(fn (Product $product) => $product->is_bestseller = in_array($product->id, $top, true));
+        // Non una arrow function: each() si ferma al primo false restituito,
+        // e l'assegnazione restituisce proprio il valore assegnato.
+        foreach ($shown as $product) {
+            $product->is_bestseller = in_array($product->id, $top, true);
+        }
     }
 
     /**

@@ -57,7 +57,7 @@ class HomeController extends Controller
 
         $products = $scope->products(Product::query()
             ->active()
-            ->with('company')
+            ->with(['company', 'variants'])
             ->whereHas('company', fn ($q) => $q->active()->selling()))
             ->latest()
             ->take(8)

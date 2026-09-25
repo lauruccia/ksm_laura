@@ -35,6 +35,8 @@ class OptimizeImages extends Command
 
     private int $after = 0;
 
+    private int $thumbs = 0;
+
     public function __construct(private readonly ImageStore $images)
     {
         parent::__construct();
@@ -51,7 +53,7 @@ class OptimizeImages extends Command
         }
 
         $groups = $only ? [$only] : self::GROUPS;
-        $this->done = $this->before = $this->after = 0;
+        $this->done = $this->before = $this->after = $this->thumbs = 0;
 
         if (in_array('prodotti', $groups, true)) {
             $this->column('products', 'featured_image', 'product');
@@ -74,6 +76,10 @@ class OptimizeImages extends Command
 
         $verb = $this->option('dry-run') ? 'da convertire' : 'convertite';
         $this->info("Immagini $verb: $this->done.");
+
+        if ($this->thumbs) {
+            $this->line("Miniature aggiunte: $this->thumbs.");
+        }
 
         if ($this->option('dry-run')) {
             $this->line('Peso attuale: '.self::size($this->before).'.');
@@ -125,7 +131,16 @@ class OptimizeImages extends Command
         $limit = (int) $this->option('limit');
         $disk = Storage::disk('public');
 
-        if (($limit && $this->done >= $limit) || ! $disk->exists($path) || $this->isOptimized($path, $profile)) {
+        if (($limit && $this->done >= $limit) || ! $disk->exists($path)) {
+            return null;
+        }
+
+        // Gia' in WebP: al massimo manca la miniatura (i loghi non l'avevano).
+        if ($this->isOptimized($path, $profile)) {
+            if (! $this->option('dry-run') && $this->images->addThumb($path, $profile)) {
+                $this->thumbs++;
+            }
+
             return null;
         }
 

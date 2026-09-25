@@ -1,0 +1,7 @@
+# I file di questa cartella si linkano sempre con ?v=data del file: quando
+# cambiano cambia l'indirizzo, quindi il browser puo' tenerli un anno senza
+# richiederli a ogni pagina. Sta qui e non nel .htaccess di public/, che sul
+# server e' diverso e non viene sovrascritto dal deploy.
+<IfModule mod_headers.c>
+    Header set Cache-Control "public, max-age=31536000, immutable"
+</IfModule>

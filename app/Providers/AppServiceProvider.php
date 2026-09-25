@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Support\Ads\AdServer;
 use App\Support\Domains\CpanelHostingPanel;
 use App\Support\Domains\HostingPanel;
 use App\Support\Domains\NoHostingPanel;
@@ -9,12 +10,15 @@ use App\Support\Domains\WhmHostingPanel;
 use App\Support\TenantContext;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\ServiceProvider;
+use Stripe\ApiRequestor;
+use Stripe\HttpClient\CurlClient;
 
 class AppServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
         $this->app->singleton(TenantContext::class);
+        $this->app->scoped(AdServer::class);
 
         // Solo con un token cPanel i domini si aggiungono da soli all'account.
         $this->app->singleton(HostingPanel::class, function () {
@@ -39,5 +43,14 @@ class AppServiceProvider extends ServiceProvider
         // Quella di Laravel presuppone Tailwind, che il sito non carica.
         Paginator::defaultView('partials.pagination');
         Paginator::defaultSimpleView('partials.pagination');
+
+        // Stripe di suo aspetta fino a 80 secondi: chi paga non deve restare
+        // appeso cosi' a lungo se Stripe non risponde.
+        if (class_exists(CurlClient::class)) {
+            $stripeHttp = new CurlClient;
+            $stripeHttp->setConnectTimeout(5);
+            $stripeHttp->setTimeout(25);
+            ApiRequestor::setHttpClient($stripeHttp);
+        }
     }
 }

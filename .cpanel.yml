@@ -9,9 +9,12 @@ deployment:
     - export PHP=/usr/local/bin/ea-php83
     # Il .htaccess del server sceglie PHP 8.3: non va sovrascritto.
     - /bin/cp $DEPLOYPATH/public/.htaccess /tmp/ksm-htaccess-$USER
-    - /bin/cp -R app bootstrap config database lang public resources routes artisan composer.json composer.lock $DEPLOYPATH/
+    # -p tiene le date dei file: i ?v= dei CSS e JS cambiano solo per quelli modificati.
+    - /bin/cp -Rp app bootstrap config database lang public resources routes artisan composer.json composer.lock $DEPLOYPATH/
     - /bin/cp /tmp/ksm-htaccess-$USER $DEPLOYPATH/public/.htaccess
     - cd $DEPLOYPATH && echo "=== deploy $(date) ===" >> deploy.log
     - cd $DEPLOYPATH && $PHP artisan migrate --force >> deploy.log 2>&1
-    - cd $DEPLOYPATH && $PHP artisan optimize:clear >> deploy.log 2>&1
+    # La cache dei dati resta: dentro ci sono i controlli anti-doppione dei
+    # banner e i lock di KMoney, che un deploy non deve azzerare.
+    - cd $DEPLOYPATH && $PHP artisan optimize:clear --except=cache >> deploy.log 2>&1
     - cd $DEPLOYPATH && $PHP artisan optimize >> deploy.log 2>&1

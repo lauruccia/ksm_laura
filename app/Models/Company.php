@@ -153,7 +153,12 @@ class Company extends Model
     /** Solo le aziende che possono vendere: serve allo shop pubblico. */
     public function scopeSelling($query)
     {
-        return $query->whereHas('plan', fn ($q) => $q->whereJsonContains('capabilities', PlanCapabilities::SHOP));
+        // Come InDirectory: i piani sono pochi, meglio la lista degli id che
+        // una sottoquery ripetuta per ogni azienda (e per ogni prodotto nello shop).
+        return $query->whereIn(
+            'companies.plan_id',
+            Plan::query()->whereJsonContains('capabilities', PlanCapabilities::SHOP)->select('plans.id')
+        );
     }
 
     public function getAverageRatingAttribute(): float

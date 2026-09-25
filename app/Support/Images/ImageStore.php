@@ -25,7 +25,7 @@ final class ImageStore
      */
     public const PROFILES = [
         'product' => [1600, 1600, 600],
-        'logo' => [800, 800, 0],
+        'logo' => [800, 800, 240],
         'banner' => [2000, 1200, 800],
         'gallery' => [1600, 1600, 600],
         'advertisement' => [2000, 2000, 0],
@@ -84,6 +84,29 @@ final class ImageStore
         }
 
         return $this->write($source, dirname($path), $profile);
+    }
+
+    /**
+     * Scrive la miniatura che manca a un'immagine gia' ottimizzata, per
+     * esempio ai loghi caricati prima che il profilo ne avesse una.
+     */
+    public function addThumb(string $path, string $profile): bool
+    {
+        $disk = Storage::disk($this->disk);
+        $thumb = self::PROFILES[$profile][2];
+        $format = strtolower(pathinfo($path, PATHINFO_EXTENSION));
+
+        if (! $thumb || ! in_array($format, ['webp', 'png', 'jpg'], true) || ! $disk->exists($path) || $disk->exists(self::thumbPath($path))) {
+            return false;
+        }
+
+        $image = @imagecreatefromstring((string) $disk->get($path));
+
+        if (! $image instanceof GdImage || ($format === 'webp' && ! function_exists('imagewebp'))) {
+            return false;
+        }
+
+        return $disk->put(self::thumbPath($path), self::encode(self::fit($image, $thumb, $thumb), $format));
     }
 
     /** Il lavoro vero; null quando conviene tenere l'originale. */
