@@ -43,6 +43,7 @@
 @can(P::CONTENT_MANAGE)
     <li class="ksm-panel__sep">Contenuti</li>
     <li><a href="{{ route('admin.cms.index') }}" @if (request()->routeIs('admin.cms.*')) aria-current="page" @endif>Pagine</a></li>
+    <li><a href="{{ route('admin.menus.edit') }}" @if (request()->routeIs('admin.menus.*')) aria-current="page" @endif>Menu</a></li>
     <li><a href="{{ route('admin.advertisements.index') }}" @if (request()->routeIs('admin.advertisements.*')) aria-current="page" @endif>Campagne banner</a></li>
     <li><a href="{{ route('admin.advertisers.index') }}" @if (request()->routeIs('admin.advertisers.*')) aria-current="page" @endif>Inserzionisti</a></li>
     <li><a href="{{ route('admin.domains.index') }}" @if (request()->routeIs('admin.domains.*')) aria-current="page" @endif>Domini</a></li>

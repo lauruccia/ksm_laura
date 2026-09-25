@@ -68,22 +68,20 @@
 
             <div>
                 <h4>{{ __('site.footer_pages') }}</h4>
+                {{-- Le due colonne di link si scrivono in Amministrazione, Menu. --}}
                 <ul class="ksm-footer__links">
-                    <li><a href="{{ route('plans.index') }}"><x-icon name="chevrons" :size="15" />{{ __('site.nav_plans') }}</a></li>
-                    @foreach ($footerPages as $page)
-                        <li><a href="{{ route('pages.show', $page->slug) }}"><x-icon name="chevrons" :size="15" />{{ $page->title }}</a></li>
+                    @foreach (\App\Support\Navigation::items('footer_pages') as $item)
+                        <li><a href="{{ $item['url'] }}" @if ($item['new_tab']) target="_blank" rel="noopener" @endif><x-icon name="chevrons" :size="15" />{{ $item['label'] }}</a></li>
                     @endforeach
-                    <li><a href="{{ route('orders.track') }}"><x-icon name="chevrons" :size="15" />{{ __('site.track_order') }}</a></li>
                 </ul>
             </div>
 
             <div>
                 <h4>{{ __('site.footer_quick_links') }}</h4>
                 <ul class="ksm-footer__links">
-                    <li><a href="{{ route('home') }}"><x-icon name="chevrons" :size="15" />{{ __('site.nav_home') }}</a></li>
-                    <li><a href="{{ route('contact') }}"><x-icon name="chevrons" :size="15" />{{ __('site.nav_contact') }}</a></li>
-                    <li><a href="{{ route('companies.index') }}"><x-icon name="chevrons" :size="15" />{{ __('site.nav_companies') }}</a></li>
-                    <li><a href="{{ route('products.index') }}"><x-icon name="chevrons" :size="15" />{{ __('site.nav_products') }}</a></li>
+                    @foreach (\App\Support\Navigation::items('footer_links') as $item)
+                        <li><a href="{{ $item['url'] }}" @if ($item['new_tab']) target="_blank" rel="noopener" @endif><x-icon name="chevrons" :size="15" />{{ $item['label'] }}</a></li>
+                    @endforeach
                     @guest
                         <li><a href="{{ route('register') }}"><x-icon name="chevrons" :size="15" />{{ __('site.sign_up') }}</a></li>
                         <li><a href="{{ route('login') }}"><x-icon name="chevrons" :size="15" />{{ __('site.sign_in') }}</a></li>

@@ -3,6 +3,7 @@
 namespace App\Support\Sites;
 
 use App\Models\Domain;
+use App\Support\Navigation;
 
 /**
  * Contenuti del sito di un dominio: blocchi dello shop, menu, piede e SEO.
@@ -155,7 +156,7 @@ final class SiteContent
     {
         $links = $this->links("menu.$side");
 
-        return $links ? array_map(fn ($link) => $link + ['active' => $this->isCurrent($link['url'])], $links) : null;
+        return $links ? array_map(fn ($link) => $link + ['active' => Navigation::isCurrent($link['url'])], $links) : null;
     }
 
     public function footer(): array
@@ -227,28 +228,6 @@ final class SiteContent
             fn ($link) => ['label' => (string) $link['label'], 'url' => (string) $link['url']],
             array_filter((array) $this->get($key, []), fn ($link) => filled($link['label'] ?? null) && filled($link['url'] ?? null))
         ));
-    }
-
-    private function isCurrent(string $url): bool
-    {
-        $path = parse_url($url, PHP_URL_PATH);
-
-        // Le ancore portano a un punto della pagina, non a una pagina: non si accendono.
-        if ($path === null || str_contains($url, '#')) {
-            return false;
-        }
-
-        $current = '/'.ltrim(request()->path(), '/');
-        parse_str((string) parse_url($url, PHP_URL_QUERY), $query);
-
-        // Con parametri, come /prodotti?offerta=1, devono esserci anche quelli.
-        foreach ($query as $name => $value) {
-            if ((string) request()->query($name) !== (string) $value) {
-                return false;
-            }
-        }
-
-        return $path === '/' ? $current === '/' : str_starts_with($current, rtrim($path, '/'));
     }
 
     private function hex(?string $value): ?string

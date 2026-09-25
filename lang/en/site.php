@@ -4,6 +4,7 @@ return [
     'menu' => 'Menu',
     'nav_primary' => 'Primary navigation',
     'nav_secondary' => 'Secondary navigation',
+    'nav_top' => 'Top links',
     'nav_home' => 'Home',
     'nav_companies' => 'Companies',
     'nav_products' => 'Products',

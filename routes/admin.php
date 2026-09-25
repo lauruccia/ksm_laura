@@ -7,6 +7,7 @@ use App\Http\Controllers\Admin\AdminCompanyCategoryController;
 use App\Http\Controllers\Admin\AdminCompanyController;
 use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\Admin\AdminDomainController;
+use App\Http\Controllers\Admin\AdminMenuController;
 use App\Http\Controllers\Admin\AdminOrderController;
 use App\Http\Controllers\Admin\AdminPaymentController;
 use App\Http\Controllers\Admin\AdminPlanController;
@@ -147,6 +148,8 @@ Route::middleware(['auth', 'admin'])
                 ->name('domains.check');
             Route::resource('pagine', AdminCmsPageController::class)
                 ->parameters(['pagine' => 'page'])->names('cms');
+            Route::get('/menu', [AdminMenuController::class, 'edit'])->name('menus.edit');
+            Route::put('/menu/{location}', [AdminMenuController::class, 'update'])->name('menus.update');
             Route::resource('banner', AdminAdvertisementController::class)
                 ->parameters(['banner' => 'advertisement'])->names('advertisements');
 

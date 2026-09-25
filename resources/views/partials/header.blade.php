@@ -15,31 +15,26 @@
     $siteSubline = $siteSubline ?? $presentation['subline'] ?? ($mainSite ? $settings->header_subline : null) ?? ($isShopHeader ? __('header.shop_subline') : __('site.claim_tagline'));
     $logoUrl = $logoUrl ?? $presentation['logo'] ?? ($tenant->brandLogo() ? asset('storage/'.$tenant->brandLogo()) : null);
 
-    // Un dominio della rete puo' scrivere il proprio menu e non mostra le pagine CMS di KSM.
+    // Un dominio della rete puo' scrivere il proprio menu e non mostra le pagine CMS di KSM;
+    // sul sito principale i menu si scrivono in Amministrazione, Menu.
     $networkSite = $tenant->isNetworkSite();
-    $leftMenu = $leftMenu ?? $tenant->content()->menu('left');
-    $rightMenu = $rightMenu ?? $tenant->content()->menu('right')
+    $menu = fn (string $location) => $networkSite ? null : \App\Support\Navigation::custom($location);
+
+    $leftMenu = $leftMenu ?? $tenant->content()->menu('left') ?? $menu('header_left');
+    $rightMenu = $rightMenu ?? $tenant->content()->menu('right') ?? $menu('header_right')
         ?? ($networkSite ? [['label' => __('site.nav_contact'), 'url' => route('contact'), 'active' => request()->routeIs('contact')]] : null);
 
     $leftMenu = $leftMenu ?? ($isShopHeader ? [
         ['label' => __('site.nav_home'), 'url' => route('home'), 'active' => request()->routeIs('home')],
         ['label' => __('site.nav_products'), 'url' => route('products.index'), 'active' => request()->routeIs('products.*')],
         ['label' => __('site.nav_companies'), 'url' => route('companies.index'), 'active' => request()->routeIs('companies.*')],
-    ] : [
-        ['label' => __('site.nav_home'), 'url' => route('home'), 'active' => request()->routeIs('home')],
-        ['label' => __('site.nav_companies'), 'url' => route('companies.index'), 'active' => request()->routeIs('companies.*')],
-        ['label' => __('site.nav_products'), 'url' => route('products.index'), 'active' => request()->routeIs('products.*')],
-        ['label' => __('site.nav_plans'), 'url' => route('plans.index'), 'active' => request()->routeIs('plans.*')],
-    ]);
+    ] : \App\Support\Navigation::defaults('header_left'));
 
-    $rightMenu = $rightMenu ?? array_merge(
-        [['label' => __('site.nav_contact'), 'url' => route('contact'), 'active' => request()->routeIs('contact')]],
-        $headerPages->map(fn ($page) => [
-            'label' => $page->title,
-            'url' => route('pages.show', $page->slug),
-            'active' => false,
-        ])->all()
-    );
+    $rightMenu = $rightMenu ?? \App\Support\Navigation::defaults('header_right');
+
+    // Barra in alto, nella fascia scura: c'e' solo se in Amministrazione ha delle voci.
+    $topLeft = $menu('top_left') ?? [];
+    $topRight = $menu('top_right') ?? [];
 @endphp
 
 <header class="brand-header brand-header--{{ $presentation['variant'] }}" style="{{ $presentation['style'] }}" data-site-header>
@@ -50,14 +45,25 @@
             <a href="{{ route('cart.index') }}">{{ __('site.cart') }} ({{ $cartCount }})</a>
         </div>
     @endif
-    <div class="brand-header__accent brand-header__accent--left" aria-hidden="true"></div>
-    <div class="brand-header__accent brand-header__accent--right" aria-hidden="true"></div>
+    @if ($topLeft || $topRight)
+        <div class="brand-header__top">
+            @foreach (['left' => $topLeft, 'right' => $topRight] as $side => $items)
+                <nav class="brand-header__top-nav brand-header__top-nav--{{ $side }}" aria-label="{{ __('site.nav_top') }}">
+                    @foreach ($items as $item)
+                        <a href="{{ $item['url'] }}" @if ($item['active']) aria-current="page" @endif
+                           @if ($item['new_tab']) target="_blank" rel="noopener" @endif>{{ $item['label'] }}</a>
+                    @endforeach
+                </nav>
+            @endforeach
+        </div>
+    @endif
 
     <div class="brand-header__bar">
         <nav class="brand-header__nav brand-header__nav--left" aria-label="{{ __('site.nav_primary') }}">
             @foreach ($leftMenu as $item)
                 <a href="{{ $item['url'] }}" class="brand-header__link @if (! empty($item['active'])) is-active @endif"
-                   @if (! empty($item['active'])) aria-current="page" @endif>
+                   @if (! empty($item['active'])) aria-current="page" @endif
+                   @if (! empty($item['new_tab'])) target="_blank" rel="noopener" @endif>
                     {{ $item['label'] }}
                 </a>
             @endforeach
@@ -79,7 +85,8 @@
         <div class="brand-header__right">
             <nav class="brand-header__nav brand-header__nav--right" aria-label="{{ __('site.nav_secondary') }}">
                 @foreach ($rightMenu as $item)
-                    <a href="{{ $item['url'] }}" class="brand-header__link @if (! empty($item['active'])) is-active @endif">
+                    <a href="{{ $item['url'] }}" class="brand-header__link @if (! empty($item['active'])) is-active @endif"
+                       @if (! empty($item['new_tab'])) target="_blank" rel="noopener" @endif>
                         {{ $item['label'] }}
                     </a>
                 @endforeach
@@ -137,8 +144,8 @@
     </div>
 
     <div class="brand-header__mobile-menu" id="ksm-mobile-menu">
-        @foreach (array_merge($leftMenu, $rightMenu) as $item)
-            <a href="{{ $item['url'] }}">{{ $item['label'] }}</a>
+        @foreach (array_merge($leftMenu, $rightMenu, $topLeft, $topRight) as $item)
+            <a href="{{ $item['url'] }}" @if (! empty($item['new_tab'])) target="_blank" rel="noopener" @endif>{{ $item['label'] }}</a>
         @endforeach
 
         @guest
