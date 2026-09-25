@@ -7,7 +7,12 @@
 @section('content')
     <div class="ksm-panel__head">
         <h1>{{ $product->name }}</h1>
-        <a class="ksm-btn ksm-btn--ghost" href="{{ route('admin.products.index') }}">Torna ai prodotti</a>
+        <div style="display: flex; gap: 8px;">
+            @can(\App\Support\Permissions::CATALOG_MANAGE)
+                <a class="ksm-btn ksm-btn--primary" href="{{ route('admin.products.edit', $product) }}">Modifica</a>
+            @endcan
+            <a class="ksm-btn ksm-btn--ghost" href="{{ route('admin.products.index') }}">Torna ai prodotti</a>
+        </div>
     </div>
 
     <div class="ksm-card" style="padding: 20px; max-width: 720px;">

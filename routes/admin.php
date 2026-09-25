@@ -103,8 +103,9 @@ Route::middleware(['auth', 'admin'])
         });
 
         Route::middleware('can:'.P::CATALOG_MANAGE)->group(function () {
-            Route::delete('/prodotti/{product}', [AdminProductController::class, 'destroy'])
-                ->name('products.destroy');
+            Route::resource('prodotti', AdminProductController::class)
+                ->parameters(['prodotti' => 'product'])->names('products')
+                ->only(['edit', 'update', 'destroy']);
             Route::patch('/prodotti/{product}/stato', [AdminProductController::class, 'toggleStatus'])
                 ->name('products.status');
             Route::patch('/prodotti-kmoney', [AdminProductController::class, 'kmoney'])

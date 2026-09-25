@@ -62,7 +62,7 @@
                                    aria-label="Seleziona {{ $product->name }}">
                         </td>
                     @endif
-                    <td>{{ $product->name }}</td>
+                    <td><a href="{{ route($canManage ? 'admin.products.edit' : 'admin.products.show', $product) }}">{{ $product->name }}</a></td>
                     <td>{{ $product->company?->name }}</td>
                     <td>{{ \App\Support\Money::format($product->price) }}</td>
                     <td style="white-space: nowrap;">
@@ -78,6 +78,7 @@
                     </td>
                     <td style="text-align: right; white-space: nowrap;">
                         @if ($canManage)
+                            <a class="ksm-btn ksm-btn--ghost" href="{{ route('admin.products.edit', $product) }}">Modifica</a>
                             <form method="POST" action="{{ route('admin.products.status', $product) }}" style="display: inline;">
                                 @csrf @method('PATCH')
                                 <button class="ksm-btn ksm-btn--ghost" type="submit">Cambia stato</button>

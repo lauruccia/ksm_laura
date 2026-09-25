@@ -5,8 +5,11 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Company;
 use App\Models\Product;
+use App\Models\ProductBrand;
+use App\Models\ProductCategory;
 use App\Payments\KMoney\KMoneyPercentages;
 use App\Payments\KMoney\KMoneyShare;
+use App\Support\ProductForm;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -30,6 +33,29 @@ class AdminProductController extends Controller
     public function show(Product $product): View
     {
         return view('admin.products.show', ['product' => $product->load('company', 'variants')]);
+    }
+
+    /** Tutto il prodotto, con lo stesso modulo che usa l'azienda. */
+    public function edit(Product $product, ProductForm $form): View
+    {
+        $company = $product->company;
+
+        return view('admin.products.edit', [
+            'product' => $product->load('company', 'variants'),
+            'inDebt' => $company ? $form->inDebt($company) : false,
+            'kmoneySteps' => $company ? $form->kmoneySteps($company) : [],
+            'categories' => ProductCategory::orderBy('name')->get(),
+            'brands' => ProductBrand::orderBy('name')->get(),
+        ]);
+    }
+
+    public function update(Request $request, Product $product, ProductForm $form): RedirectResponse
+    {
+        abort_unless($product->company, 404);
+
+        $form->save($request, $product, $product->company);
+
+        return back()->with('success', __('Prodotto aggiornato.'));
     }
 
     public function toggleStatus(Product $product): RedirectResponse
