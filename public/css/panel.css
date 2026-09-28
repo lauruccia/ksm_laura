@@ -730,6 +730,28 @@ a.ksm-panel__me:hover { background: var(--ksm-line-soft); color: inherit; }
 
 .ksm-pager { margin-top: 20px; }
 
+/* Elenco campagne banner: nome e posizioni in colonna, il resto su una riga. */
+.ksm-table--campaigns td { vertical-align: middle; }
+@media (min-width: 761px) {
+    .ksm-table--campaigns th,
+    .ksm-table--campaigns td { padding-inline: 12px; }
+    .ksm-table--campaigns th:first-child,
+    .ksm-table--campaigns td:first-child { padding-left: 16px; }
+}
+.ksm-table--campaigns td:not(.ksm-campaign) { white-space: nowrap; }
+.ksm-table--campaigns .ksm-badge { white-space: nowrap; }
+
+.ksm-campaign { min-width: 180px; max-width: 280px; }
+.ksm-campaign strong { display: block; color: var(--ksm-ink); }
+.ksm-campaign__places,
+.ksm-campaign__billing {
+    display: block;
+    margin-top: 3px;
+    color: var(--ksm-muted);
+    font-size: .8rem;
+    line-height: 1.4;
+}
+
 /* Nella tabella a schede del telefono gli importi seguono l'etichetta. */
 @media (max-width: 760px) {
     .ksm-table--stack td.is-num { text-align: left; }

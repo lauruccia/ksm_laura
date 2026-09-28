@@ -37,5 +37,5 @@
         'editRoute' => 'admin.advertisements.edit',
     ])
 
-    <div style="margin-top: 20px;">{{ $campaigns->links() }}</div>
+    <div class="ksm-pager">{{ $campaigns->links() }}</div>
 @endsection
