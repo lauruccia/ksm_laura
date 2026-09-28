@@ -232,6 +232,9 @@
             @if ($company->exists)
                 <p style="margin: 12px 0 0;">
                     <a href="{{ route('admin.products.index', ['azienda' => $company->id]) }}">Quote dei singoli prodotti</a>
+                    @can(\App\Support\Permissions::CATALOG_MANAGE)
+                        · <a href="{{ route('admin.products.create', ['azienda' => $company->id]) }}">Aggiungi un prodotto</a>
+                    @endcan
                 </p>
             @endif
         </section>

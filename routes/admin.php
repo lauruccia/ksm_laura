@@ -92,6 +92,12 @@ Route::middleware(['auth', 'admin'])
 
         /* Catalogo ------------------------------------------------------ */
 
+        // Prima della scheda /prodotti/{product}: altrimenti "nuovo" verrebbe preso per un prodotto.
+        Route::middleware('can:'.P::CATALOG_MANAGE)->group(function () {
+            Route::get('/prodotti/nuovo', [AdminProductController::class, 'create'])->name('products.create');
+            Route::post('/prodotti', [AdminProductController::class, 'store'])->name('products.store');
+        });
+
         Route::middleware('can:'.P::CATALOG_VIEW)->group(function () {
             Route::resource('prodotti', AdminProductController::class)
                 ->parameters(['prodotti' => 'product'])->names('products')

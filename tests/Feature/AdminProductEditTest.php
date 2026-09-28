@@ -130,4 +130,44 @@ class AdminProductEditTest extends TestCase
 
         $this->assertSame('Mozzarella', $product->fresh()->name);
     }
+
+    public function test_l_amministratore_aggiunge_un_prodotto_a_un_azienda(): void
+    {
+        $company = $this->product()->company;
+        $admin = $this->admin();
+
+        // Senza azienda si cerca prima quella.
+        $this->actingAs($admin)->get(route('admin.products.create', ['cerca' => 'Caseificio']))
+            ->assertOk()
+            ->assertSee(route('admin.products.create', ['azienda' => $company->id]), false);
+
+        $this->actingAs($admin)->get(route('admin.products.create', ['azienda' => $company->id]))
+            ->assertOk()
+            ->assertSee($company->name)
+            ->assertSee('Crea prodotto');
+
+        $this->actingAs($admin)->get(route('admin.products.index'))->assertSee('Nuovo prodotto');
+
+        $this->actingAs($admin)
+            ->post(route('admin.products.store'), [
+                'company_id' => $company->id, 'name' => 'Ricotta fresca', 'price' => 4.5,
+                'product_type' => 'simple', 'status' => 'active',
+            ])
+            ->assertSessionHasNoErrors()
+            ->assertRedirect();
+
+        $product = Product::where('name', 'Ricotta fresca')->firstOrFail();
+        $this->assertSame($company->id, $product->company_id);
+        $this->assertNotEmpty($product->slug);
+    }
+
+    public function test_chi_vede_solo_il_catalogo_non_aggiunge_prodotti(): void
+    {
+        $company = $this->product()->company;
+        $viewer = $this->admin('catalogo', [\App\Support\Permissions::CATALOG_VIEW]);
+
+        $this->actingAs($viewer)->get(route('admin.products.create', ['azienda' => $company->id]))->assertForbidden();
+        $this->actingAs($viewer)->post(route('admin.products.store'), ['company_id' => $company->id, 'name' => 'X', 'price' => 1])->assertForbidden();
+        $this->actingAs($viewer)->get(route('admin.products.index'))->assertDontSee('Nuovo prodotto');
+    }
 }

@@ -10,6 +10,7 @@ use App\Models\ProductCategory;
 use App\Payments\KMoney\KMoneyPercentages;
 use App\Payments\KMoney\KMoneyShare;
 use App\Support\BulkSelection;
+use App\Support\PlanCapabilities;
 use App\Support\ProductForm;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
@@ -59,6 +60,47 @@ class AdminProductController extends Controller
         };
 
         return back()->with('success', $message);
+    }
+
+    /**
+     * Nuovo prodotto per un'azienda. Senza azienda si sceglie prima quella:
+     * le quote KMoney del modulo dipendono dal suo conto.
+     */
+    public function create(Request $request, ProductForm $form): View
+    {
+        $company = $request->integer('azienda') ? Company::find($request->integer('azienda')) : null;
+
+        if (! $company) {
+            $term = trim($request->string('cerca')->toString());
+
+            return view('admin.products.pick-company', [
+                'term' => $term,
+                'companies' => $term === '' ? collect() : Company::query()
+                    ->where('name', 'like', '%'.addcslashes($term, '\\%_').'%')
+                    ->orderBy('name')
+                    ->take(20)
+                    ->get(['id', 'name', 'city', 'is_active']),
+            ]);
+        }
+
+        return view('admin.products.create', [
+            'company' => $company,
+            'product' => new Product(['status' => 'active']),
+            'inDebt' => $form->inDebt($company),
+            'kmoneySteps' => $form->kmoneySteps($company),
+            'categories' => ProductCategory::orderBy('name')->get(),
+            'brands' => ProductBrand::orderBy('name')->get(),
+            'sells' => $company->allows(PlanCapabilities::SHOP),
+        ]);
+    }
+
+    public function store(Request $request, ProductForm $form): RedirectResponse
+    {
+        $request->validate(['company_id' => ['required', 'integer', 'exists:companies,id']]);
+
+        $product = $form->save($request, new Product(), Company::findOrFail($request->integer('company_id')));
+
+        return redirect()->route('admin.products.edit', $product)->with('success', __('Prodotto creato.'));
     }
 
     public function show(Product $product): View
