@@ -681,6 +681,60 @@ a.ksm-panel__me:hover { background: var(--ksm-line-soft); color: inherit; }
 
 .ksm-rowactions form { display: inline; }
 
+/* Abbonamenti: strumenti di attivazione e rinnovo ------------------------ */
+
+.ksm-subtools { margin-bottom: 22px; }
+.ksm-subtools > .ksm-box { margin-bottom: 0; }
+
+/* Due colonne: i campi a sinistra, a destra il campo corto e sotto il
+   bottone. Tutti i controlli hanno la stessa altezza, cosi' etichette,
+   campi e bottone stanno sulla stessa linea anche con le select native. */
+.ksm-toolform {
+    display: grid;
+    grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+    gap: 14px 14px;
+    align-items: end;
+}
+
+.ksm-panel__main .ksm-toolform > .ksm-field { margin: 0; min-width: 0; }
+
+.ksm-panel__main .ksm-toolform .ksm-input,
+.ksm-panel__main .ksm-toolform .ksm-select { height: 42px; padding-block: 0; }
+
+.ksm-toolform > .ksm-btn { width: 100%; height: 42px; padding-block: 0; }
+
+.ksm-toolform__hint {
+    margin: 12px 0 0;
+    color: var(--ksm-muted);
+    font-size: .8rem;
+    line-height: 1.45;
+}
+
+.ksm-toolform > .ksm-toolform__hint { margin: 0; align-self: center; }
+
+@media (max-width: 560px) {
+    .ksm-toolform { grid-template-columns: minmax(0, 1fr); }
+    .ksm-toolform > .ksm-toolform__hint { order: 1; }
+}
+
+/* Elenco abbonamenti: importi e date su una riga, importi allineati a destra. */
+.ksm-table th.is-num,
+.ksm-table td.is-num { text-align: right; font-variant-numeric: tabular-nums; }
+
+.ksm-table--subscriptions td { vertical-align: middle; }
+.ksm-table--subscriptions td:nth-child(3),
+.ksm-table--subscriptions td:nth-child(4),
+.ksm-table--subscriptions td:nth-child(5),
+.ksm-table--subscriptions td:nth-child(6) { white-space: nowrap; }
+.ksm-table--subscriptions .ksm-rowactions { flex-wrap: nowrap; }
+
+.ksm-pager { margin-top: 20px; }
+
+/* Nella tabella a schede del telefono gli importi seguono l'etichetta. */
+@media (max-width: 760px) {
+    .ksm-table--stack td.is-num { text-align: left; }
+}
+
 .ksm-taglist {
     list-style: none;
     margin: 0 0 14px;
@@ -1421,6 +1475,12 @@ body:not(:has([data-bulk])) [data-bulk-page] { visibility: hidden; }
 
 .ksm-panel__main .ksm-listhead__filters .ksm-input,
 .ksm-panel__main .ksm-listhead__filters .ksm-select { width: auto; padding-block: 8px; }
+
+/* Ricerca, tendine e bottoni della testata tutti alti uguale. */
+.ksm-panel__main .ksm-listhead__filters .ksm-input,
+.ksm-panel__main .ksm-listhead__filters .ksm-select,
+.ksm-listhead__filters .ksm-btn,
+.ksm-listhead__actions .ksm-btn { height: 38px; padding-block: 0; }
 .ksm-panel__main .ksm-listhead__search .ksm-input { width: 260px; padding-left: 34px; }
 
 .ksm-listhead__actions { display: flex; gap: 8px; }
