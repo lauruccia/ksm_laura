@@ -261,6 +261,39 @@ descrizioni importate dal sito originale. Il testo semplice resta testo e va
 a capo dove l'azienda e' andata a capo. Le pagine CMS non usano questo
 editor: possono contenere immagini, che il filtro toglierebbe.
 
+## Un sito per dominio
+
+Ogni host che arriva all'app e' uno di quattro casi (`ResolveTenant`):
+
+| Host | Sito |
+|---|---|
+| in `KSM_PLATFORM_HOSTS` o quello di `APP_URL` | sito principale, KSM |
+| in **Domini**, acceso | dominio della rete: catalogo filtrato, contenuti suoi |
+| dominio proprio di un'azienda accesa | solo la sua pagina e i suoi prodotti |
+| qualsiasi altro | 404, senza marchio |
+
+L'elenco host -> sito sta in cache (`App\Support\Sites\HostDirectory`) e si
+rifa' da solo quando si crea, cambia, accende, spegne o elimina un dominio
+o un'azienda. **Prima di pubblicare**: ogni indirizzo con cui si apre il sito
+principale (anche un sottodominio provvisorio) va in `KSM_PLATFORM_HOSTS`,
+altrimenti risponde 404.
+
+Fra un sito e l'altro:
+
+- **account**: uno solo, le stesse credenziali valgono ovunque; sessione e
+  carrello restano del dominio su cui si e' entrati (cookie senza dominio);
+- **ordini**: `orders.site` e `orders.domain_id` dicono dove sono nati; area
+  cliente e traccia ordine mostrano solo quelli del sito aperto;
+- **pagine CMS**: `cms_pages.domain_id`, vuoto per KSM. Lo slug e' unico
+  dentro il sito; una pagina si apre e va in mappa solo sul suo sito;
+- **solo sul sito principale** (middleware `platform`, altrove 404): piani,
+  iscrizione di aziende e inserzionisti, attivazione, abbonamento, area
+  azienda, area inserzionista, amministrazione;
+- **moduli**: contatti e recensioni di un'azienda o di un prodotto si
+  inviano solo da un sito che li mostra.
+
+`tests/Feature/DomainIsolationTest.php` prova ognuno di questi punti.
+
 ## Domini e certificati
 
 I domini della rete (**Domini**) e i domini propri delle aziende (scheda

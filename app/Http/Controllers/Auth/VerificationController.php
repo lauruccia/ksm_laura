@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Support\TenantContext;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -45,6 +46,7 @@ class VerificationController extends Controller
         $user = $request->user();
 
         return match (true) {
+            ! app(TenantContext::class)->isPlatformSite() => route('home'),
             $user->isVendor() && ! $user->company => route('onboarding.create'),
             $user->isVendor() && ! $user->hasActiveCompany() => route('subscription.index'),
             $user->isAdvertiser() => route('advertiser.dashboard'),

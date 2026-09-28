@@ -1,6 +1,8 @@
-{{-- I domini della rete hanno un piede tutto loro, senza dati ne' pagine di KSM. --}}
+{{-- I domini della rete e i domini delle aziende hanno un piede tutto loro, senza dati ne' pagine di KSM. --}}
 @if ($tenant->isNetworkSite())
     @include('partials.footer-site')
+@elseif ($tenant->isCompanySite())
+    @include('partials.footer-company')
 @else
 @php
     // Dati del gestore del sito: si modificano da Amministrazione, Impostazioni.

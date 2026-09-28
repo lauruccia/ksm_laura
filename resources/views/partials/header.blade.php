@@ -11,14 +11,30 @@
     $siteName = $siteName ?? $presentation['name'] ?? $tenant->brandName();
     // Sul sito principale sottotitolo e motto si scrivono in Amministrazione, Impostazioni.
     $mainSite = ! $tenant->isNetworkSite() && ! $tenant->isCompanySite();
+    // Sul dominio di un'azienda sotto il nome vanno il suo settore e il suo luogo, non i motti di KSM.
+    if ($tenant->isCompanySite()) {
+        $siteTagline = $siteTagline ?? $presentation['tagline'] ?? ($tenant->company()->category?->name ?? '');
+        $siteSubline = $siteSubline ?? $presentation['subline'] ?? collect([$tenant->company()->city, $tenant->company()->region])->filter()->unique()->implode(' · ');
+    }
     $siteTagline = $siteTagline ?? $presentation['tagline'] ?? ($mainSite ? $settings->header_tagline : null) ?? ($isShopHeader ? __('header.shop_tagline') : trim(__('site.claim_line1').' '.__('site.claim_line2')));
     $siteSubline = $siteSubline ?? $presentation['subline'] ?? ($mainSite ? $settings->header_subline : null) ?? ($isShopHeader ? __('header.shop_subline') : __('site.claim_tagline'));
     $logoUrl = $logoUrl ?? $presentation['logo'] ?? ($tenant->brandLogo() ? asset('storage/'.$tenant->brandLogo()) : null);
 
     // Un dominio della rete puo' scrivere il proprio menu e non mostra le pagine CMS di KSM;
-    // sul sito principale i menu si scrivono in Amministrazione, Menu.
+    // sul sito principale i menu si scrivono in Amministrazione, Menu. Il dominio di
+    // un'azienda non ha niente di KSM: le sue voci sono fisse, qui sotto.
     $networkSite = $tenant->isNetworkSite();
-    $menu = fn (string $location) => $networkSite ? null : \App\Support\Navigation::custom($location);
+    $companySite = $tenant->isCompanySite();
+    $menu = fn (string $location) => $mainSite ? \App\Support\Navigation::custom($location) : null;
+
+    if ($companySite) {
+        $sells = $tenant->company()->allows(\App\Support\PlanCapabilities::SHOP);
+        $leftMenu = $leftMenu ?? array_values(array_filter([
+            ['label' => __('site.nav_home'), 'url' => route('home'), 'active' => request()->routeIs('home')],
+            $sells ? ['label' => __('site.nav_products'), 'url' => route('products.index'), 'active' => request()->routeIs('products.*')] : null,
+        ]));
+        $rightMenu = $rightMenu ?? [['label' => __('site.nav_contact'), 'url' => route('contact'), 'active' => request()->routeIs('contact')]];
+    }
 
     $leftMenu = $leftMenu ?? $tenant->content()->menu('left') ?? $menu('header_left');
     $rightMenu = $rightMenu ?? $tenant->content()->menu('right') ?? $menu('header_right')
@@ -118,16 +134,17 @@
             @endguest
 
             @auth
-                @if (auth()->user()->isAdmin())
+                {{-- Amministrazione e area azienda stanno solo sul sito principale. --}}
+                @if ($mainSite && auth()->user()->isAdmin())
                     <a href="{{ route('admin.dashboard') }}" class="brand-header__soft-btn brand-header__soft-btn--account"><x-icon name="user" :size="20" /><span>{{ __('site.admin') }}</span></a>
-                @elseif (auth()->user()->hasActiveCompany())
+                @elseif ($mainSite && auth()->user()->hasActiveCompany())
                     <a href="{{ route('vendor.dashboard') }}" class="brand-header__soft-btn brand-header__soft-btn--account"><x-icon name="user" :size="20" /><span>{{ __('site.my_area') }}</span></a>
                 @else
                     <a href="{{ route('account.dashboard') }}" class="brand-header__soft-btn brand-header__soft-btn--account"><x-icon name="user" :size="20" /><span>{{ __('site.my_account') }}</span></a>
                 @endif
             @endauth
 
-            @unless ($isShopHeader || $networkSite)
+            @unless ($isShopHeader || ! $mainSite)
                 <a href="{{ route('register.vendor') }}" class="brand-header__register-btn" aria-label="{{ __('site.register_company') }}">
                     <x-icon name="building" :size="20" />
                     <span>{{ __('site.register_company') }}</span>
@@ -158,9 +175,9 @@
 
         @guest
             <a href="{{ route('login') }}">{{ __('site.sign_in') }}</a>
-            @unless ($networkSite)
+            @if ($mainSite)
                 <a href="{{ route('register.vendor') }}">{{ __('site.register_company') }}</a>
-            @endunless
+            @endif
         @endguest
 
         @auth
@@ -175,7 +192,7 @@
     </div>
 
     <div class="brand-header__search" id="ksm-navsearch">
-        <form method="GET" action="{{ $isShopHeader ? route('products.index') : route('companies.index') }}">
+        <form method="GET" action="{{ $isShopHeader || $companySite ? route('products.index') : route('companies.index') }}">
             <x-icon name="search" />
             <input type="text" name="cerca" value="{{ request('cerca') }}"
                    placeholder="{{ __('site.search_placeholder') }}" aria-label="{{ __('site.search_placeholder') }}">

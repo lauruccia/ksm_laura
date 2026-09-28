@@ -13,7 +13,12 @@
         $pageTitle = $onEntry && $seo['title'] ? e($seo['title']) : trim($__env->yieldContent('title', $tenant->brandName()));
         $pageDescription = $onEntry && $seo['description']
             ? e($seo['description'])
-            : trim($__env->yieldContent('meta_description', $tenant->isNetworkSite() ? ($seo['description'] ?? '') : ($settings->about ?? '')));
+            : trim($__env->yieldContent('meta_description', match (true) {
+                $tenant->isNetworkSite() => $seo['description'] ?? '',
+                // Sul dominio di un'azienda la sua descrizione, mai quella di KSM.
+                $tenant->isCompanySite() => \Illuminate\Support\Str::limit(trim(html_entity_decode(strip_tags((string) $tenant->company()->company_description))), 160),
+                default => $settings->about ?? '',
+            }));
     @endphp
     <title>{!! $pageTitle !!}</title>
     <meta name="description" content="{!! $pageDescription !!}">

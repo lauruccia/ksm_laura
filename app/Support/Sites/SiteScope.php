@@ -26,6 +26,9 @@ use Illuminate\Database\Eloquent\Builder;
  *    vende nella categoria prodotto (products), o entrambe (both);
  *  - prodotti: categoria prodotto del dominio con le sottocategorie, e solo
  *    di aziende della categoria azienda e del luogo del dominio.
+ *
+ * Sul dominio proprio di un'azienda il sito e' solo suo: la sua scheda e i
+ * suoi prodotti, niente del resto del marketplace.
  */
 final class SiteScope
 {
@@ -35,13 +38,20 @@ final class SiteScope
     /** @var list<int>|null|false */
     private array|null|false $companyCategories = false;
 
-    public function __construct(private readonly ?Domain $domain = null)
+    public function __construct(private readonly ?Domain $domain = null, private readonly ?Company $company = null)
     {
+    }
+
+    /** Il dominio proprio di un'azienda: tutto si restringe a lei. */
+    public function company(): ?Company
+    {
+        return $this->company;
     }
 
     public function isRestricted(): bool
     {
-        return $this->productCategoryIds() !== null
+        return $this->company !== null
+            || $this->productCategoryIds() !== null
             || $this->companyCategoryIds() !== null
             || $this->place() !== null
             || $this->requiresProducts();
@@ -102,6 +112,10 @@ final class SiteScope
     {
         $table = $query->getModel()->getTable();
 
+        if ($this->company) {
+            return $query->where("$table.company_id", $this->company->getKey());
+        }
+
         return $query
             ->when($this->productCategoryIds(), fn ($q, $ids) => $q->whereIn("$table.category_id", $ids))
             // Solo aziende della categoria e del luogo del dominio. Non si usa companies():
@@ -115,6 +129,10 @@ final class SiteScope
     /** Limita una query di aziende a quelle del dominio. Colonne qualificate: la directory unisce `plans`. */
     public function companies(Builder $query): Builder
     {
+        if ($this->company) {
+            return $query->where('companies.id', $this->company->getKey());
+        }
+
         return $this->byCategoryAndPlace($query)
             ->when($this->requiresProducts(), fn ($q) => $q->whereIn(
                 'companies.id',

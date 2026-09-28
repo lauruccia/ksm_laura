@@ -197,8 +197,9 @@ class DomainSiteTest extends TestCase
         $this->domain(['entry_page' => 'home']);
         $this->get(self::HOST.'/')->assertOk()->assertDontSee('storage/'.$image, false);
 
-        // Togliendola si cancella anche il file.
-        $this->actingAs($admin)->put(route('admin.settings.update'), ['website_name' => 'KSM', 'remove_hero_image' => '1'])
+        // Togliendola si cancella anche il file. L'amministrazione sta solo sul sito principale:
+        // dopo la visita al dominio route() userebbe il suo indirizzo.
+        $this->actingAs($admin)->put('http://localhost'.route('admin.settings.update', [], false), ['website_name' => 'KSM', 'remove_hero_image' => '1'])
             ->assertRedirect();
         $this->assertNull(\App\Models\AdminSetting::current()->hero_image);
         Storage::disk('public')->assertMissing($image);

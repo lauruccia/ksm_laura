@@ -17,6 +17,6 @@ $reserved = [
     'inserzionisti', 'area-inserzionista', 'webhook', 'tls',
 ];
 
-Route::get('/{page:slug}', [PageController::class, 'show'])
-    ->where('page', '^(?!'.implode('|', $reserved).')[A-Za-z0-9\-_]+$')
+Route::get('/{slug}', [PageController::class, 'bySlug'])
+    ->where('slug', '^(?!'.implode('|', $reserved).')[A-Za-z0-9\-_]+$')
     ->name('pages.show');

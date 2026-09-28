@@ -94,19 +94,21 @@ class SitemapController extends Controller
     /** Pagine fisse del sito e pagine CMS pubblicate. */
     private function pages(): array
     {
-        $urls = [
-            ['loc' => route('home'), 'priority' => '1.0'],
-            ['loc' => route('companies.index'), 'priority' => '0.9'],
-            ['loc' => route('products.index'), 'priority' => '0.9'],
-            ['loc' => route('contact'), 'priority' => '0.5'],
-        ];
+        $tenant = app(TenantContext::class);
+        $mainSite = ! $tenant->isNetworkSite() && ! $tenant->isCompanySite();
 
-        // I piani sono di KSM: un dominio della rete non li mette in mappa.
-        if (! app(TenantContext::class)->isNetworkSite()) {
-            array_splice($urls, 3, 0, [['loc' => route('plans.index'), 'priority' => '0.7']]);
-        }
+        $urls = array_values(array_filter([
+            ['loc' => route('home'), 'priority' => '1.0'],
+            // Sul dominio di un'azienda non c'e' una directory: /aziende rimanda alla home.
+            $tenant->isCompanySite() ? null : ['loc' => route('companies.index'), 'priority' => '0.9'],
+            ['loc' => route('products.index'), 'priority' => '0.9'],
+            // I piani sono di KSM: gli altri siti non li hanno.
+            $mainSite ? ['loc' => route('plans.index'), 'priority' => '0.7'] : null,
+            ['loc' => route('contact'), 'priority' => '0.5'],
+        ]));
 
         $cms = CmsPage::query()
+            ->forSite($tenant)
             ->published()
             ->where('visibility', 'visible')
             ->where('include_in_sitemap', true)
@@ -143,6 +145,11 @@ class SitemapController extends Controller
 
     private function companies(): Builder
     {
+        // Sul suo dominio la pagina dell'azienda e' la home, gia' in mappa.
+        if (app(TenantContext::class)->isCompanySite()) {
+            return Company::query()->whereRaw('1 = 0');
+        }
+
         // Solo chi ha una pagina: biglietto e anagrafica stanno nella directory.
         return app(TenantContext::class)->scope()->companies(Company::query()
             ->active()

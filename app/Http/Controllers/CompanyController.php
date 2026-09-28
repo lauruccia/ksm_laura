@@ -26,8 +26,13 @@ class CompanyController extends Controller
     {
     }
 
-    public function index(Request $request, TenantContext $tenant): View|Response
+    public function index(Request $request, TenantContext $tenant): View|Response|RedirectResponse
     {
+        // Sul dominio proprio di un'azienda non c'e' una directory: c'e' solo lei.
+        if ($tenant->isCompanySite()) {
+            return redirect()->route('home', status: 301);
+        }
+
         $region = $request->string('regione')->toString();
 
         $filters = array_filter([

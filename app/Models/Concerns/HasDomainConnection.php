@@ -5,6 +5,7 @@ namespace App\Models\Concerns;
 use App\Support\Domains\DomainConnectionChecker;
 use App\Support\Domains\HostingPanel;
 use App\Support\Domains\NoHostingPanel;
+use App\Support\Sites\HostDirectory;
 
 /**
  * Stato di collegamento di un dominio, per `Domain` e per `Company`.
@@ -29,6 +30,15 @@ trait HasDomainConnection
                 ]);
             }
         });
+
+        // L'elenco host -> sito in cache si rifa' quando cambia un dominio o se si accende o spegne.
+        static::saved(function (self $model) {
+            if ($model->wasRecentlyCreated || $model->wasChanged([$model->domainColumn(), 'is_active'])) {
+                HostDirectory::forget();
+            }
+        });
+
+        static::deleted(fn () => HostDirectory::forget());
 
         // Un dominio nuovo va subito sul pannello dell'hosting, dopo la risposta per non far aspettare il modulo.
         static::saved(function (self $model) {

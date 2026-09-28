@@ -4,11 +4,15 @@
 
 <li class="ksm-panel__sep">Sul sito</li>
 <li><a href="{{ route('products.index') }}">Catalogo</a></li>
-<li><a href="{{ route('companies.index') }}">Aziende</a></li>
+@unless ($tenant->isCompanySite())
+    <li><a href="{{ route('companies.index') }}">Aziende</a></li>
+@endunless
 <li><a href="{{ route('cart.index') }}">Carrello</a></li>
 
+{{-- Area azienda e amministrazione esistono solo sul sito principale. --}}
 @auth
-    @if (auth()->user()->isVendor())
+    @if (! $tenant->isPlatformSite())
+    @elseif (auth()->user()->isVendor())
         <li class="ksm-panel__sep">Altre aree</li>
         <li><a href="{{ route('vendor.dashboard') }}">Area azienda</a></li>
     @elseif (auth()->user()->isAdmin())

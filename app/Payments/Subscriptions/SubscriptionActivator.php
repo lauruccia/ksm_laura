@@ -141,6 +141,9 @@ class SubscriptionActivator
             Company::whereKey($subscription->company_id)
                 ->where('plan_id', $subscription->plan_id)
                 ->update(['plan_id' => null, 'is_active' => false]);
+
+            // L'aggiornamento in blocco non passa dagli eventi del modello: il dominio proprio va riletto.
+            \App\Support\Sites\HostDirectory::forget();
         });
     }
 

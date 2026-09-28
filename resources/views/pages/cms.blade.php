@@ -1,7 +1,8 @@
 @extends('layouts.app')
 
 @section('title', $page->meta_title ?: $page->title)
-@section('meta_description', $page->meta_description)
+{{-- Mai null: con null @section apre un blocco che non si chiude, e la pagina finisce nella descrizione. --}}
+@section('meta_description', (string) $page->meta_description)
 @if ($page->canonical_url)
     @section('canonical', $page->canonical_url)
 @endif

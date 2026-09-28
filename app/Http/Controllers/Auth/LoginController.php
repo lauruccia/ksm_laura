@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Support\AuthReturn;
+use App\Support\TenantContext;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -61,6 +62,8 @@ class LoginController extends Controller
         $user = $request->user();
 
         return match (true) {
+            // Le aree riservate stanno solo sul sito principale: sugli altri siti si resta sul sito.
+            ! app(TenantContext::class)->isPlatformSite() => route('home'),
             $user->isAdmin() => route('admin.dashboard'),
             $user->isVendor() && $user->hasActiveCompany() => route('vendor.dashboard'),
             $user->isVendor() && ! $user->company => route('onboarding.create'),

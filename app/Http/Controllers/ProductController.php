@@ -185,8 +185,13 @@ class ProductController extends Controller
     private function ranking(Builder $visible, int $count, bool $soldOnly = false): array
     {
         // Nella chiave anche l'ultima modifica del dominio: cambiato il filtro, cambia la classifica.
+        // Il dominio di un'azienda ha la sua classifica: solo i suoi prodotti.
         $domain = $this->tenant->domain();
-        $site = $domain ? $domain->id.'-'.$domain->updated_at?->timestamp : 0;
+        $site = match (true) {
+            (bool) $domain => $domain->id.'-'.$domain->updated_at?->timestamp,
+            $this->tenant->isCompanySite() => 'c'.$this->tenant->company()->id,
+            default => 0,
+        };
 
         return Cache::remember("shop:ranking:$site:$count:".(int) $soldOnly, self::RANKING_TTL, fn () => (clone $visible)
             ->withSold()

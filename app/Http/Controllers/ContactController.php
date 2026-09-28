@@ -19,6 +19,16 @@ class ContactController extends Controller
         $settings = AdminSetting::current();
         $domain = $tenant->domain();
 
+        // Sul dominio di un'azienda i recapiti sono i suoi.
+        if ($company = $tenant->company()) {
+            return view('pages.contact', ['contacts' => [
+                'address' => collect([$company->address, $company->city])->filter()->implode(', '),
+                'phone' => $company->phone,
+                'email' => $company->email,
+                'map' => null,
+            ]]);
+        }
+
         // Su un dominio della rete i recapiti sono i suoi, non quelli di KSM.
         return view('pages.contact', ['contacts' => $domain ? [
             'address' => collect([$domain->address, $domain->city])->filter()->implode(', '),
@@ -37,8 +47,14 @@ class ContactController extends Controller
     {
         $data = $this->validated($request);
 
-        // Il messaggio va a chi gestisce il sito: l'email del dominio, se c'e', altrimenti KSM.
-        $recipient = $tenant->domain()?->email ?: AdminSetting::current()->website_email;
+        // Il messaggio va a chi gestisce il sito: l'azienda sul suo dominio, il dominio
+        // della rete sul suo, KSM solo sul sito principale.
+        $recipient = match (true) {
+            // Senza email dell'azienda, al titolare: il messaggio non deve perdersi.
+            $tenant->isCompanySite() => $tenant->company()->email ?: $tenant->company()->user?->email ?: AdminSetting::current()->website_email,
+            $tenant->isNetworkSite() => $tenant->domain()->email ?: AdminSetting::current()->website_email,
+            default => AdminSetting::current()->website_email,
+        };
 
         if ($recipient && ! $this->deliver($recipient, new ContactMessage($data))) {
             return $this->failed();
@@ -49,8 +65,8 @@ class ContactController extends Controller
 
     public function sendToCompany(Request $request, Company $company): RedirectResponse
     {
-        // Il modulo sta sulla pagina dell'azienda: senza pagina non c'e'.
-        abort_unless($company->hasPage(), 404);
+        // Il modulo sta sulla pagina dell'azienda: senza pagina, o se l'azienda non e' di questo sito, non c'e'.
+        abort_unless($company->hasPage() && app(TenantContext::class)->scope()->allowsCompany($company), 404);
 
         $data = $this->validated($request);
 

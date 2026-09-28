@@ -57,6 +57,12 @@ class TenantContext
         return $this->company !== null;
     }
 
+    /** Il sito principale: ne' un dominio della rete, ne' il dominio di un'azienda. */
+    public function isPlatformSite(): bool
+    {
+        return $this->domain === null && $this->company === null;
+    }
+
     /** Un dominio della rete: deve sembrare un sito a se', senza il marchio KSM. */
     public function isNetworkSite(): bool
     {
@@ -78,10 +84,10 @@ class TenantContext
             ?? null;
     }
 
-    /** Prodotti e aziende visibili sul dominio corrente. */
+    /** Prodotti e aziende visibili sul dominio corrente: sul dominio di un'azienda solo i suoi. */
     public function scope(): SiteScope
     {
-        return $this->scope ??= new SiteScope($this->domain);
+        return $this->scope ??= new SiteScope($this->domain, $this->company);
     }
 
     /** Testi, immagini, menu e piede del dominio, con i valori predefiniti del sito. */

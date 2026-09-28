@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Models\CmsPage;
+use App\Models\Domain;
 use App\Support\Navigation;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
@@ -21,12 +22,14 @@ class AdminCmsPageController extends AdminResourceController
 
     protected function columns(): array
     {
-        return ['title' => 'Titolo', 'slug' => 'Slug', 'status' => 'Stato'];
+        return ['title' => 'Titolo', 'slug' => 'Slug', 'site_name' => 'Sito', 'status' => 'Stato'];
     }
 
     protected function formData(): array
     {
         return [
+            // Vuoto: il sito principale. Una pagina si vede solo sul suo sito.
+            'domain_id' => Domain::query()->orderBy('domain')->pluck('domain', 'id'),
             'status' => collect(['draft' => 'Bozza', 'published' => 'Pubblicata']),
             'visibility' => collect(['visible' => 'Visibile', 'hidden' => 'Nascosta']),
             'locations' => collect(['header' => 'Intestazione', 'footer' => 'Piede']),
@@ -36,6 +39,7 @@ class AdminCmsPageController extends AdminResourceController
     protected function fields(): array
     {
         return [
+            'domain_id' => ['label' => 'Sito', 'type' => 'select', 'empty' => 'Sito principale (KSM)'],
             'title' => ['label' => 'Titolo', 'type' => 'text'],
             'slug' => ['label' => 'Slug', 'type' => 'text'],
             'content' => ['label' => 'Contenuto', 'type' => 'textarea', 'rows' => 14],
@@ -53,7 +57,10 @@ class AdminCmsPageController extends AdminResourceController
     {
         return [
             'title' => ['required', 'string', 'max:255'],
-            'slug' => ['nullable', 'string', 'max:255', Rule::unique('cms_pages', 'slug')->ignore($record)],
+            'domain_id' => ['nullable', 'integer', 'exists:domains,id'],
+            // Lo slug e' unico dentro il sito: due domini possono avere la stessa "chi-siamo".
+            'slug' => ['nullable', 'string', 'max:255', Rule::unique('cms_pages', 'slug')->ignore($record)
+                ->where(fn ($q) => $request->filled('domain_id') ? $q->where('domain_id', $request->integer('domain_id')) : $q->whereNull('domain_id'))],
             'content' => ['nullable', 'string'],
             'status' => ['required', 'in:draft,published'],
             'visibility' => ['required', 'in:visible,hidden'],
@@ -66,9 +73,15 @@ class AdminCmsPageController extends AdminResourceController
         ];
     }
 
+    protected function prepareRows(\Illuminate\Support\Collection $records): void
+    {
+        $records->load('domain');
+    }
+
     protected function transform(array $data, Request $request, ?Model $record = null): array
     {
         $data['slug'] = $data['slug'] ?: Str::slug($data['title']);
+        $data['domain_id'] = $data['domain_id'] ?? null;
         $data['include_in_sitemap'] = $request->boolean('include_in_sitemap');
         $data['published_at'] = $data['status'] === 'published' ? now() : null;
 

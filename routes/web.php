@@ -42,7 +42,8 @@ Route::get('/prodotti/{product:slug}', [ProductController::class, 'show'])->name
 Route::post('/prodotti/{product:slug}/recensioni', [ReviewController::class, 'storeForProduct'])
     ->middleware('auth')->name('products.reviews.store');
 
-Route::get('/piani', [PlanController::class, 'index'])->name('plans.index');
+// I piani sono di KSM: sugli altri siti non esistono.
+Route::get('/piani', [PlanController::class, 'index'])->middleware('platform')->name('plans.index');
 
 Route::get('/contatti', [ContactController::class, 'show'])->name('contact');
 Route::post('/contatti', [ContactController::class, 'send'])->name('contact.send');
@@ -107,11 +108,14 @@ Route::middleware('guest')->group(function () {
     Route::get('/registrati', [RegisterController::class, 'choose'])->name('register');
     Route::get('/registrati/privato', [RegisterController::class, 'showBuyer'])->name('register.buyer');
     Route::post('/registrati/privato', [RegisterController::class, 'storeBuyer'])->name('register.buyer.store');
-    Route::get('/registrati/azienda', [RegisterController::class, 'showVendor'])->name('register.vendor');
-    Route::post('/registrati/azienda', [RegisterController::class, 'storeVendor'])->name('register.vendor.store');
+    // Aziende e inserzionisti si iscrivono solo sul sito principale.
+    Route::middleware('platform')->group(function () {
+        Route::get('/registrati/azienda', [RegisterController::class, 'showVendor'])->name('register.vendor');
+        Route::post('/registrati/azienda', [RegisterController::class, 'storeVendor'])->name('register.vendor.store');
 
-    Route::get('/inserzionisti/registrati', [AdvertiserRegisterController::class, 'show'])->name('advertiser.register');
-    Route::post('/inserzionisti/registrati', [AdvertiserRegisterController::class, 'store'])->name('advertiser.register.store');
+        Route::get('/inserzionisti/registrati', [AdvertiserRegisterController::class, 'show'])->name('advertiser.register');
+        Route::post('/inserzionisti/registrati', [AdvertiserRegisterController::class, 'store'])->name('advertiser.register.store');
+    });
 
     Route::get('/password/recupero', [PasswordResetController::class, 'request'])->name('password.request');
     Route::post('/password/recupero', [PasswordResetController::class, 'email'])->name('password.email');
@@ -136,7 +140,7 @@ Route::middleware('auth')->group(function () {
 |
 */
 
-Route::middleware(['auth', 'advertiser'])
+Route::middleware(['platform', 'auth', 'advertiser'])
     ->prefix('area-inserzionista')
     ->name('advertiser.')
     ->group(function () {
@@ -150,7 +154,8 @@ Route::middleware(['auth', 'advertiser'])
 |--------------------------------------------------------------------------
 */
 
-require __DIR__.'/vendor-area.php';
+// Attivazione, abbonamento e area azienda: solo sul sito principale.
+Route::middleware('platform')->group(__DIR__.'/vendor-area.php');
 
 /*
 |--------------------------------------------------------------------------

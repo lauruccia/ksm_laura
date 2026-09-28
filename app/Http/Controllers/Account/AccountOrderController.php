@@ -17,7 +17,9 @@ class AccountOrderController extends Controller
 {
     public function index(Request $request): View
     {
+        // Solo gli ordini fatti su questo sito: l'account vale ovunque, gli acquisti no.
         $orders = $request->user()->orders()
+            ->forSite()
             ->with('company')
             ->when($request->string('stato')->toString(), fn ($q, $status) => $q->where('status', $status))
             ->latest()
@@ -32,7 +34,8 @@ class AccountOrderController extends Controller
 
     public function show(Request $request, Order $order): View
     {
-        abort_unless($order->user_id === $request->user()->id, 404);
+        abort_unless($order->user_id === $request->user()->id
+            && Order::query()->forSite()->whereKey($order->getKey())->exists(), 404);
 
         $order->load(['items.product', 'company', 'payment']);
 

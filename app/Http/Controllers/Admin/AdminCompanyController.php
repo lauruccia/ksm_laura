@@ -21,6 +21,7 @@ use App\Support\Domains\DomainConnectionChecker;
 use App\Support\Domains\HostName;
 use App\Support\Maps\CompanyLocation;
 use App\Support\RichText;
+use App\Support\Sites\HostDirectory;
 use App\Support\WorkingHours;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
@@ -105,6 +106,9 @@ class AdminCompanyController extends Controller
             'deactivate' => trans_choice(':count azienda spenta.|:count aziende spente.', $query->update(['is_active' => false])),
             'delete' => trans_choice(':count azienda eliminata.|:count aziende eliminate.', BulkSelection::deleteEach($query)),
         };
+
+        // L'aggiornamento in blocco non passa dagli eventi del modello: i domini propri accesi o spenti vanno riletti.
+        HostDirectory::forget();
 
         return back()->with('success', $message);
     }

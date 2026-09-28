@@ -206,7 +206,7 @@
                                 <option value="{{ $id }}" @selected((string) $value('entry_cms_page_id') === (string) $id)>{{ $label }}</option>
                             @endforeach
                         </select>
-                        <small class="ksm-muted">Solo con Pagina iniziale "Pagina CMS".</small>
+                        <small class="ksm-muted">Solo con Pagina iniziale "Pagina CMS". Si sceglie fra le pagine di questo dominio (Pagine, campo Sito).</small>
                         @error('entry_cms_page_id')<span class="ksm-error">{{ $message }}</span>@enderror
                     </div>
                     <div class="ksm-field">

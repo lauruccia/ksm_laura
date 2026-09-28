@@ -21,7 +21,7 @@ return [
     'sale' => 'Offer',
     'quantity' => 'Quantity',
     'featured_title' => 'Best sellers',
-    'featured_subtitle' => 'Our customers'' favourites',
+    'featured_subtitle' => "Our customers' favourites",
     'bestseller' => 'Best seller',
     'new' => 'New',
     'reviews' => ':count reviews',

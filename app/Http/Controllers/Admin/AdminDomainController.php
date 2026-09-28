@@ -102,7 +102,10 @@ class AdminDomainController extends AdminResourceController
             'railOptions' => $domain->product_category_id
                 ? array_intersect_key($productTree->labels(), array_flip([$domain->product_category_id, ...$productTree->descendants($domain->product_category_id)]))
                 : $productTree->labels(),
-            'cmsPages' => CmsPage::query()->published()->orderBy('title')->pluck('title', 'id'),
+            // Solo le pagine del dominio: quelle di KSM non si aprono qui.
+            'cmsPages' => $domain->exists
+                ? CmsPage::query()->where('domain_id', $domain->getKey())->published()->orderBy('title')->pluck('title', 'id')
+                : collect(),
             'entryCompany' => $domain->entry_company_id ? Company::find($domain->entry_company_id, ['id', 'name']) : null,
             'icons' => SiteContent::BENEFIT_ICONS,
             'sorts' => SiteContent::FEATURED_SORTS,
@@ -134,7 +137,9 @@ class AdminDomainController extends AdminResourceController
             'city' => ['nullable', 'string', 'max:120'],
             'entry_page' => ['required', Rule::in(array_keys(Domain::ENTRY_PAGES))],
             'entry_company_id' => ['nullable', 'required_if:entry_page,company', 'integer', 'exists:companies,id'],
-            'entry_cms_page_id' => ['nullable', 'required_if:entry_page,page', 'integer', 'exists:cms_pages,id'],
+            // Una pagina del dominio. Per un dominio nuovo non ce ne sono ancora: prima si crea il dominio.
+            'entry_cms_page_id' => ['nullable', 'required_if:entry_page,page', 'integer',
+                Rule::exists('cms_pages', 'id')->where('domain_id', $record?->getKey() ?? 0)],
 
             'logo' => $image,
             'favicon' => $image,

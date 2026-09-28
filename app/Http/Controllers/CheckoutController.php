@@ -317,7 +317,7 @@ class CheckoutController extends Controller
                 'kmoney_total' => $split->kmoney(),
                 'currency' => config('ksm.currency'),
                 'status' => 'pending',
-            ]);
+            ] + Order::siteFields());
 
             foreach ($items as $item) {
                 OrderItem::create([
@@ -352,5 +352,7 @@ class CheckoutController extends Controller
     private function authorizeOrder(Order $order): void
     {
         abort_unless($order->user_id === auth()->id(), 403);
+        // Esito e nuovi tentativi solo dal sito su cui e' nato l'ordine.
+        abort_unless(Order::query()->forSite()->whereKey($order->getKey())->exists(), 404);
     }
 }

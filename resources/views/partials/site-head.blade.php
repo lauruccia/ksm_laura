@@ -4,9 +4,12 @@
      * la sua (o il logo) e i colori del dominio valgono per tutta la pagina.
      */
     $networkDomain = $tenant->domain();
-    $favicon = $networkDomain
-        ? ($networkDomain->favicon ?? $networkDomain->logo)
-        : ($settings->favicon ?? null);
+    // Sul dominio di un'azienda l'icona e' il suo logo: quella di KSM la tradirebbe.
+    $favicon = match (true) {
+        (bool) $networkDomain => $networkDomain->favicon ?? $networkDomain->logo,
+        $tenant->isCompanySite() => $tenant->company()->logo,
+        default => $settings->favicon ?? null,
+    };
     $siteColors = $tenant->content()->cssVariables();
 @endphp
 

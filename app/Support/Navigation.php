@@ -26,13 +26,17 @@ class Navigation
     /** Voci al massimo per posizione. */
     public const MAX_ITEMS = 12;
 
-    /** Pagine CMS da mostrare in una data posizione: header o footer. */
+    /**
+     * Pagine CMS del sito principale da mostrare in una data posizione:
+     * header o footer. I domini della rete scrivono i propri menu.
+     */
     public static function pages(string $location): Collection
     {
         return Cache::remember(
             "cms.pages.$location",
             now()->addMinutes(10),
             fn () => CmsPage::query()
+                ->whereNull('domain_id')
                 ->published()
                 ->inLocation($location)
                 ->orderBy('sort_order')
@@ -67,21 +71,27 @@ class Navigation
     public static function defaults(string $location): array
     {
         $page = fn ($page) => ['label' => $page->title, 'url' => route('pages.show', $page->slug, false)];
+        // Piani e pagine di KSM solo sul sito principale: sugli altri siti queste voci predefinite
+        // valgono quando il dominio non ha scritto il suo menu, e non devono portare a KSM.
+        $tenant = app(TenantContext::class);
+        $mainSite = ! $tenant->isNetworkSite() && ! $tenant->isCompanySite();
+        $plans = $mainSite ? [['label' => __('site.nav_plans'), 'url' => route('plans.index', [], false)]] : [];
+        $cms = fn (string $where) => $mainSite ? self::pages($where)->map($page)->all() : [];
 
         $items = match ($location) {
             'header_left' => [
                 ['label' => __('site.nav_home'), 'url' => route('home', [], false)],
                 ['label' => __('site.nav_companies'), 'url' => route('companies.index', [], false)],
                 ['label' => __('site.nav_products'), 'url' => route('products.index', [], false)],
-                ['label' => __('site.nav_plans'), 'url' => route('plans.index', [], false)],
+                ...$plans,
             ],
             'header_right' => [
                 ['label' => __('site.nav_contact'), 'url' => route('contact', [], false)],
-                ...self::pages('header')->map($page)->all(),
+                ...$cms('header'),
             ],
             'footer_pages' => [
-                ['label' => __('site.nav_plans'), 'url' => route('plans.index', [], false)],
-                ...self::pages('footer')->map($page)->all(),
+                ...$plans,
+                ...$cms('footer'),
                 ['label' => __('site.track_order'), 'url' => route('orders.track', [], false)],
             ],
             'footer_links' => [

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Company;
 use App\Models\Domain;
 use App\Support\Domains\HostName;
+use App\Support\Sites\HostDirectory;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 
@@ -28,7 +29,7 @@ class TlsAuthorizationController extends Controller
         $host = HostName::normalize($request->query('domain'));
 
         $known = $host !== null && (
-            in_array($host, (array) config('ksm.platform_hosts'), true)
+            HostDirectory::isPlatform($host)
             || Domain::where('domain', $host)->where('is_active', true)->exists()
             || Company::where('custom_domain', $host)->exists()
         );

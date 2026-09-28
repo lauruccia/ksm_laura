@@ -19,7 +19,8 @@ return Application::configure(basePath: dirname(__DIR__))
 
             // L'ordine conta: prima le sezioni con un prefisso proprio,
             // per ultima la rotta jolly delle pagine.
-            Route::middleware('web')->group(base_path('routes/admin.php'));
+            // L'amministrazione esiste solo sul sito principale.
+            Route::middleware(['web', 'platform'])->group(base_path('routes/admin.php'));
             Route::middleware('web')->group(base_path('routes/account.php'));
             Route::middleware('web')->group(base_path('routes/pages.php'));
         },
@@ -39,12 +40,31 @@ return Application::configure(basePath: dirname(__DIR__))
             App\Http\Middleware\SetLocale::class,
         ]);
 
+        // Il sito si decide prima dell'accesso e dei parametri delle rotte: su un host
+        // sconosciuto, o fuori da KSM su una sezione di KSM, si risponde 404 e non
+        // "accedi" o "pagina non trovata" con il marchio della piattaforma.
+        $middleware->prependToPriorityList(
+            before: Illuminate\Contracts\Auth\Middleware\AuthenticatesRequests::class,
+            prepend: App\Http\Middleware\ResolveTenant::class,
+        );
+        $middleware->prependToPriorityList(
+            before: Illuminate\Contracts\Auth\Middleware\AuthenticatesRequests::class,
+            prepend: App\Http\Middleware\EnsurePlatformSite::class,
+        );
+
         $middleware->alias([
             'admin' => App\Http\Middleware\EnsureUserIsAdmin::class,
             'vendor' => App\Http\Middleware\EnsureUserIsVendor::class,
             'advertiser' => App\Http\Middleware\EnsureUserIsAdvertiser::class,
+            'platform' => App\Http\Middleware\EnsurePlatformSite::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        // Un indirizzo senza rotta su un host che non e' di nessun sito: stesso 404
+        // senza marchio di ResolveTenant, non la pagina di errore di KSM.
+        $exceptions->render(function (Symfony\Component\HttpKernel\Exception\NotFoundHttpException $e, Illuminate\Http\Request $request) {
+            if (! App\Support\Sites\HostDirectory::knows($request->getHost())) {
+                return App\Http\Middleware\ResolveTenant::unknownSite();
+            }
+        });
     })->create();

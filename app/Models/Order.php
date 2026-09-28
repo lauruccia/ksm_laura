@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Support\TenantContext;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -26,7 +28,7 @@ class Order extends Model
     }
 
     protected $fillable = [
-        'user_id', 'company_id', 'payment_id', 'kmoney_payment_id', 'subtotal', 'shipping', 'tax', 'total',
+        'user_id', 'company_id', 'site', 'domain_id', 'payment_id', 'kmoney_payment_id', 'subtotal', 'shipping', 'tax', 'total',
         'kmoney_total', 'currency', 'status', 'billing_name', 'billing_email', 'billing_phone',
         'billing_address', 'billing_city', 'billing_state', 'billing_zip',
         'billing_country', 'shipping_address', 'notes',
@@ -38,6 +40,43 @@ class Order extends Model
         'total' => 'decimal:2',
         'kmoney_total' => 'decimal:2',
     ];
+
+    /**
+     * Il sito dell'ordine, da salvare alla creazione.
+     *
+     * @return array{site: string, domain_id: ?int}
+     */
+    public static function siteFields(?TenantContext $tenant = null): array
+    {
+        $tenant ??= app(TenantContext::class);
+
+        return match (true) {
+            $tenant->isNetworkSite() => ['site' => 'domain', 'domain_id' => $tenant->domain()->getKey()],
+            $tenant->isCompanySite() => ['site' => 'company', 'domain_id' => null],
+            default => ['site' => 'platform', 'domain_id' => null],
+        };
+    }
+
+    /**
+     * Solo gli ordini nati sul sito corrente: chi compra su due siti con lo
+     * stesso account non vede su uno gli acquisti fatti sull'altro.
+     */
+    public function scopeForSite(Builder $query, ?TenantContext $tenant = null): Builder
+    {
+        $tenant ??= app(TenantContext::class);
+        $table = $query->getModel()->getTable();
+
+        return match (true) {
+            $tenant->isNetworkSite() => $query->where("$table.site", 'domain')->where("$table.domain_id", $tenant->domain()->getKey()),
+            $tenant->isCompanySite() => $query->where("$table.site", 'company')->where("$table.company_id", $tenant->company()->getKey()),
+            default => $query->where("$table.site", 'platform'),
+        };
+    }
+
+    public function domain(): BelongsTo
+    {
+        return $this->belongsTo(Domain::class);
+    }
 
     public function user(): BelongsTo
     {

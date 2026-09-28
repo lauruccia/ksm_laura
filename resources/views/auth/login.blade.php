@@ -16,13 +16,16 @@
                 </span>
             </a>
 
-            <a class="ksm-auth__option" href="{{ route('register.vendor') }}">
-                <span class="ksm-auth__option-icon"><x-icon name="building" :size="22" /></span>
-                <span>
-                    <strong>Sono un'azienda</strong>
-                    <small>Porto la mia attività nel marketplace</small>
-                </span>
-            </a>
+            {{-- Le aziende si iscrivono solo sul sito principale. --}}
+            @if ($tenant->isPlatformSite())
+                <a class="ksm-auth__option" href="{{ route('register.vendor') }}">
+                    <span class="ksm-auth__option-icon"><x-icon name="building" :size="22" /></span>
+                    <span>
+                        <strong>Sono un'azienda</strong>
+                        <small>Porto la mia attività nel marketplace</small>
+                    </span>
+                </a>
+            @endif
         </x-slot:aside>
 
         <form method="POST" action="{{ route('login.store') }}">

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Plan;
 use App\Models\User;
 use App\Support\AuthReturn;
+use App\Support\TenantContext;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -29,6 +30,11 @@ class RegisterController extends Controller
 
     public function choose(Request $request): View|RedirectResponse
     {
+        // Fuori dal sito principale ci si iscrive solo per comprare: le aziende si iscrivono su KSM.
+        if (! app(TenantContext::class)->isPlatformSite()) {
+            return redirect()->route('register.buyer');
+        }
+
         // Dai vecchi link dei piani: chi ha gia' scelto un piano e' un'azienda.
         if ($request->filled('piano')) {
             return redirect()->route('register.vendor', ['piano' => $request->string('piano')->toString()]);

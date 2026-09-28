@@ -10,9 +10,11 @@
                 'Storico ordini e stato delle spedizioni',
                 'Recensioni su aziende e prodotti',
             ]">
-                <p class="ksm-auth__aside-note">
-                    Hai un'attività? <a href="{{ route('register.vendor') }}">Registra la tua azienda</a>
-                </p>
+                @if ($tenant->isPlatformSite())
+                    <p class="ksm-auth__aside-note">
+                        Hai un'attività? <a href="{{ route('register.vendor') }}">Registra la tua azienda</a>
+                    </p>
+                @endif
             </x-auth.perks>
         </x-slot:aside>
 

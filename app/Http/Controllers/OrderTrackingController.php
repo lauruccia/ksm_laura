@@ -22,7 +22,9 @@ class OrderTrackingController extends Controller
 
         $id = (int) preg_replace('/\D/', '', $data['reference']);
 
+        // Un ordine si traccia solo dal sito su cui e' stato fatto.
         $order = Order::with('items')
+            ->forSite()
             ->whereKey($id)
             ->where('billing_email', $data['email'])
             ->first();

@@ -6,6 +6,7 @@ use App\Models\Company;
 use App\Models\Product;
 use App\Models\ProductReview;
 use App\Models\Review;
+use App\Support\TenantContext;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
@@ -13,8 +14,8 @@ class ReviewController extends Controller
 {
     public function storeForCompany(Request $request, Company $company): RedirectResponse
     {
-        // Il modulo sta sulla pagina dell'azienda: senza pagina non c'e'.
-        abort_unless($company->hasPage(), 404);
+        // Il modulo sta sulla pagina dell'azienda: senza pagina, o se l'azienda non e' di questo sito, non c'e'.
+        abort_unless($company->hasPage() && app(TenantContext::class)->scope()->allowsCompany($company), 404);
 
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
@@ -43,6 +44,9 @@ class ReviewController extends Controller
 
     public function storeForProduct(Request $request, Product $product): RedirectResponse
     {
+        // Come la scheda: un prodotto che su questo sito non si vede non si recensisce da qui.
+        abort_unless(app(TenantContext::class)->scope()->allowsProduct($product), 404);
+
         $data = $request->validate([
             'rating' => ['required', 'integer', 'min:1', 'max:5'],
             'comment' => ['required', 'string', 'max:2000'],

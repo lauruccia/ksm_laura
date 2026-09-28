@@ -18,7 +18,8 @@ class AccountDashboardController extends Controller
     public function index(Request $request): View
     {
         $user = $request->user();
-        $orders = $user->orders();
+        // I conteggi e gli ultimi ordini sono quelli di questo sito.
+        $orders = $user->orders()->forSite();
 
         return view('account.dashboard', [
             'user' => $user,
