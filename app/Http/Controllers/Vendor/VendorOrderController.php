@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Vendor;
 
 use App\Http\Controllers\Controller;
 use App\Models\Order;
+use App\Support\Orders\OrderStatus;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -29,17 +30,14 @@ class VendorOrderController extends Controller
         return view('vendor.orders.show', ['order' => $order->load('items', 'user')]);
     }
 
-    public function updateStatus(Request $request, Order $order): RedirectResponse
+    public function updateStatus(Request $request, Order $order, OrderStatus $orderStatus): RedirectResponse
     {
         $this->authorizeOrder($request, $order);
 
-        $data = $request->validate([
-            'status' => ['required', 'in:'.implode(',', Order::STATUSES)],
-        ]);
+        // Stato, spedizione, disponibilita' ed email al cliente come in amministrazione.
+        $data = $request->validate(OrderStatus::rules());
 
-        $order->update($data);
-
-        return back()->with('success', __('Stato ordine aggiornato.'));
+        return back()->with(...$orderStatus->applyForm($order, $data, $request->boolean('notify')));
     }
 
     private function authorizeOrder(Request $request, Order $order): void

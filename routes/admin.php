@@ -132,6 +132,18 @@ Route::middleware(['auth', 'admin'])
 
         /* Vendite ------------------------------------------------------- */
 
+        // Prima della scheda /ordini/{order}: altrimenti "nuovo" verrebbe preso per un ordine.
+        Route::middleware('can:'.P::ORDERS_MANAGE)->group(function () {
+            Route::get('/ordini/nuovo', [AdminOrderController::class, 'create'])->name('orders.create');
+            Route::post('/ordini', [AdminOrderController::class, 'store'])->name('orders.store');
+            Route::get('/ordini/{order}/modifica', [AdminOrderController::class, 'edit'])->name('orders.edit');
+            Route::put('/ordini/{order}', [AdminOrderController::class, 'update'])->name('orders.update');
+        });
+
+        Route::middleware('can:'.P::ORDERS_VIEW)->group(function () {
+            Route::get('/ordini-esporta', [AdminOrderController::class, 'export'])->name('orders.export');
+        });
+
         Route::resource('ordini', AdminOrderController::class)
             ->parameters(['ordini' => 'order'])->names('orders')
             ->only(['index', 'show'])->middleware('can:'.P::ORDERS_VIEW);

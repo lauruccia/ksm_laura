@@ -7,7 +7,7 @@
 
 @extends('layouts.panel')
 
-@section('title', $order->reference.' · KSM')
+@section('title', $order->reference.' · '.$tenant->brandName())
 @section('role', 'Il mio account')
 @section('crumb', 'Ordine '.$order->reference)
 @section('nav')@include('account.nav')@endsection
@@ -37,6 +37,8 @@
                 @endforeach
             </ol>
         @endif
+
+        <div style="margin-top: 14px;">@include('orders._tracking')</div>
     </section>
 
     <div class="ksm-panel-grid">

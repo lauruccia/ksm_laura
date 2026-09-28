@@ -69,7 +69,7 @@ final class Permissions
             ],
             'Vendite' => [
                 self::ORDERS_VIEW => 'Vedere gli ordini',
-                self::ORDERS_MANAGE => 'Cambiare stato ed eliminare ordini',
+                self::ORDERS_MANAGE => 'Creare, modificare, cambiare stato ed eliminare ordini',
                 self::PAYMENTS_VIEW => 'Vedere i pagamenti',
                 self::PAYMENTS_MANAGE => 'Eliminare pagamenti',
                 self::PLANS_MANAGE => 'Gestire i piani di abbonamento',

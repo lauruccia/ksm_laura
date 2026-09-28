@@ -235,6 +235,9 @@
                     @can(\App\Support\Permissions::CATALOG_MANAGE)
                         · <a href="{{ route('admin.products.create', ['azienda' => $company->id]) }}">Aggiungi un prodotto</a>
                     @endcan
+                    @can(\App\Support\Permissions::ORDERS_VIEW)
+                        · <a href="{{ route('admin.orders.index', ['azienda' => $company->id]) }}">Ordini</a>
+                    @endcan
                 </p>
             @endif
         </section>

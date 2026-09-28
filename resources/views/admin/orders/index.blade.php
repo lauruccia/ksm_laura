@@ -23,11 +23,40 @@
                     <option value="{{ $status }}" @selected(request('stato') === $status)>{{ $label }}</option>
                 @endforeach
             </select>
+            <select class="ksm-select" name="sito" aria-label="Sito" onchange="this.form.submit()">
+                <option value="">Tutti i siti</option>
+                @foreach ($siteOptions as $value => $label)
+                    <option value="{{ $value }}" @selected(request('sito') === $value)>{{ $label }}</option>
+                @endforeach
+            </select>
+            @if ($company)
+                <span class="ksm-listhead__chip">
+                    {{ $company->name }}
+                    <a href="{{ route('admin.orders.index', request()->except(['azienda', 'page'])) }}" aria-label="Tutte le aziende"><x-icon name="close" :size="14" /></a>
+                </span>
+                <input type="hidden" name="azienda" value="{{ $company->id }}">
+            @else
+                <input class="ksm-input" type="search" name="azienda_nome" value="{{ request('azienda_nome') }}" placeholder="Azienda" aria-label="Azienda" style="max-width: 170px;">
+            @endif
+            <label class="ksm-muted" style="display: flex; gap: 6px; align-items: center;">dal
+                <input class="ksm-input" type="date" name="dal" value="{{ request('dal') }}" aria-label="Dal giorno" style="max-width: 160px;">
+            </label>
+            <label class="ksm-muted" style="display: flex; gap: 6px; align-items: center;">al
+                <input class="ksm-input" type="date" name="al" value="{{ request('al') }}" aria-label="Al giorno" style="max-width: 160px;">
+            </label>
             <button class="ksm-btn ksm-btn--ghost ksm-btn--sm" type="submit">Cerca</button>
-            @if (request()->hasAny(['cerca', 'stato']))
+            @if (request()->hasAny(['cerca', 'stato', 'sito', 'azienda', 'azienda_nome', 'dal', 'al']))
                 <a class="ksm-btn ksm-btn--ghost ksm-btn--sm" href="{{ route('admin.orders.index') }}">Azzera</a>
             @endif
         </form>
+
+        <span class="ksm-listhead__actions">
+            {{-- Esporta con gli stessi filtri dell'elenco. --}}
+            <a class="ksm-btn ksm-btn--ghost ksm-btn--sm" href="{{ route('admin.orders.export', request()->except('page')) }}">Esporta CSV</a>
+            @if ($canManage)
+                <a class="ksm-btn ksm-btn--primary ksm-btn--sm" href="{{ route('admin.orders.create', array_filter(['azienda' => $company?->id])) }}">Nuovo ordine</a>
+            @endif
+        </span>
     </div>
 
     @if ($canManage && $orders->isNotEmpty())

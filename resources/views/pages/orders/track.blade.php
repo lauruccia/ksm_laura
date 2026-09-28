@@ -29,6 +29,7 @@
                     <h3>{{ $order->reference }}</h3>
                     <p><span class="ksm-badge">{{ $order->statusLabel() }}</span></p>
                     <p>Totale {{ \App\Support\Money::format($order->total) }}</p>
+                    @include('orders._tracking')
                 </div>
             @endif
         </div>

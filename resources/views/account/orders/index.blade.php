@@ -1,6 +1,6 @@
 @extends('layouts.panel')
 
-@section('title', 'I miei ordini · KSM')
+@section('title', 'I miei ordini · '.$tenant->brandName())
 @section('role', 'Il mio account')
 @section('crumb', 'I miei ordini')
 @section('nav')@include('account.nav')@endsection

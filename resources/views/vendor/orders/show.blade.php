@@ -40,16 +40,11 @@
                 <li>{{ $order->billing_phone }}</li>
             </ul>
 
-            <form method="POST" action="{{ route('vendor.orders.status', $order) }}"
-                  style="margin-top: 16px; display: flex; gap: 8px;">
-                @csrf @method('PATCH')
-                <select class="ksm-select" name="status">
-                    @foreach (\App\Models\Order::STATUSES as $status)
-                        <option value="{{ $status }}" @selected($order->status === $status)>{{ \App\Models\Order::STATUS_LABELS[$status] ?? $status }}</option>
-                    @endforeach
-                </select>
-                <button class="ksm-btn ksm-btn--primary" type="submit">Aggiorna</button>
-            </form>
+            @if ($order->notes)
+                <p style="margin: 12px 0 0;"><strong>Note del cliente:</strong> {{ $order->notes }}</p>
+            @endif
+
+            @include('orders._status-form', ['action' => route('vendor.orders.status', $order)])
         </section>
     </div>
 @endsection

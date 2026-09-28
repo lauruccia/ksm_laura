@@ -32,13 +32,23 @@ class Order extends Model
         'kmoney_total', 'currency', 'status', 'billing_name', 'billing_email', 'billing_phone',
         'billing_address', 'billing_city', 'billing_state', 'billing_zip',
         'billing_country', 'shipping_address', 'notes',
+        'carrier', 'tracking_number', 'tracking_url', 'shipped_at', 'admin_notes',
     ];
+
+    /** Gli stati in cui la merce e' impegnata: la disponibilita' dei prodotti e' scalata. */
+    public const STOCK_STATUSES = ['paid', 'shipped', 'completed'];
+
+    /** Gli stati per cui il cliente riceve un'email. */
+    public const NOTIFIED_STATUSES = ['shipped', 'cancelled'];
 
     protected $casts = [
         'shipping_address' => 'array',
         'subtotal' => 'decimal:2',
         'total' => 'decimal:2',
         'kmoney_total' => 'decimal:2',
+        'shipping' => 'decimal:2',
+        'stock_deducted_at' => 'datetime',
+        'shipped_at' => 'datetime',
     ];
 
     /**
@@ -81,6 +91,33 @@ class Order extends Model
             'company' => $this->company?->custom_domain ?: 'Sito dell\'azienda',
             default => config('ksm.brand_name'),
         };
+    }
+
+    /** Il nome del sito dell'ordine, come lo conosce il cliente: mai KSM se ha comprato altrove. */
+    public function siteName(): string
+    {
+        return match ($this->site) {
+            'domain' => $this->domain?->name ?: (string) $this->domain?->domain ?: config('ksm.brand_name'),
+            'company' => (string) $this->company?->name,
+            default => config('ksm.brand_name'),
+        };
+    }
+
+    /**
+     * Un indirizzo sul sito dell'ordine, per le email: il cliente torna dove
+     * ha comprato, qualunque sia il sito da cui parte l'email.
+     */
+    public function siteUrl(string $path = '/'): string
+    {
+        $host = match ($this->site) {
+            'domain' => $this->domain?->domain,
+            'company' => $this->company?->custom_domain,
+            default => null,
+        };
+
+        $base = $host ? 'https://'.$host : rtrim((string) config('app.url'), '/');
+
+        return $base.'/'.ltrim($path, '/');
     }
 
     public function domain(): BelongsTo
@@ -148,8 +185,9 @@ class Order extends Model
         return round((float) $this->total - (float) $this->kmoney_total, 2);
     }
 
+    /** KSM- sul sito principale; sugli altri siti ORD-, che non rivela la piattaforma. */
     public function getReferenceAttribute(): string
     {
-        return 'KSM-'.str_pad((string) $this->id, 6, '0', STR_PAD_LEFT);
+        return ($this->site && $this->site !== 'platform' ? 'ORD-' : 'KSM-').str_pad((string) $this->id, 6, '0', STR_PAD_LEFT);
     }
 }

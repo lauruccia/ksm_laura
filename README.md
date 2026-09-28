@@ -403,6 +403,32 @@ e Symfony lo attiva da solo, ma il certificato e' intestato a
 stesso non servono credenziali. Il `.env` e' in cache: dopo ogni modifica
 va rilanciato `artisan optimize`, altrimenti non cambia niente.
 
+## Ordini
+
+Tutti i cambi di stato (scheda ordine, azioni in blocco, area azienda) passano
+da `App\Support\Orders\OrderStatus`:
+
+- **disponibilita'**: pagato, spedito e concluso tengono la merce scalata, in
+  attesa e annullato no. `OrderStock` la scala o la restituisce secondo lo
+  stato, una volta sola (`orders.stock_deducted_at`); anche il pagamento
+  online passa da li';
+- **email al cliente** per *Spedito* e *Annullato* (casella "Avvisa il
+  cliente"): mittente, testata e link sono del sito dove ha comprato
+  (`Order::siteName()`, `siteUrl()`), le risposte vanno all'azienda. Il
+  numero d'ordine e' `KSM-` sul sito principale, `ORD-` sugli altri;
+- **spedizione**: corriere, numero e link di tracciamento, che il cliente
+  vede nell'area cliente, in "Traccia ordine" e nell'email.
+
+In amministrazione un ordine si crea a mano (**Ordini, Nuovo ordine**: azienda,
+sito di provenienza, cliente, righe, stato) e si modifica (righe, prezzi,
+spedizione, dati del cliente) con `OrderEditor`: totali ricalcolati e
+disponibilita' aggiornata; i pagamenti online gia' fatti non cambiano. Un
+ordine a mano si collega all'account con la stessa email, se c'e'. Le note
+interne le vede solo l'amministrazione.
+
+L'elenco filtra per stato, sito, azienda e date; **Esporta CSV** scarica gli
+ordini filtrati (punto e virgola, UTF-8, si apre in Excel).
+
 ## Pagamenti
 
 Ogni azienda incassa sul proprio conto: le credenziali stanno in
