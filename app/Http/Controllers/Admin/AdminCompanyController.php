@@ -141,6 +141,7 @@ class AdminCompanyController extends Controller
                 'slug' => $this->uniqueSlug($data['name']),
             ]);
 
+            $company->exclusiveDomains()->sync($data['exclusive_domains'] ?? []);
             $this->saveMedia($request, $company);
             $this->syncPlan($company, $data['plan_id'] ?? null);
             $this->saveKMoney($company, $data);
@@ -179,6 +180,8 @@ class AdminCompanyController extends Controller
             $owner->save();
 
             $company->update($this->attributes($data) + $coordinates);
+            // Nessuna casella spuntata non arriva nel modulo: vuol dire nessun dominio esclusivo.
+            $company->exclusiveDomains()->sync($data['exclusive_domains'] ?? []);
             $this->saveMedia($request, $company);
             $this->syncPlan($company, $data['plan_id'] ?? null);
             $this->saveKMoney($company, $data);
@@ -276,7 +279,8 @@ class AdminCompanyController extends Controller
                     }
                 },
             ],
-            'exclusive_domain_id' => ['nullable', 'integer', 'exists:domains,id'],
+            'exclusive_domains' => ['nullable', 'array'],
+            'exclusive_domains.*' => ['integer', 'distinct', 'exists:domains,id'],
             'base_shipping_rate' => ['nullable', 'numeric', 'min:0', 'max:99999'],
             'per_kg_rate' => ['nullable', 'numeric', 'min:0', 'max:99999'],
             'address' => ['nullable', 'string', 'max:255'],
@@ -319,7 +323,6 @@ class AdminCompanyController extends Controller
             'name', 'category_id', 'email', 'phone', 'website', 'custom_domain', 'base_shipping_rate', 'per_kg_rate',
             'address', 'city', 'region', 'company_location',
         ]) + [
-            'exclusive_domain_id' => $data['exclusive_domain_id'] ?? null,
             'company_description' => RichText::clean($data['company_description'] ?? null),
             'is_active' => (bool) ($data['is_active'] ?? false),
             'working_hours' => WorkingHours::normalize($data['working_hours'] ?? null) ?: null,

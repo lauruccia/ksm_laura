@@ -9,6 +9,8 @@ use App\Models\Product;
 use App\Models\ProductCategory;
 use App\Support\CategoryTree;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Query\Builder as QueryBuilder;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Cosa si vede su un dominio della rete.
@@ -30,9 +32,9 @@ use Illuminate\Database\Eloquent\Builder;
  * Sul dominio proprio di un'azienda il sito e' solo suo: la sua scheda e i
  * suoi prodotti, niente del resto del marketplace.
  *
- * Un'azienda esclusiva di un dominio (companies.exclusive_domain_id) si vede
- * su quel dominio anche fuori dal suo filtro aziende (la categoria prodotto
- * vale comunque per i prodotti), e mai su KSM ne' sugli altri domini.
+ * Un'azienda esclusiva di uno o piu' domini (company_exclusive_domain) si
+ * vede su quei domini anche fuori dal loro filtro aziende (la categoria
+ * prodotto vale comunque per i prodotti), e mai su KSM ne' sugli altri.
  */
 final class SiteScope
 {
@@ -151,9 +153,8 @@ final class SiteScope
                         ->when($this->productCategoryIds(), fn ($p, $ids) => $p->whereIn('products.category_id', $ids))
                         ->select('products.company_id')
                 ))
-                ->where(fn ($q) => $q->whereNull('companies.exclusive_domain_id')
-                    ->when($this->domain, fn ($q) => $q->orWhere('companies.exclusive_domain_id', $this->domain->getKey()))))
-            ->when($this->domain, fn ($q) => $q->orWhere('companies.exclusive_domain_id', $this->domain->getKey())));
+                ->whereNotIn('companies.id', $this->exclusiveElsewhere()))
+            ->when($this->domain, fn ($q) => $q->orWhereIn('companies.id', $this->exclusiveHere())));
     }
 
     /**
@@ -170,18 +171,17 @@ final class SiteScope
         return $this->companies(Company::query()->whereKey($company->getKey()))->exists();
     }
 
-    /** Aziende che si vedono solo su un dominio diverso da questo (su KSM: tutte le esclusive). */
-    private function exclusiveElsewhere(): Builder
+    /** Aziende che si vedono solo su altri domini, non su questo (su KSM: tutte le esclusive). */
+    private function exclusiveElsewhere(): QueryBuilder
     {
-        return Company::query()
-            ->whereNotNull('exclusive_domain_id')
-            ->when($this->domain, fn ($q) => $q->where('exclusive_domain_id', '!=', $this->domain->getKey()))
-            ->select('id');
+        return DB::table('company_exclusive_domain')
+            ->when($this->domain, fn ($q) => $q->whereNotIn('company_id', $this->exclusiveHere()))
+            ->select('company_id');
     }
 
-    private function exclusiveHere(): Builder
+    private function exclusiveHere(): QueryBuilder
     {
-        return Company::query()->where('exclusive_domain_id', $this->domain?->getKey())->select('id');
+        return DB::table('company_exclusive_domain')->where('domain_id', $this->domain?->getKey())->select('company_id');
     }
 
     private function requiresProducts(): bool

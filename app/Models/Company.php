@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Support\PlanCapabilities;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
@@ -23,7 +24,7 @@ class Company extends Model
         'address', 'city', 'region', 'website', 'phone', 'email', 'banner', 'logo',
         'working_hours', 'offer_gallery', 'company_description', 'company_location',
         'personal_page', 'is_active', 'base_shipping_rate', 'per_kg_rate',
-        'latitude', 'longitude', 'exclusive_domain_id',
+        'latitude', 'longitude',
     ];
 
     protected $casts = [
@@ -33,10 +34,10 @@ class Company extends Model
         'force_www' => 'boolean',
     ];
 
-    /** Il solo dominio della rete su cui l'azienda si vede, se ne ha scelto uno. */
-    public function exclusiveDomain(): BelongsTo
+    /** I soli domini della rete su cui l'azienda si vede, se ne ha scelti. Nessuno: ovunque la comprendano. */
+    public function exclusiveDomains(): BelongsToMany
     {
-        return $this->belongsTo(Domain::class, 'exclusive_domain_id');
+        return $this->belongsToMany(Domain::class, 'company_exclusive_domain');
     }
 
     public function user(): BelongsTo

@@ -127,23 +127,29 @@ class AdminCompanyFormTest extends TestCase
         $this->assertSame('06 123', $company->fresh()->phone);
     }
 
-    public function test_l_azienda_si_puo_tenere_su_un_solo_dominio(): void
+    public function test_l_azienda_si_puo_tenere_su_alcuni_domini(): void
     {
         $company = $this->company();
         $domain = \App\Models\Domain::create(['name' => 'Rete', 'domain' => 'rete.test', 'type' => 'home', 'company_scope' => 'category', 'entry_page' => 'home', 'is_active' => true]);
+        $other = \App\Models\Domain::create(['name' => 'Altra', 'domain' => 'altra.test', 'type' => 'home', 'company_scope' => 'category', 'entry_page' => 'home', 'is_active' => true]);
 
         $this->actingAs($this->admin())->get(route('admin.companies.edit', $company))
-            ->assertOk()->assertSee('Solo rete.test');
+            ->assertOk()->assertSee('rete.test')->assertSee('name="exclusive_domains[]"', false);
 
         $this->actingAs($this->admin())
-            ->put(route('admin.companies.update', $company), $this->payload($company, ['exclusive_domain_id' => $domain->id]))
+            ->put(route('admin.companies.update', $company), $this->payload($company, ['exclusive_domains' => [$domain->id, $other->id]]))
             ->assertSessionHasNoErrors();
-        $this->assertSame($domain->id, $company->fresh()->exclusive_domain_id);
+        $this->assertEqualsCanonicalizing([$domain->id, $other->id], $company->fresh()->exclusiveDomains->modelKeys());
+
+        // Nessuna casella spuntata: il campo non arriva e l'azienda torna ovunque.
+        $this->actingAs($this->admin())
+            ->put(route('admin.companies.update', $company), $this->payload($company))
+            ->assertSessionHasNoErrors();
+        $this->assertSame([], $company->fresh()->exclusiveDomains->modelKeys());
 
         $this->actingAs($this->admin())
-            ->put(route('admin.companies.update', $company), $this->payload($company, ['exclusive_domain_id' => '']))
-            ->assertSessionHasNoErrors();
-        $this->assertNull($company->fresh()->exclusive_domain_id);
+            ->put(route('admin.companies.update', $company), $this->payload($company, ['exclusive_domains' => [999999]]))
+            ->assertSessionHasErrors('exclusive_domains.0');
     }
 
     public function test_scegliere_un_piano_apre_un_abbonamento_attivo(): void

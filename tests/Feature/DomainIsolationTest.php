@@ -260,9 +260,9 @@ class DomainIsolationTest extends TestCase
 
     public function test_un_azienda_esclusiva_si_vede_solo_sul_suo_dominio(): void
     {
-        $this->trattoria->update(['exclusive_domain_id' => $this->network->id]);
+        $this->trattoria->exclusiveDomains()->sync([$this->network->id]);
         // Anche fuori dal filtro del dominio: i calzaturifici non sono ristoranti.
-        $this->calzature->update(['exclusive_domain_id' => $this->network->id]);
+        $this->calzature->exclusiveDomains()->sync([$this->network->id]);
 
         // Su KSM non c'e', nemmeno scrivendo l'indirizzo.
         $this->get(self::MAIN.'/aziende')->assertOk()->assertDontSee('Trattoria Mario')->assertDontSee('Calzature Rossi');
@@ -284,15 +284,32 @@ class DomainIsolationTest extends TestCase
         $this->get(self::COMPANY_SITE.'/prodotti')->assertOk()->assertSee('Prodotto Trattoria Mario');
     }
 
+    public function test_un_azienda_puo_essere_esclusiva_di_piu_domini(): void
+    {
+        $this->calzature->exclusiveDomains()->sync([$this->network->id, $this->otherNetwork->id]);
+
+        // Su tutti e due i suoi domini si', anche fuori filtro; su KSM no.
+        $this->get(self::NETWORK.'/aziende')->assertOk()->assertSee('Calzature Rossi');
+        $this->get(self::OTHER_NETWORK.'/aziende')->assertOk()->assertSee('Calzature Rossi');
+        $this->get(self::MAIN.'/aziende')->assertOk()->assertDontSee('Calzature Rossi');
+        $this->get(self::MAIN.'/aziende/calzature-rossi')->assertNotFound();
+    }
+
     public function test_eliminare_il_dominio_spegne_le_sue_aziende_esclusive(): void
     {
-        $this->calzature->update(['exclusive_domain_id' => $this->network->id]);
+        $this->calzature->exclusiveDomains()->sync([$this->network->id]);
+        // Esclusiva anche di un altro dominio: resta accesa e resta li'.
+        $this->trattoria->exclusiveDomains()->sync([$this->network->id, $this->otherNetwork->id]);
 
         $this->network->delete();
 
         $this->assertFalse($this->calzature->fresh()->is_active);
-        $this->assertNull($this->calzature->fresh()->exclusive_domain_id);
+        $this->assertSame([], $this->calzature->fresh()->exclusiveDomains->modelKeys());
         $this->get(self::MAIN.'/aziende/calzature-rossi')->assertNotFound();
+
+        $this->assertTrue($this->trattoria->fresh()->is_active);
+        $this->assertSame([$this->otherNetwork->id], $this->trattoria->fresh()->exclusiveDomains->modelKeys());
+        $this->get(self::MAIN.'/aziende/trattoria-mario')->assertNotFound();
     }
 
     // Sezioni della piattaforma

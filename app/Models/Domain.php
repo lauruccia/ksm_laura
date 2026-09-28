@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\DB;
 
 class Domain extends Model
 {
@@ -52,8 +53,16 @@ class Domain extends Model
     protected static function booted(): void
     {
         // Le aziende che stavano solo qui si spengono: senza, finirebbero su KSM e sugli altri domini.
+        // Chi e' esclusiva anche di un altro dominio resta accesa e resta li'.
         static::deleting(function (self $domain) {
-            Company::query()->where('exclusive_domain_id', $domain->getKey())->update(['is_active' => false]);
+            $pivot = DB::table('company_exclusive_domain');
+
+            Company::query()
+                ->whereIn('id', (clone $pivot)->where('domain_id', $domain->getKey())->select('company_id'))
+                ->whereNotIn('id', (clone $pivot)->where('domain_id', '!=', $domain->getKey())->select('company_id'))
+                ->update(['is_active' => false]);
+
+            (clone $pivot)->where('domain_id', $domain->getKey())->delete();
         });
     }
 
