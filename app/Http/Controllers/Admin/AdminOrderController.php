@@ -15,7 +15,7 @@ class AdminOrderController extends Controller
     public function index(Request $request): View
     {
         return view('admin.orders.index', [
-            'orders' => $this->filters(Order::with(['company', 'user']), $request)
+            'orders' => $this->filters(Order::with(['company', 'user', 'domain']), $request)
                 ->latest()
                 ->paginate(25)
                 ->withQueryString(),

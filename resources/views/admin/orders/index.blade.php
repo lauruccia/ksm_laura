@@ -53,6 +53,7 @@
                 <th>Data</th>
                 <th>Cliente</th>
                 <th>Azienda</th>
+                <th>Sito</th>
                 <th>Totale</th>
                 <th>Stato</th>
                 <th></th>
@@ -76,6 +77,7 @@
                         @endif
                     </td>
                     <td>{{ $order->company?->name }}</td>
+                    <td>{{ $order->siteLabel() }}</td>
                     <td style="white-space: nowrap;">{{ \App\Support\Money::format($order->total) }}</td>
                     <td><span class="ksm-badge ksm-badge--{{ $order->status }}">{{ $order->statusLabel() }}</span></td>
                     <td style="text-align: right;">
@@ -83,7 +85,7 @@
                     </td>
                 </tr>
             @empty
-                <tr><td colspan="{{ $canManage ? 8 : 7 }}" class="ksm-muted">Nessun ordine.</td></tr>
+                <tr><td colspan="{{ $canManage ? 9 : 8 }}" class="ksm-muted">Nessun ordine.</td></tr>
             @endforelse
             </tbody>
         </table>

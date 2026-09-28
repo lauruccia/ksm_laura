@@ -49,6 +49,14 @@ class Domain extends Model
         'is_active' => 'boolean',
     ];
 
+    protected static function booted(): void
+    {
+        // Le aziende che stavano solo qui si spengono: senza, finirebbero su KSM e sugli altri domini.
+        static::deleting(function (self $domain) {
+            Company::query()->where('exclusive_domain_id', $domain->getKey())->update(['is_active' => false]);
+        });
+    }
+
     public function companyCategory(): BelongsTo
     {
         return $this->belongsTo(CompanyCategory::class);

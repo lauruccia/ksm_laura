@@ -23,7 +23,7 @@ class Company extends Model
         'address', 'city', 'region', 'website', 'phone', 'email', 'banner', 'logo',
         'working_hours', 'offer_gallery', 'company_description', 'company_location',
         'personal_page', 'is_active', 'base_shipping_rate', 'per_kg_rate',
-        'latitude', 'longitude',
+        'latitude', 'longitude', 'exclusive_domain_id',
     ];
 
     protected $casts = [
@@ -32,6 +32,12 @@ class Company extends Model
         'is_active' => 'boolean',
         'force_www' => 'boolean',
     ];
+
+    /** Il solo dominio della rete su cui l'azienda si vede, se ne ha scelto uno. */
+    public function exclusiveDomain(): BelongsTo
+    {
+        return $this->belongsTo(Domain::class, 'exclusive_domain_id');
+    }
 
     public function user(): BelongsTo
     {

@@ -127,6 +127,25 @@ class AdminCompanyFormTest extends TestCase
         $this->assertSame('06 123', $company->fresh()->phone);
     }
 
+    public function test_l_azienda_si_puo_tenere_su_un_solo_dominio(): void
+    {
+        $company = $this->company();
+        $domain = \App\Models\Domain::create(['name' => 'Rete', 'domain' => 'rete.test', 'type' => 'home', 'company_scope' => 'category', 'entry_page' => 'home', 'is_active' => true]);
+
+        $this->actingAs($this->admin())->get(route('admin.companies.edit', $company))
+            ->assertOk()->assertSee('Solo rete.test');
+
+        $this->actingAs($this->admin())
+            ->put(route('admin.companies.update', $company), $this->payload($company, ['exclusive_domain_id' => $domain->id]))
+            ->assertSessionHasNoErrors();
+        $this->assertSame($domain->id, $company->fresh()->exclusive_domain_id);
+
+        $this->actingAs($this->admin())
+            ->put(route('admin.companies.update', $company), $this->payload($company, ['exclusive_domain_id' => '']))
+            ->assertSessionHasNoErrors();
+        $this->assertNull($company->fresh()->exclusive_domain_id);
+    }
+
     public function test_scegliere_un_piano_apre_un_abbonamento_attivo(): void
     {
         $company = $this->company();

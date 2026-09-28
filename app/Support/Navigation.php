@@ -36,7 +36,7 @@ class Navigation
             "cms.pages.$location",
             now()->addMinutes(10),
             fn () => CmsPage::query()
-                ->whereNull('domain_id')
+                ->where('on_platform', true)
                 ->published()
                 ->inLocation($location)
                 ->orderBy('sort_order')

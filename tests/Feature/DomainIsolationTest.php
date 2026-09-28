@@ -190,8 +190,8 @@ class DomainIsolationTest extends TestCase
     public function test_le_pagine_cms_restano_sul_loro_sito(): void
     {
         CmsPage::create(['title' => 'Chi siamo KSM', 'slug' => 'chi-siamo', 'content' => 'Siamo Gruppo Kosmos', 'status' => 'published', 'visibility' => 'visible']);
-        CmsPage::create(['domain_id' => $this->network->id, 'title' => 'Chi siamo', 'slug' => 'chi-siamo', 'content' => 'Cucina calabrese', 'status' => 'published', 'visibility' => 'visible']);
-        CmsPage::create(['domain_id' => $this->network->id, 'title' => 'Ricette', 'slug' => 'ricette', 'content' => 'Le ricette', 'status' => 'published', 'visibility' => 'visible']);
+        CmsPage::create(['sites' => [$this->network->id], 'title' => 'Chi siamo', 'slug' => 'chi-siamo', 'content' => 'Cucina calabrese', 'status' => 'published', 'visibility' => 'visible']);
+        CmsPage::create(['sites' => [$this->network->id], 'title' => 'Ricette', 'slug' => 'ricette', 'content' => 'Le ricette', 'status' => 'published', 'visibility' => 'visible']);
 
         // Stesso slug, un contenuto per sito.
         $this->get(self::MAIN.'/chi-siamo')->assertOk()->assertSee('Siamo Gruppo Kosmos')->assertDontSee('Cucina calabrese');
@@ -208,6 +208,36 @@ class DomainIsolationTest extends TestCase
         $this->assertStringNotContainsString('/ricette', $this->get(self::OTHER_NETWORK.'/sitemap-pagine-1.xml')->getContent());
     }
 
+    public function test_la_stessa_pagina_si_vede_su_tutti_i_siti_scelti(): void
+    {
+        $page = CmsPage::create([
+            'sites' => ['platform', $this->network->id], 'title' => 'Spedizioni', 'slug' => 'spedizioni',
+            'content' => 'Spediamo in 48 ore', 'status' => 'published', 'visibility' => 'visible',
+        ]);
+
+        $this->get(self::MAIN.'/spedizioni')->assertOk()->assertSee('Spediamo in 48 ore');
+        $this->get(self::NETWORK.'/spedizioni')->assertOk()->assertSee('Spediamo in 48 ore');
+        $this->get(self::OTHER_NETWORK.'/spedizioni')->assertNotFound();
+
+        // In amministrazione l'elenco dice dove sta, il modulo ha le caselle spuntate.
+        $admin = $this->admin();
+        $this->actingAs($admin)->get(self::MAIN.route('admin.cms.index', [], false))->assertOk()->assertSee('Sito principale, cibocalabrese.test');
+        $this->actingAs($admin)->get(self::MAIN.route('admin.cms.edit', $page, false))->assertOk()
+            ->assertSee('value="platform"', false)
+            ->assertSee('name="sites[]" value="'.$this->network->id.'"', false);
+        $this->actingAs($admin)->get(self::MAIN.route('admin.cms.create', [], false))->assertOk();
+
+        // Tolto il sito principale dal modulo, resta solo sul dominio.
+        $this->actingAs($admin)->put(self::MAIN.route('admin.cms.update', $page, false), [
+            'sites' => [(string) $this->network->id, (string) $this->otherNetwork->id], 'title' => 'Spedizioni', 'slug' => 'spedizioni',
+            'status' => 'published', 'visibility' => 'visible', 'sort_order' => 0,
+        ])->assertSessionHasNoErrors();
+
+        $this->get(self::MAIN.'/spedizioni')->assertNotFound();
+        $this->get(self::OTHER_NETWORK.'/spedizioni')->assertOk();
+        $this->assertEqualsCanonicalizing([(string) $this->network->id, (string) $this->otherNetwork->id], $page->fresh()->sites);
+    }
+
     public function test_lo_slug_e_unico_dentro_il_sito_non_fra_i_siti(): void
     {
         $admin = $this->admin();
@@ -215,12 +245,54 @@ class DomainIsolationTest extends TestCase
 
         $page = ['title' => 'Chi siamo', 'slug' => 'chi-siamo', 'status' => 'published', 'visibility' => 'visible', 'sort_order' => 0];
 
-        $this->actingAs($admin)->post(self::MAIN.route('admin.cms.store', [], false), $page + ['domain_id' => $this->network->id])
+        $this->actingAs($admin)->post(self::MAIN.route('admin.cms.store', [], false), $page + ['sites' => [(string) $this->network->id]])
             ->assertSessionHasNoErrors();
-        $this->actingAs($admin)->post(self::MAIN.route('admin.cms.store', [], false), $page)
+        $this->actingAs($admin)->post(self::MAIN.route('admin.cms.store', [], false), $page + ['sites' => ['platform']])
+            ->assertSessionHasErrors('slug');
+        // Basta un sito in comune per lo scontro, anche insieme ad altri liberi.
+        $this->actingAs($admin)->post(self::MAIN.route('admin.cms.store', [], false), $page + ['sites' => [(string) $this->otherNetwork->id, (string) $this->network->id]])
             ->assertSessionHasErrors('slug');
 
-        $this->assertSame(1, CmsPage::where('domain_id', $this->network->id)->where('slug', 'chi-siamo')->count());
+        $this->assertSame(1, CmsPage::whereHas('domains', fn ($q) => $q->whereKey($this->network->id))->where('slug', 'chi-siamo')->count());
+    }
+
+    // Aziende esclusive di un dominio
+
+    public function test_un_azienda_esclusiva_si_vede_solo_sul_suo_dominio(): void
+    {
+        $this->trattoria->update(['exclusive_domain_id' => $this->network->id]);
+        // Anche fuori dal filtro del dominio: i calzaturifici non sono ristoranti.
+        $this->calzature->update(['exclusive_domain_id' => $this->network->id]);
+
+        // Su KSM non c'e', nemmeno scrivendo l'indirizzo.
+        $this->get(self::MAIN.'/aziende')->assertOk()->assertDontSee('Trattoria Mario')->assertDontSee('Calzature Rossi');
+        $this->get(self::MAIN.'/prodotti')->assertOk()->assertDontSee('Prodotto Trattoria Mario');
+        $this->get(self::MAIN.'/aziende/trattoria-mario')->assertNotFound();
+        $this->get(self::MAIN.'/prodotti/prodotto-trattoria-mario')->assertNotFound();
+        $this->assertStringNotContainsString('trattoria-mario', $this->get(self::MAIN.'/sitemap-aziende-1.xml')->getContent());
+
+        // Sul suo dominio si', anche l'azienda fuori filtro; i prodotti seguono la categoria del dominio.
+        $this->get(self::NETWORK.'/aziende')->assertOk()->assertSee('Trattoria Mario')->assertSee('Calzature Rossi');
+        $this->get(self::NETWORK.'/prodotti/prodotto-trattoria-mario')->assertOk();
+        $this->get(self::NETWORK.'/prodotti/prodotto-calzature-rossi')->assertNotFound();
+
+        // Sull'altro dominio, che per filtro la comprenderebbe, no.
+        $this->get(self::OTHER_NETWORK.'/aziende')->assertOk()->assertDontSee('Calzature Rossi');
+        $this->get(self::OTHER_NETWORK.'/prodotti/prodotto-calzature-rossi')->assertNotFound();
+
+        // Il suo dominio proprio resta suo.
+        $this->get(self::COMPANY_SITE.'/prodotti')->assertOk()->assertSee('Prodotto Trattoria Mario');
+    }
+
+    public function test_eliminare_il_dominio_spegne_le_sue_aziende_esclusive(): void
+    {
+        $this->calzature->update(['exclusive_domain_id' => $this->network->id]);
+
+        $this->network->delete();
+
+        $this->assertFalse($this->calzature->fresh()->is_active);
+        $this->assertNull($this->calzature->fresh()->exclusive_domain_id);
+        $this->get(self::MAIN.'/aziende/calzature-rossi')->assertNotFound();
     }
 
     // Sezioni della piattaforma
@@ -302,6 +374,26 @@ class DomainIsolationTest extends TestCase
         // L'altro dominio della rete non vede nessuno dei tre.
         $this->actingAs($buyer)->get(self::OTHER_NETWORK.'/account')->assertOk()->assertViewHas('orderCount', 0);
         $this->actingAs($buyer)->get(self::NETWORK.'/account')->assertOk()->assertViewHas('orderCount', 1);
+    }
+
+    public function test_gli_elenchi_ordini_dicono_da_quale_sito_arrivano(): void
+    {
+        $buyer = $this->buyer();
+        $this->order($buyer, $this->trattoria, ['site' => 'domain', 'domain_id' => $this->network->id]);
+        $this->order($buyer, $this->trattoria, ['site' => 'company']);
+        $this->order($buyer, $this->calzature, ['site' => 'platform']);
+
+        $this->actingAs($this->admin())->get(self::MAIN.route('admin.orders.index', [], false))
+            ->assertOk()
+            ->assertSee('<th>Sito</th>', false)
+            ->assertSee('cibocalabrese.test')
+            ->assertSee('trattoriamario.test');
+
+        $this->actingAs($this->trattoria->user)->get(self::MAIN.route('vendor.orders.index', [], false))
+            ->assertOk()
+            ->assertSee('<th>Sito</th>', false)
+            ->assertSee('cibocalabrese.test')
+            ->assertSee('trattoriamario.test');
     }
 
     public function test_un_ordine_nuovo_prende_il_sito_da_cui_si_compra(): void

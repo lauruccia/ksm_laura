@@ -84,7 +84,7 @@ class AdminMenuController extends Controller
             route('orders.track', [], false) => __('site.track_order'),
         ];
 
-        foreach (CmsPage::query()->whereNull('domain_id')->published()->orderBy('title')->get(['title', 'slug']) as $page) {
+        foreach (CmsPage::query()->where('on_platform', true)->published()->orderBy('title')->get(['title', 'slug']) as $page) {
             $pages[route('pages.show', $page->slug, false)] = 'Pagina: '.$page->title;
         }
 

@@ -241,6 +241,20 @@
             <div class="ksm-box__head"><h2>Dominio proprio</h2></div>
 
             <div class="ksm-field">
+                <label class="ksm-label" for="exclusive_domain_id">Visibile solo su</label>
+                <select class="ksm-select" id="exclusive_domain_id" name="exclusive_domain_id">
+                    <option value="">KSM e tutti i domini che la comprendono</option>
+                    @foreach ($networkDomains as $id => $host)
+                        <option value="{{ $id }}" @selected((string) old('exclusive_domain_id', $company->exclusive_domain_id) === (string) $id)>Solo {{ $host }}</option>
+                    @endforeach
+                </select>
+                <small class="ksm-muted">
+                    Con un dominio scelto, l'azienda e i suoi prodotti compaiono solo li' (e sul dominio qui sotto), non su KSM.
+                </small>
+                @error('exclusive_domain_id')<span class="ksm-error">{{ $message }}</span>@enderror
+            </div>
+
+            <div class="ksm-field">
                 <label class="ksm-label" for="custom_domain">Dominio</label>
                 <input class="ksm-input" id="custom_domain" name="custom_domain" placeholder="decinabus.it"
                        value="{{ old('custom_domain', $company->custom_domain) }}">

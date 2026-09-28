@@ -284,8 +284,17 @@ Fra un sito e l'altro:
   carrello restano del dominio su cui si e' entrati (cookie senza dominio);
 - **ordini**: `orders.site` e `orders.domain_id` dicono dove sono nati; area
   cliente e traccia ordine mostrano solo quelli del sito aperto;
-- **pagine CMS**: `cms_pages.domain_id`, vuoto per KSM. Lo slug e' unico
-  dentro il sito; una pagina si apre e va in mappa solo sul suo sito;
+- **pagine CMS**: una pagina sta sui siti spuntati in **Pagine, Siti**:
+  il sito principale (`cms_pages.on_platform`) e i domini
+  (`cms_page_domain`). Si apre e va in mappa solo li'; lo slug e' unico
+  dentro ciascun sito;
+- **aziende esclusive**: in **Aziende, Dominio proprio, Visibile solo su**
+  si sceglie un dominio (`companies.exclusive_domain_id`). L'azienda e i
+  suoi prodotti si vedono su quel dominio (anche fuori dal suo filtro
+  aziende; la categoria prodotto vale comunque) e sul suo dominio proprio,
+  mai su KSM ne' sugli altri domini. Eliminando il dominio le sue aziende
+  esclusive si spengono;
+- **elenchi ordini** di amministrazione e area azienda: colonna *Sito*;
 - **solo sul sito principale** (middleware `platform`, altrove 404): piani,
   iscrizione di aziende e inserzionisti, attivazione, abbonamento, area
   azienda, area inserzionista, amministrazione;

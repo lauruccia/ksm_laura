@@ -24,13 +24,14 @@
 
     <div class="ksm-table-wrap">
         <table class="ksm-table">
-            <thead><tr><th>Ordine</th><th>Data</th><th>Cliente</th><th>Totale</th><th>Stato</th><th></th></tr></thead>
+            <thead><tr><th>Ordine</th><th>Data</th><th>Cliente</th><th>Sito</th><th>Totale</th><th>Stato</th><th></th></tr></thead>
             <tbody>
             @forelse ($orders as $order)
                 <tr>
                     <td><a href="{{ route('vendor.orders.show', $order) }}" style="font-weight: 600;">{{ $order->reference }}</a></td>
                     <td style="white-space: nowrap;">{{ $order->created_at?->format('d/m/Y') }}</td>
                     <td>{{ $order->billing_name }}</td>
+                    <td>{{ $order->siteLabel() }}</td>
                     <td style="white-space: nowrap;">{{ \App\Support\Money::format($order->total) }}</td>
                     <td><span class="ksm-badge ksm-badge--{{ $order->status }}">{{ $order->statusLabel() }}</span></td>
                     <td style="text-align: right;">
@@ -38,7 +39,7 @@
                     </td>
                 </tr>
             @empty
-                <tr><td colspan="6" class="ksm-muted">Nessun ordine.</td></tr>
+                <tr><td colspan="7" class="ksm-muted">Nessun ordine.</td></tr>
             @endforelse
             </tbody>
         </table>

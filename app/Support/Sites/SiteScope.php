@@ -29,6 +29,10 @@ use Illuminate\Database\Eloquent\Builder;
  *
  * Sul dominio proprio di un'azienda il sito e' solo suo: la sua scheda e i
  * suoi prodotti, niente del resto del marketplace.
+ *
+ * Un'azienda esclusiva di un dominio (companies.exclusive_domain_id) si vede
+ * su quel dominio anche fuori dal suo filtro aziende (la categoria prodotto
+ * vale comunque per i prodotti), e mai su KSM ne' sugli altri domini.
  */
 final class SiteScope
 {
@@ -118,12 +122,18 @@ final class SiteScope
 
         return $query
             ->when($this->productCategoryIds(), fn ($q, $ids) => $q->whereIn("$table.category_id", $ids))
-            // Solo aziende della categoria e del luogo del dominio. Non si usa companies():
-            // con company_scope products le aziende dipendono a loro volta dai prodotti.
-            ->when($this->companyCategoryIds() || $this->place(), fn ($q) => $q->whereIn(
-                "$table.company_id",
-                $this->byCategoryAndPlace(Company::query())->select('companies.id')
-            ));
+            ->where(fn ($q) => $q
+                ->where(fn ($q) => $q
+                    // Solo aziende della categoria e del luogo del dominio. Non si usa companies():
+                    // con company_scope products le aziende dipendono a loro volta dai prodotti.
+                    ->when($this->companyCategoryIds() || $this->place(), fn ($q) => $q->whereIn(
+                        "$table.company_id",
+                        $this->byCategoryAndPlace(Company::query())->select('companies.id')
+                    ))
+                    // Mai i prodotti delle aziende che hanno scelto un altro dominio, o un dominio se si e' su KSM.
+                    ->whereNotIn("$table.company_id", $this->exclusiveElsewhere()))
+                // Le aziende esclusive del dominio ci stanno anche fuori dal suo filtro aziende.
+                ->when($this->domain, fn ($q) => $q->orWhereIn("$table.company_id", $this->exclusiveHere())));
     }
 
     /** Limita una query di aziende a quelle del dominio. Colonne qualificate: la directory unisce `plans`. */
@@ -133,23 +143,45 @@ final class SiteScope
             return $query->where('companies.id', $this->company->getKey());
         }
 
-        return $this->byCategoryAndPlace($query)
-            ->when($this->requiresProducts(), fn ($q) => $q->whereIn(
-                'companies.id',
-                Product::query()->active()
-                    ->when($this->productCategoryIds(), fn ($p, $ids) => $p->whereIn('products.category_id', $ids))
-                    ->select('products.company_id')
-            ));
+        return $query->where(fn ($q) => $q
+            ->where(fn ($q) => $this->byCategoryAndPlace($q)
+                ->when($this->requiresProducts(), fn ($q) => $q->whereIn(
+                    'companies.id',
+                    Product::query()->active()
+                        ->when($this->productCategoryIds(), fn ($p, $ids) => $p->whereIn('products.category_id', $ids))
+                        ->select('products.company_id')
+                ))
+                ->where(fn ($q) => $q->whereNull('companies.exclusive_domain_id')
+                    ->when($this->domain, fn ($q) => $q->orWhere('companies.exclusive_domain_id', $this->domain->getKey()))))
+            ->when($this->domain, fn ($q) => $q->orWhere('companies.exclusive_domain_id', $this->domain->getKey())));
     }
 
+    /**
+     * Anche sul sito principale si controlla: le aziende esclusive di un
+     * dominio non si aprono su KSM, nemmeno scrivendo l'indirizzo a mano.
+     */
     public function allowsProduct(Product $product): bool
     {
-        return ! $this->isRestricted() || $this->products(Product::query()->whereKey($product->getKey()))->exists();
+        return $this->products(Product::query()->whereKey($product->getKey()))->exists();
     }
 
     public function allowsCompany(Company $company): bool
     {
-        return ! $this->isRestricted() || $this->companies(Company::query()->whereKey($company->getKey()))->exists();
+        return $this->companies(Company::query()->whereKey($company->getKey()))->exists();
+    }
+
+    /** Aziende che si vedono solo su un dominio diverso da questo (su KSM: tutte le esclusive). */
+    private function exclusiveElsewhere(): Builder
+    {
+        return Company::query()
+            ->whereNotNull('exclusive_domain_id')
+            ->when($this->domain, fn ($q) => $q->where('exclusive_domain_id', '!=', $this->domain->getKey()))
+            ->select('id');
+    }
+
+    private function exclusiveHere(): Builder
+    {
+        return Company::query()->where('exclusive_domain_id', $this->domain?->getKey())->select('id');
     }
 
     private function requiresProducts(): bool

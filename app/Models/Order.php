@@ -73,6 +73,16 @@ class Order extends Model
         };
     }
 
+    /** Da dove e' arrivato l'ordine, per gli elenchi: KSM, il dominio della rete o quello dell'azienda. */
+    public function siteLabel(): string
+    {
+        return match ($this->site) {
+            'domain' => $this->domain?->domain ?? 'Dominio eliminato',
+            'company' => $this->company?->custom_domain ?: 'Sito dell\'azienda',
+            default => config('ksm.brand_name'),
+        };
+    }
+
     public function domain(): BelongsTo
     {
         return $this->belongsTo(Domain::class);

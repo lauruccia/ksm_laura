@@ -13,7 +13,7 @@ class VendorOrderController extends Controller
     public function index(Request $request): View
     {
         $orders = $request->user()->company->orders()
-            ->with('items')
+            ->with(['items', 'domain', 'company'])
             ->when($request->string('stato')->toString(), fn ($q, $s) => $q->where('status', $s))
             ->latest()
             ->paginate(20)

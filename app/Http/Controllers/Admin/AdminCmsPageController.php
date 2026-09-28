@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class AdminCmsPageController extends AdminResourceController
 {
@@ -28,8 +29,9 @@ class AdminCmsPageController extends AdminResourceController
     protected function formData(): array
     {
         return [
-            // Vuoto: il sito principale. Una pagina si vede solo sul suo sito.
-            'domain_id' => Domain::query()->orderBy('domain')->pluck('domain', 'id'),
+            // La stessa pagina puo' stare su piu' siti: si vede solo su quelli spuntati.
+            'sites' => collect([CmsPage::PLATFORM => 'Sito principale (KSM)'])
+                ->union(Domain::query()->orderBy('domain')->pluck('domain', 'id')),
             'status' => collect(['draft' => 'Bozza', 'published' => 'Pubblicata']),
             'visibility' => collect(['visible' => 'Visibile', 'hidden' => 'Nascosta']),
             'locations' => collect(['header' => 'Intestazione', 'footer' => 'Piede']),
@@ -39,7 +41,7 @@ class AdminCmsPageController extends AdminResourceController
     protected function fields(): array
     {
         return [
-            'domain_id' => ['label' => 'Sito', 'type' => 'select', 'empty' => 'Sito principale (KSM)'],
+            'sites' => ['label' => 'Siti', 'type' => 'checkboxes'],
             'title' => ['label' => 'Titolo', 'type' => 'text'],
             'slug' => ['label' => 'Slug', 'type' => 'text'],
             'content' => ['label' => 'Contenuto', 'type' => 'textarea', 'rows' => 14],
@@ -57,10 +59,10 @@ class AdminCmsPageController extends AdminResourceController
     {
         return [
             'title' => ['required', 'string', 'max:255'],
-            'domain_id' => ['nullable', 'integer', 'exists:domains,id'],
-            // Lo slug e' unico dentro il sito: due domini possono avere la stessa "chi-siamo".
-            'slug' => ['nullable', 'string', 'max:255', Rule::unique('cms_pages', 'slug')->ignore($record)
-                ->where(fn ($q) => $request->filled('domain_id') ? $q->where('domain_id', $request->integer('domain_id')) : $q->whereNull('domain_id'))],
+            'sites' => ['required', 'array', 'min:1'],
+            'sites.*' => ['string', Rule::in([CmsPage::PLATFORM, ...Domain::query()->pluck('id')->map(fn ($id) => (string) $id)->all()])],
+            // Unico dentro ciascun sito: lo controlla transform(), quando lo slug e' deciso.
+            'slug' => ['nullable', 'string', 'max:255'],
             'content' => ['nullable', 'string'],
             'status' => ['required', 'in:draft,published'],
             'visibility' => ['required', 'in:visible,hidden'],
@@ -75,18 +77,43 @@ class AdminCmsPageController extends AdminResourceController
 
     protected function prepareRows(\Illuminate\Support\Collection $records): void
     {
-        $records->load('domain');
+        $records->load('domains');
     }
 
     protected function transform(array $data, Request $request, ?Model $record = null): array
     {
         $data['slug'] = $data['slug'] ?: Str::slug($data['title']);
-        $data['domain_id'] = $data['domain_id'] ?? null;
+        $this->ensureSlugIsFree($data['slug'], $data['sites'], $record);
         $data['include_in_sitemap'] = $request->boolean('include_in_sitemap');
         $data['published_at'] = $data['status'] === 'published' ? now() : null;
 
         Navigation::flush();
 
         return $data;
+    }
+
+    /**
+     * Su ogni sito un indirizzo porta a una pagina sola: lo slug non deve
+     * essere gia' di un'altra pagina che sta su uno dei siti scelti.
+     *
+     * @param  list<string>  $sites
+     */
+    private function ensureSlugIsFree(string $slug, array $sites, ?Model $record): void
+    {
+        $domains = array_map('intval', array_diff($sites, [CmsPage::PLATFORM]));
+
+        $taken = CmsPage::query()
+            ->where('slug', $slug)
+            ->when($record, fn ($q) => $q->whereKeyNot($record->getKey()))
+            ->where(fn ($q) => $q
+                ->when(in_array(CmsPage::PLATFORM, $sites, true), fn ($q) => $q->orWhere('on_platform', true))
+                ->when($domains, fn ($q) => $q->orWhereHas('domains', fn ($d) => $d->whereKey($domains))))
+            ->exists();
+
+        if ($taken) {
+            throw ValidationException::withMessages([
+                'slug' => __('Su uno dei siti scelti c\'e\' gia\' una pagina con questo indirizzo.'),
+            ]);
+        }
     }
 }

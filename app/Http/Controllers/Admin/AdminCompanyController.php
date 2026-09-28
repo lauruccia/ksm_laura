@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Company;
 use App\Models\CompanyCategory;
+use App\Models\Domain;
 use App\Models\CompanyPaymentSetting;
 use App\Models\Plan;
 use App\Models\ProductCategory;
@@ -275,6 +276,7 @@ class AdminCompanyController extends Controller
                     }
                 },
             ],
+            'exclusive_domain_id' => ['nullable', 'integer', 'exists:domains,id'],
             'base_shipping_rate' => ['nullable', 'numeric', 'min:0', 'max:99999'],
             'per_kg_rate' => ['nullable', 'numeric', 'min:0', 'max:99999'],
             'address' => ['nullable', 'string', 'max:255'],
@@ -317,6 +319,7 @@ class AdminCompanyController extends Controller
             'name', 'category_id', 'email', 'phone', 'website', 'custom_domain', 'base_shipping_rate', 'per_kg_rate',
             'address', 'city', 'region', 'company_location',
         ]) + [
+            'exclusive_domain_id' => $data['exclusive_domain_id'] ?? null,
             'company_description' => RichText::clean($data['company_description'] ?? null),
             'is_active' => (bool) ($data['is_active'] ?? false),
             'working_hours' => WorkingHours::normalize($data['working_hours'] ?? null) ?: null,
@@ -443,6 +446,7 @@ class AdminCompanyController extends Controller
             'plans' => Plan::byRank()->get(),
             // Con il percorso: al terzo livello i nomi da soli non dicono dove stanno.
             'categories' => CategoryTree::of(CompanyCategory::class)->labels(),
+            'networkDomains' => Domain::query()->orderBy('domain')->pluck('domain', 'id'),
             'days' => WorkingHours::DAYS,
             'galleryMax' => self::GALLERY_MAX,
             'subscription' => $company->exists ? $company->activeSubscription() : null,
