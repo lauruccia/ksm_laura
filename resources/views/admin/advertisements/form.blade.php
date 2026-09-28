@@ -146,20 +146,9 @@
 
             <div class="ksm-field">
                 <span class="ksm-label">Domini</span>
-                <div class="ksm-checkgrid">
-                    <label>
-                        <input type="checkbox" name="target_domains[]" value="{{ \App\Support\Ads\AdContext::MAIN_SITE }}"
-                               @checked(in_array((string) \App\Support\Ads\AdContext::MAIN_SITE, $chosenDomains, true))>
-                        Sito principale
-                    </label>
-                    @foreach ($domains as $domain)
-                        <label>
-                            <input type="checkbox" name="target_domains[]" value="{{ $domain->id }}"
-                                   @checked(in_array((string) $domain->id, $chosenDomains, true))>
-                            {{ $domain->domain }}
-                        </label>
-                    @endforeach
-                </div>
+                <x-multiselect name="target_domains" id="target_domains" placeholder="Cerca un dominio"
+                               :options="[(string) \App\Support\Ads\AdContext::MAIN_SITE => 'Sito principale'] + $domains->pluck('domain', 'id')->all()"
+                               :selected="$chosenDomains" />
                 @error('target_domains.*')<span class="ksm-error">{{ $message }}</span>@enderror
             </div>
 

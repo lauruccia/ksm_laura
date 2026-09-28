@@ -24,7 +24,7 @@
             @php($value = old($name, $record->$name))
             @php($type = $field['type'])
 
-            <div class="ksm-field @if (in_array($type, ['textarea', 'checkboxes', 'list'], true)) ksm-field--wide @endif">
+            <div class="ksm-field @if (in_array($type, ['textarea', 'checkboxes', 'multiselect', 'list'], true)) ksm-field--wide @endif">
                 @if ($type !== 'checkbox')
                     <label class="ksm-label" for="{{ $name }}">{{ $field['label'] }}</label>
                 @endif
@@ -52,6 +52,12 @@
                             <input id="{{ $name }}" name="{{ $name }}" type="checkbox" value="1" @checked($value)>
                             {{ $field['label'] }}
                         </label>
+                        @break
+
+                    @case('multiselect')
+                        <x-multiselect :name="$name" :options="$options[$name] ?? []" :id="$name"
+                                       :selected="(array) old($name, $record->$name ?? [])"
+                                       :placeholder="$field['placeholder'] ?? 'Cerca...'" />
                         @break
 
                     @case('checkboxes')

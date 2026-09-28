@@ -1438,3 +1438,133 @@ body:not(:has([data-bulk])) [data-bulk-page] { visibility: hidden; }
     .ksm-panel__main .ksm-listhead__search .ksm-input { width: 100%; }
     .ksm-panel__main .ksm-listhead__filters .ksm-select { flex: 1 1 auto; }
 }
+
+/* Scelta multipla con ricerca (<x-multiselect>) -------------------------- */
+
+.ksm-multiselect { position: relative; }
+
+/* Senza script: le caselle in un riquadro scorrevole. */
+.ksm-multiselect__list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 4px 16px;
+    max-height: 240px;
+    overflow: auto;
+    padding: 4px 0;
+}
+
+.ksm-multiselect__option {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    padding: 4px 6px;
+    border-radius: var(--ksm-radius-sm);
+    font-size: .92rem;
+    cursor: pointer;
+}
+
+.ksm-multiselect__option[hidden] { display: none; }
+.ksm-multiselect__option:hover { background: var(--ksm-canvas); }
+
+.ksm-multiselect__box {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center;
+    min-height: 48px;
+    padding: 6px 10px;
+    border: 1px solid var(--ksm-line);
+    border-radius: var(--ksm-radius);
+    background: #fff;
+    cursor: text;
+}
+
+.ksm-multiselect.is-open .ksm-multiselect__box {
+    border-color: var(--ksm-accent);
+    box-shadow: var(--ksm-ring);
+}
+
+.ksm-multiselect__box[hidden] { display: none; }
+.ksm-multiselect__chips { display: contents; }
+
+.ksm-multiselect__chip {
+    display: inline-flex;
+    gap: 4px;
+    align-items: center;
+    padding: 3px 4px 3px 10px;
+    border-radius: var(--ksm-radius-pill);
+    background: var(--ksm-accent-soft);
+    color: var(--ksm-ink);
+    font-size: .85rem;
+    line-height: 1.3;
+}
+
+.ksm-multiselect__chip button {
+    width: 20px;
+    height: 20px;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: inherit;
+    font-size: 1rem;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.ksm-multiselect__chip button:hover { background: rgba(0, 0, 0, .08); }
+
+.ksm-multiselect__search {
+    flex: 1 1 140px;
+    min-width: 120px;
+    padding: 6px 4px;
+    border: 0;
+    outline: none;
+    font: inherit;
+    color: var(--ksm-ink);
+    background: transparent;
+}
+
+/* Con lo script l'elenco compare sotto il campo solo quando e' aperto. */
+.ksm-multiselect.is-enhanced .ksm-multiselect__panel {
+    display: none;
+    position: absolute;
+    z-index: 20;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    padding: 8px 10px 10px;
+    border: 1px solid var(--ksm-line);
+    border-radius: var(--ksm-radius);
+    background: #fff;
+    box-shadow: var(--ksm-shadow-md);
+}
+
+.ksm-multiselect.is-enhanced.is-open .ksm-multiselect__panel { display: block; }
+.ksm-multiselect.is-enhanced .ksm-multiselect__list { grid-template-columns: minmax(0, 1fr); max-height: 260px; }
+
+.ksm-multiselect__tools {
+    display: flex;
+    gap: 14px;
+    align-items: center;
+    padding: 0 6px 6px;
+    border-bottom: 1px solid var(--ksm-line-soft);
+    margin-bottom: 6px;
+    font-size: .85rem;
+}
+
+.ksm-multiselect__tools[hidden] { display: none; }
+.ksm-multiselect__tools span { margin-right: auto; }
+.ksm-multiselect__tools > * { white-space: nowrap; }
+.ksm-multiselect__empty { margin: 6px; font-size: .88rem; }
+
+.ksm-linkbtn {
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--ksm-accent-dark);
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.ksm-linkbtn:hover { text-decoration: underline; }

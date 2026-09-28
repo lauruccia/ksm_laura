@@ -41,7 +41,7 @@ class AdminCmsPageController extends AdminResourceController
     protected function fields(): array
     {
         return [
-            'sites' => ['label' => 'Siti', 'type' => 'checkboxes'],
+            'sites' => ['label' => 'Siti', 'type' => 'multiselect', 'placeholder' => 'Cerca un sito'],
             'title' => ['label' => 'Titolo', 'type' => 'text'],
             'slug' => ['label' => 'Slug', 'type' => 'text'],
             'content' => ['label' => 'Contenuto', 'type' => 'textarea', 'rows' => 14],

@@ -14,6 +14,7 @@
     <link rel="stylesheet" href="{{ asset('css/components.css') }}?v={{ filemtime(public_path('css/components.css')) }}">
     <link rel="stylesheet" href="{{ asset('css/panel.css') }}?v={{ filemtime(public_path('css/panel.css')) }}">
     <script src="{{ asset('js/tables.js') }}?v={{ filemtime(public_path('js/tables.js')) }}" defer></script>
+    <script src="{{ asset('js/multiselect.js') }}?v={{ filemtime(public_path('js/multiselect.js')) }}" defer></script>
 </head>
 <body>
 {{-- La spunta nascosta apre e chiude la colonna sui telefoni: niente script. --}}
