@@ -85,6 +85,7 @@ class CompanyDirectoryFilterTest extends TestCase
         $other = CompanyCategory::create(['name' => 'Ristoranti', 'slug' => 'ristoranti']);
 
         $this->company('Edilnord Costruzioni', $leaf);
+        $this->company('Trattoria da Mario', $other);
 
         $html = $this->get(route('companies.index', ['categoria' => $leaf->id, 'cerca' => 'edil']))
             ->assertOk()
@@ -100,5 +101,22 @@ class CompanyDirectoryFilterTest extends TestCase
         // La voce attiva e' segnata e i link cambiano solo la categoria.
         $this->assertMatchesRegularExpression('/is-current[^>]*href="[^"]*categoria='.$leaf->id.'[^"]*"\s+aria-current="page"/', $html);
         $this->assertStringContainsString(e(route('companies.index', ['cerca' => 'edil', 'categoria' => $other->id])), $html);
+    }
+
+    public function test_il_menu_laterale_nasconde_categorie_e_sottocategorie_vuote(): void
+    {
+        $root = CompanyCategory::create(['name' => 'Costruire e Abitare', 'slug' => 'costruire-e-abitare']);
+        $used = CompanyCategory::create(['name' => 'Imprese Edili', 'slug' => 'imprese-edili', 'parent_id' => $root->id]);
+        CompanyCategory::create(['name' => 'Amianto', 'slug' => 'amianto', 'parent_id' => $root->id]);
+        CompanyCategory::create(['name' => 'Ristoranti', 'slug' => 'ristoranti']);
+
+        $this->company('Edilnord Costruzioni', $used);
+
+        $this->get(route('companies.index'))
+            ->assertOk()
+            // La madre resta perche' ha una figlia con aziende; le vuote no.
+            ->assertSeeInOrder(['Costruire e Abitare', 'Imprese Edili'])
+            ->assertDontSee('Amianto')
+            ->assertDontSee('Ristoranti');
     }
 }

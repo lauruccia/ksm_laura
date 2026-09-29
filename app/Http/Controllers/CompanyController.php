@@ -19,8 +19,8 @@ use Illuminate\Http\Response;
 
 class CompanyController extends Controller
 {
-    /** Secondi di validita' delle categorie usate dalle aziende di un dominio. */
-    private const SCOPED_CATEGORIES_TTL = 3600;
+    /** Secondi di validita' delle categorie usate dalle aziende della directory. */
+    private const SCOPED_CATEGORIES_TTL = 300;
 
     public function __construct(private readonly CompanyDirectory $directory)
     {
@@ -44,10 +44,9 @@ class CompanyController extends Controller
 
         $scope = $tenant->scope();
 
-        // Sui domini il menu mostra solo le categorie delle aziende del dominio, con le loro madri.
-        $tree = $scope->isRestricted()
-            ? new CategoryTree($this->scopedCategories($tenant, $scope->companies(Company::query()->active()->inDirectory())))
-            : CategoryTree::of(CompanyCategory::class);
+        // Il menu mostra solo le categorie che hanno aziende (con le loro madri),
+        // a ogni livello: quelle vuote e le sottocategorie vuote restano fuori.
+        $tree = new CategoryTree($this->scopedCategories($tenant, $scope->companies(Company::query()->active()->inDirectory())));
 
         // Colonne sempre qualificate: la directory unisce anche `plans`,
         // che ha a sua volta una colonna `name`.
