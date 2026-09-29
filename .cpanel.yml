@@ -5,7 +5,8 @@
 # I file cancellati nel repository non vengono tolti dal server.
 deployment:
   tasks:
-    - export DEPLOYPATH=/home2/ilnetwork/ksm-next
+    # $HOME vale sia per l'account ksm (produzione) sia per ilnetwork (prova).
+    - export DEPLOYPATH=$HOME/ksm-next
     - export PHP=/usr/local/bin/ea-php83
     # Il .htaccess del server sceglie PHP 8.3: non va sovrascritto.
     - /bin/cp $DEPLOYPATH/public/.htaccess /tmp/ksm-htaccess-$USER
