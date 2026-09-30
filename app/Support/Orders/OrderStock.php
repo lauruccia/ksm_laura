@@ -65,13 +65,21 @@ class OrderStock
 
         if ($item->product_variant_id) {
             $variant = ProductVariant::whereKey($item->product_variant_id)->where('product_id', $item->product_id)
-                ->whereNotNull('variant_stock')->where('variant_stock', '!=', '');
-            $quantity < 0 ? $variant->decrement('variant_stock', -$quantity) : $variant->increment('variant_stock', $quantity);
+                ->whereNotNull('variant_stock')->where('variant_stock', '!=', '')->lockForUpdate()->first();
+
+            if ($variant) {
+                $variant->variant_stock = (string) ((int) $variant->variant_stock + $quantity);
+                $variant->save();
+            }
 
             return;
         }
 
-        $product = Product::whereKey($item->product_id)->whereNotNull('stock');
-        $quantity < 0 ? $product->decrement('stock', -$quantity) : $product->increment('stock', $quantity);
+        $product = Product::whereKey($item->product_id)->whereNotNull('stock')->lockForUpdate()->first();
+
+        if ($product) {
+            $product->stock += $quantity;
+            $product->save();
+        }
     }
 }

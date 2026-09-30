@@ -25,6 +25,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 use Illuminate\Validation\Rule;
 
 /**
@@ -92,8 +93,19 @@ class AdminDomainController extends AdminResourceController
             $counts[$state] = $this->filters(Domain::query(), $request->duplicate(array_merge($request->query(), ['stato' => $state])))->count();
         }
 
+        // Gli errori piu' frequenti fra i domini filtrati: con centinaia di righe
+        // lo stesso problema (un pacchetto, un token) si vede qui una volta sola.
+        $topErrors = $this->filters(Domain::query(), $request->duplicate(Arr::except($request->query(), ['errore'])))
+            ->whereNotNull('domain_error')->where('domain_error', '!=', '')
+            ->selectRaw('domain_error, COUNT(*) as total')
+            ->groupBy('domain_error')
+            ->orderByDesc('total')
+            ->limit(3)
+            ->get();
+
         return view('admin.domains.index', [
             'records' => $records,
+            'topErrors' => $topErrors,
             'counts' => $counts,
             'states' => self::STATES,
             'sorts' => self::SORTS,
@@ -111,6 +123,7 @@ class AdminDomainController extends AdminResourceController
             ->when($term !== '', fn ($q) => $q->where(fn ($q) => $q->where('name', 'like', "%$term%")->orWhere('domain', 'like', "%$term%")))
             ->when(in_array($request->input('tipo'), Domain::TYPES, true), fn ($q) => $q->where('type', $request->input('tipo')))
             ->when(in_array($request->input('attivo'), ['1', '0'], true), fn ($q) => $q->where('is_active', $request->input('attivo') === '1'))
+            ->when($request->filled('errore'), fn ($q) => $q->where('domain_error', $request->string('errore')->toString()))
             ->when($request->input('stato'), fn ($q, $state) => match ($state) {
                 'collegato' => $q->whereNotNull('dns_verified_at')->whereNotNull('ssl_verified_at'),
                 'certificato' => $q->whereNotNull('dns_verified_at')->whereNull('ssl_verified_at'),

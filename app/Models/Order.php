@@ -11,6 +11,8 @@ use Illuminate\Support\Collection;
 
 class Order extends Model
 {
+    use Concerns\HasConnectorIdentity;
+
     public const STATUSES = ['pending', 'paid', 'shipped', 'completed', 'cancelled'];
 
     /** Gli stati come si leggono nei pannelli. */

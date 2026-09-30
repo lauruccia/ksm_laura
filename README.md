@@ -22,6 +22,13 @@ manca un piano la directory resta vuota, perche' un'azienda si vede solo se
 ne ha uno attivo. Per accendere le aziende di prova, da **Abbonamenti** si
 assegna loro un piano.
 
+## Portal Connector API
+
+KMoney e gli altri portali autorizzati possono leggere identita aziendale,
+catalogo e ordini e aggiornare inventario e spedizioni tramite la Portal
+Connector API v1. Configurazione, contratto, scope, idempotenza, outbox ed esempi sono in
+[`docs/portal-connector-api-v1.md`](docs/portal-connector-api-v1.md).
+
 ## In produzione
 
 Nel `.env` del server, diverso da quello di sviluppo:

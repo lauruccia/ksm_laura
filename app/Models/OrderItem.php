@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class OrderItem extends Model
 {
+    use Concerns\HasConnectorIdentity;
+
     protected $fillable = [
         'order_id', 'product_id', 'product_name', 'product_price', 'quantity', 'subtotal',
         'kmoney_percent', 'kmoney_amount', 'product_variant_id',
@@ -25,5 +27,10 @@ class OrderItem extends Model
     public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class);
+    }
+
+    public function variant(): BelongsTo
+    {
+        return $this->belongsTo(ProductVariant::class, 'product_variant_id');
     }
 }

@@ -238,7 +238,11 @@ class WhmHostingPanel implements HostingPanel
         ]));
 
         if (! $response->successful() || ! $response->json('metadata.result')) {
-            return 'Account proxy non creato: '.($response->json('metadata.reason') ?: 'HTTP '.$response->status());
+            $reason = $response->json('metadata.reason') ?: 'HTTP '.$response->status();
+
+            // Il messaggio della WHM non dice cosa fare: il pacchetto e' quello di Server e hosting (o del .env).
+            return 'Account proxy non creato: '.$reason
+                .(str_contains(strtolower($reason), 'package') ? " (pacchetto \"{$this->proxyPlan}\": controllalo in Domini, Server e hosting, con Prova la connessione)" : '');
         }
 
         return $this->installProxy($user, $host);

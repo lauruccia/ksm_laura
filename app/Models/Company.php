@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Company extends Model
 {
-    use Concerns\HasDomainConnection;
+    use Concerns\HasConnectorIdentity, Concerns\HasDomainConnection;
 
     /** Colonna con il nome del dominio, per lo stato di collegamento. */
     public function domainColumn(): string
@@ -63,6 +63,11 @@ class Company extends Model
     public function orders(): HasMany
     {
         return $this->hasMany(Order::class);
+    }
+
+    public function managementApiTokens(): HasMany
+    {
+        return $this->hasMany(ManagementApiToken::class);
     }
 
     public function reviews(): HasMany

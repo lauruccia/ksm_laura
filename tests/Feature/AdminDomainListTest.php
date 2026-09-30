@@ -165,4 +165,22 @@ class AdminDomainListTest extends TestCase
 
         $this->actingAs($this->admin())->patch(route('admin.domains.hosting.test'))->assertSessionHas('success');
     }
+
+    public function test_gli_errori_piu_frequenti_e_il_filtro_per_errore(): void
+    {
+        $package = 'Account proxy non creato: Sorry, unable to use package x';
+        $this->domain('uno.it', ['domain_checked_at' => now(), 'domain_error' => $package]);
+        $this->domain('due.it', ['domain_checked_at' => now(), 'domain_error' => $package]);
+        $this->domain('tre.it', ['domain_checked_at' => now(), 'domain_error' => 'Nessun record DNS trovato per il dominio.']);
+
+        $response = $this->actingAs($this->admin())->get(route('admin.domains.index'))->assertOk()->assertSee('Errori più frequenti');
+        $this->assertSame([$package, 'Nessun record DNS trovato per il dominio.'], $response->viewData('topErrors')->pluck('domain_error')->all());
+
+        $this->actingAs($this->admin())->get(route('admin.domains.index', ['errore' => $package]))
+            ->assertSee('uno.it')->assertSee('due.it')->assertDontSee('tre.it');
+
+        $this->actingAs($this->admin())
+            ->patch(route('admin.domains.bulk'), ['action' => 'reconnect', 'scope' => 'all', 'errore' => $package]);
+        Queue::assertPushed(RegisterDomainOnHostingPanel::class, 2);
+    }
 }

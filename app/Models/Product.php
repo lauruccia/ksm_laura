@@ -8,6 +8,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Product extends Model
 {
+    use Concerns\HasConnectorIdentity;
+
     protected $fillable = [
         'company_id', 'category_id', 'brand_id', 'name', 'slug', 'sku',
         'short_description', 'description', 'price', 'discount_price',

@@ -7,7 +7,7 @@
 @section('content')
     @php
         $canHosting = auth()->user()->can(\App\Support\Permissions::SETTINGS_MANAGE);
-        $filterKeys = ['cerca', 'stato', 'tipo', 'attivo', 'ordina', 'per_pagina'];
+        $filterKeys = ['cerca', 'stato', 'tipo', 'attivo', 'errore', 'ordina', 'per_pagina'];
         // Lo stesso elenco con uno stato diverso, per i contatori cliccabili.
         $stateUrl = fn (?string $state) => route('admin.domains.index', array_filter(
             array_merge(request()->only($filterKeys), ['stato' => $state, 'page' => null]),
@@ -24,7 +24,16 @@
     <div class="ksm-listhead">
         <h1>Domini <span class="ksm-listhead__count">{{ number_format($records->total(), 0, ',', '.') }}</span></h1>
 
-        <form method="GET" class="ksm-listhead__filters" role="search">
+        <span class="ksm-listhead__actions" style="margin-left: auto;">
+            @if ($canHosting)
+                <a class="ksm-btn ksm-btn--ghost ksm-btn--sm" href="{{ route('admin.domains.hosting') }}"><x-icon name="settings" :size="16" /> Server e hosting</a>
+            @endif
+            <a class="ksm-btn ksm-btn--primary ksm-btn--sm" href="{{ route('admin.domains.create') }}">Nuovo</a>
+        </span>
+    </div>
+
+    {{-- I filtri su una riga loro, sotto il titolo: con sei scelte la testata non basta. --}}
+    <form method="GET" class="ksm-listhead__filters ksm-domain-toolbar" role="search">
             <span class="ksm-listhead__search">
                 <x-icon name="search" :size="16" />
                 <input class="ksm-input" type="search" name="cerca" value="{{ request('cerca') }}" placeholder="Nome o dominio" aria-label="Nome o dominio">
@@ -53,7 +62,7 @@
             </select>
             <select class="ksm-select" name="per_pagina" aria-label="Per pagina" onchange="this.form.submit()">
                 @foreach ($perPageOptions as $size)
-                    <option value="{{ $size }}" @selected((int) request('per_pagina', 50) === $size)>{{ $size }} per pagina</option>
+                    <option value="{{ $size }}" @selected((int) request('per_pagina', 50) === $size)>{{ $size }} / pag.</option>
                 @endforeach
             </select>
             <button class="ksm-btn ksm-btn--ghost ksm-btn--sm" type="submit">Cerca</button>
@@ -61,14 +70,6 @@
                 <a class="ksm-btn ksm-btn--ghost ksm-btn--sm" href="{{ route('admin.domains.index') }}">Azzera</a>
             @endif
         </form>
-
-        <span class="ksm-listhead__actions">
-            @if ($canHosting)
-                <a class="ksm-btn ksm-btn--ghost ksm-btn--sm" href="{{ route('admin.domains.hosting') }}"><x-icon name="settings" :size="16" /> Server e hosting</a>
-            @endif
-            <a class="ksm-btn ksm-btn--primary ksm-btn--sm" href="{{ route('admin.domains.create') }}">Nuovo</a>
-        </span>
-    </div>
 
     {{-- Quanti domini per stato: un clic filtra l'elenco. --}}
     <div class="ksm-domain-states">
@@ -82,6 +83,26 @@
             {{ $hosting['panel'] }} · IP {{ implode(', ', $hosting['ips']) ?: 'non impostato' }}@if ($hosting['cname']) · CNAME {{ $hosting['cname'] }}@endif
         </span>
     </div>
+
+    {{-- Lo stesso errore su tanti domini si legge una volta sola, con un clic per filtrarli (e poi Ricollegarli). --}}
+    @if ($topErrors->isNotEmpty())
+        <div class="ksm-domain-errors">
+            <strong>Errori più frequenti</strong>
+            <ul>
+                @foreach ($topErrors as $error)
+                    <li>
+                        <a href="{{ route('admin.domains.index', array_filter(array_merge(request()->only($filterKeys), ['errore' => $error->domain_error, 'stato' => null]), fn ($v) => filled($v))) }}">
+                            <span class="ksm-domain-errors__count">{{ number_format($error->total, 0, ',', '.') }}</span>
+                            <span>{{ $error->domain_error }}</span>
+                        </a>
+                    </li>
+                @endforeach
+            </ul>
+            @if (request()->filled('errore'))
+                <a class="ksm-btn ksm-btn--ghost ksm-btn--sm" href="{{ route('admin.domains.index', request()->except(['errore', 'page'])) }}">Mostra tutti gli errori</a>
+            @endif
+        </div>
+    @endif
 
     @if ($records->isNotEmpty())
         @include('partials.bulk-bar', [
@@ -101,53 +122,56 @@
     @endif
 
     <div class="ksm-table-wrap">
-        <table class="ksm-table">
+        <table class="ksm-table ksm-domains-table">
             <thead>
             <tr>
                 <th class="ksm-bulk__cell"><input type="checkbox" data-bulk-page aria-label="Seleziona tutti in questa pagina"></th>
-                <th>Nome</th>
                 <th>Dominio</th>
-                <th>Tipo</th>
-                <th>Attivo</th>
                 <th>Collegamento</th>
-                <th>Ultima verifica</th>
-                <th></th>
+                <th>Verificato</th>
+                <th class="ksm-domains-table__actions"></th>
             </tr>
             </thead>
             <tbody>
             @forelse ($records as $domain)
-                <tr>
+                <tr @class(['is-off' => ! $domain->is_active])>
                     <td class="ksm-bulk__cell">
                         <input type="checkbox" name="ids[]" value="{{ $domain->id }}" form="bulk" data-bulk-item aria-label="Seleziona {{ $domain->domain }}">
                     </td>
-                    <td><a href="{{ route('admin.domains.edit', $domain) }}" style="font-weight: 600; color: var(--ksm-ink);">{{ $domain->name }}</a></td>
-                    <td><a href="https://{{ $domain->domain }}" target="_blank" rel="noopener">{{ $domain->domain }}</a></td>
-                    <td>{{ $domain->type }}</td>
-                    <td><span class="ksm-badge @unless ($domain->is_active) ksm-badge--muted @endunless">{{ $domain->is_active ? 'Sì' : 'No' }}</span></td>
                     <td>
+                        <div class="ksm-domains-table__host">
+                            <a href="{{ route('admin.domains.edit', $domain) }}">{{ $domain->domain }}</a>
+                            <a class="ksm-domains-table__open" href="https://{{ $domain->domain }}" target="_blank" rel="noopener" title="Apri il sito" aria-label="Apri {{ $domain->domain }}">↗</a>
+                        </div>
+                        <div class="ksm-domains-table__meta">
+                            @if ($domain->name !== $domain->domain){{ $domain->name }} · @endif{{ $domain->type }}
+                            @unless ($domain->is_active)<span class="ksm-badge ksm-badge--muted">Spento</span>@endunless
+                        </div>
+                    </td>
+                    <td class="ksm-domains-table__state">
                         <span class="ksm-badge {{ $badge($domain) }}">{{ $domain->connectionLabel() }}</span>
                         @if (filled($domain->domain_error))
-                            <small class="ksm-domain-error" title="{{ $domain->domain_error }}">{{ \Illuminate\Support\Str::limit($domain->domain_error, 70) }}</small>
+                            <span class="ksm-domains-table__error" title="{{ $domain->domain_error }}">{{ $domain->domain_error }}</span>
                         @endif
                     </td>
-                    <td class="ksm-muted" style="white-space: nowrap;">{{ $domain->domain_checked_at?->diffForHumans() ?? 'Mai' }}</td>
-                    <td>
-                        <div class="ksm-rowactions" style="flex-wrap: nowrap;">
+                    <td class="ksm-muted ksm-domains-table__when" title="{{ $domain->domain_checked_at?->format('d/m/Y H:i') }}">{{ $domain->domain_checked_at?->locale('it')->diffForHumans(short: true) ?? 'Mai' }}</td>
+                    <td class="ksm-domains-table__actions">
+                        <div class="ksm-rowactions">
                             <form method="POST" action="{{ route('admin.domains.check', $domain) }}">
                                 @csrf @method('PATCH')
-                                <button class="ksm-btn ksm-btn--ghost ksm-btn--sm" type="submit">Verifica ora</button>
+                                <button class="ksm-btn ksm-btn--ghost ksm-btn--sm" type="submit">Verifica</button>
                             </form>
                             <a class="ksm-btn ksm-btn--primary ksm-btn--sm" href="{{ route('admin.domains.edit', $domain) }}">Modifica</a>
                             <form method="POST" action="{{ route('admin.domains.destroy', $domain) }}"
                                   onsubmit="return confirm('Eliminare {{ $domain->domain }}? Viene tolto anche dal server.');">
                                 @csrf @method('DELETE')
-                                <button class="ksm-btn ksm-btn--ghost ksm-btn--sm" type="submit">Elimina</button>
+                                <button class="ksm-btn ksm-btn--ghost ksm-btn--sm ksm-domains-table__delete" type="submit" title="Elimina" aria-label="Elimina {{ $domain->domain }}">Elimina</button>
                             </form>
                         </div>
                     </td>
                 </tr>
             @empty
-                <tr><td colspan="8" class="ksm-muted">Nessun dominio.</td></tr>
+                <tr><td colspan="5" class="ksm-muted">Nessun dominio.</td></tr>
             @endforelse
             </tbody>
         </table>
@@ -156,12 +180,37 @@
     <div style="margin-top: 20px;">{{ $records->links() }}</div>
 
     <style>
+        .ksm-domain-toolbar { margin: 0 0 12px; width: 100%; }
+        .ksm-domain-toolbar .ksm-listhead__search { flex: 1 1 200px; }
+        .ksm-panel__main .ksm-domain-toolbar .ksm-listhead__search .ksm-input { width: 100%; }
         .ksm-domain-states { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 14px; }
-        .ksm-domain-state { display: inline-flex; gap: 6px; align-items: center; padding: 5px 12px; border-radius: var(--ksm-radius-pill); background: var(--ksm-line-soft); color: var(--ksm-body); font-size: .85rem; text-decoration: none; }
+        .ksm-domain-state { display: inline-flex; gap: 6px; align-items: center; padding: 5px 12px; border-radius: var(--ksm-radius-pill); background: var(--ksm-line-soft); color: var(--ksm-body); font-size: .85rem; text-decoration: none; white-space: nowrap; }
         .ksm-domain-state strong { color: var(--ksm-ink); }
         .ksm-domain-state.is-current { background: var(--ksm-accent-soft); color: var(--ksm-accent-dark); font-weight: 600; }
         .ksm-domain-state--errore strong, .ksm-domain-state--dns strong { color: var(--ksm-danger); }
         .ksm-domain-states__server { margin-left: auto; font-size: .82rem; }
-        .ksm-domain-error { display: block; margin-top: 4px; color: var(--ksm-danger); font-size: .78rem; max-width: 320px; }
+
+        .ksm-domain-errors { margin-bottom: 14px; padding: 12px 16px; border-radius: var(--ksm-radius-lg); background: #FDECEC; color: var(--ksm-danger); font-size: .88rem; }
+        .ksm-domain-errors ul { list-style: none; margin: 6px 0 0; padding: 0; display: grid; gap: 4px; }
+        .ksm-domain-errors a { display: flex; gap: 10px; align-items: baseline; color: inherit; text-decoration: none; }
+        .ksm-domain-errors a:hover span:last-child { text-decoration: underline; }
+        .ksm-domain-errors__count { flex: none; min-width: 34px; padding: 1px 8px; border-radius: var(--ksm-radius-pill); background: #fff; font-weight: 700; text-align: center; }
+        .ksm-domain-errors .ksm-btn { margin-top: 8px; }
+
+        .ksm-domains-table { min-width: 720px; }
+        .ksm-domains-table td { vertical-align: middle; padding-block: 12px; }
+        .ksm-domains-table tr.is-off td:not(.ksm-bulk__cell):not(.ksm-domains-table__actions) { opacity: .6; }
+        .ksm-domains-table__host { display: flex; align-items: center; gap: 6px; }
+        .ksm-domains-table__host a:first-child { font-weight: 600; color: var(--ksm-ink); }
+        .ksm-domains-table__open { color: var(--ksm-muted); text-decoration: none; font-size: .9rem; }
+        .ksm-domains-table__meta { margin-top: 2px; color: var(--ksm-muted); font-size: .8rem; }
+        .ksm-domains-table__meta .ksm-badge { margin-left: 4px; padding: 1px 8px; font-size: .72rem; display: inline; }
+        .ksm-domains-table__state { width: auto; }
+        .ksm-domains-table__state .ksm-badge { white-space: nowrap; }
+        /* L'errore su una riga sola: intero passando sopra con il mouse, o in cima fra i piu' frequenti. */
+        .ksm-domains-table__error { display: block; margin-top: 4px; max-width: 340px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; color: var(--ksm-danger); font-size: .78rem; cursor: help; }
+        .ksm-domains-table__when { white-space: nowrap; font-size: .85rem; }
+        .ksm-domains-table__actions { width: 1%; white-space: nowrap; }
+        .ksm-domains-table__actions .ksm-rowactions { flex-wrap: nowrap; justify-content: flex-end; }
     </style>
 @endsection
