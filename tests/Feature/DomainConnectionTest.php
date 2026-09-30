@@ -2,14 +2,17 @@
 
 namespace Tests\Feature;
 
+use App\Jobs\RegisterDomainOnHostingPanel;
 use App\Models\Company;
 use App\Models\Domain;
 use App\Models\Role;
 use App\Models\User;
 use App\Support\Domains\DnsResolver;
 use App\Support\Domains\DomainConnectionChecker;
+use App\Support\Domains\HostingPanel;
 use App\Support\Domains\TlsProbe;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;
 
 /**
@@ -219,5 +222,78 @@ class DomainConnectionTest extends TestCase
         $this->assertSame('decinabus.it', $company->custom_domain);
         $this->assertNull($company->dns_verified_at);
         $this->assertSame('Da verificare', $company->connectionLabel());
+    }
+
+    /** Un pannello finto che conta le chiamate: con la WHM vera ogni ensure fa ripartire Apache. */
+    private function fakePanel(): object
+    {
+        $panel = new class implements HostingPanel
+        {
+            public array $ensured = [];
+
+            public function ensure(string $host): ?string
+            {
+                $this->ensured[] = $host;
+
+                return null;
+            }
+
+            public function requestCertificate(): void {}
+        };
+        $this->app->instance(HostingPanel::class, $panel);
+
+        return $panel;
+    }
+
+    public function test_un_dominio_salvato_va_sul_pannello_dalla_coda_non_dalla_richiesta(): void
+    {
+        Queue::fake();
+        $panel = $this->fakePanel();
+
+        $domain = $this->domain('ristoranticalabria.com');
+
+        $this->assertSame([], $panel->ensured);
+        Queue::assertPushed(RegisterDomainOnHostingPanel::class,
+            fn ($job) => $job->modelClass === Domain::class && $job->modelId === $domain->id && $job->host === 'ristoranticalabria.com');
+    }
+
+    public function test_il_lavoro_in_coda_registra_il_dominio_e_lo_verifica(): void
+    {
+        $this->fakeNetwork([self::SERVER_IP]);
+        Queue::fake();
+        $panel = $this->fakePanel();
+        $domain = $this->domain('ristoranticalabria.com');
+
+        app()->call([new RegisterDomainOnHostingPanel(Domain::class, $domain->id, 'ristoranticalabria.com'), 'handle']);
+
+        $this->assertSame(['ristoranticalabria.com'], $panel->ensured);
+        $this->assertTrue($domain->fresh()->isConnected());
+    }
+
+    public function test_il_lavoro_in_coda_ignora_un_dominio_cambiato_nel_frattempo(): void
+    {
+        Queue::fake();
+        $panel = $this->fakePanel();
+        $domain = $this->domain('ristoranticalabria.com');
+
+        app()->call([new RegisterDomainOnHostingPanel(Domain::class, $domain->id, 'vecchio.it'), 'handle']);
+
+        $this->assertSame([], $panel->ensured);
+    }
+
+    public function test_verifica_ora_con_il_pannello_controlla_subito_e_registra_dalla_coda(): void
+    {
+        $this->fakeNetwork([self::SERVER_IP], 'certificato scaduto');
+        Queue::fake();
+        $panel = $this->fakePanel();
+        $domain = $this->domain();
+
+        $this->actingAs($this->admin())
+            ->patch(route('admin.domains.check', $domain))
+            ->assertRedirect()
+            ->assertSessionHas('error', fn ($message) => str_contains($message, 'entro un paio di minuti'));
+
+        $this->assertSame([], $panel->ensured);
+        Queue::assertPushed(RegisterDomainOnHostingPanel::class, 2);
     }
 }

@@ -3,10 +3,11 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Jobs\RegisterDomainOnHostingPanel;
 use App\Models\Company;
 use App\Models\CompanyCategory;
-use App\Models\Domain;
 use App\Models\CompanyPaymentSetting;
+use App\Models\Domain;
 use App\Models\Plan;
 use App\Models\ProductCategory;
 use App\Models\User;
@@ -17,9 +18,11 @@ use App\Payments\PaymentException;
 use App\Payments\Subscriptions\SubscriptionActivator;
 use App\Support\BulkSelection;
 use App\Support\CategoryTree;
-use App\Support\Images\ImageStore;
 use App\Support\Domains\DomainConnectionChecker;
+use App\Support\Domains\HostingPanel;
 use App\Support\Domains\HostName;
+use App\Support\Domains\NoHostingPanel;
+use App\Support\Images\ImageStore;
 use App\Support\Maps\CompanyLocation;
 use App\Support\RichText;
 use App\Support\Sites\HostDirectory;
@@ -55,8 +58,7 @@ class AdminCompanyController extends Controller
         private readonly SubscriptionActivator $activator,
         private readonly KMoneyPercentages $percentages,
         private readonly CompanyLocation $location,
-    ) {
-    }
+    ) {}
 
     public function index(Request $request): View
     {
@@ -123,7 +125,7 @@ class AdminCompanyController extends Controller
     {
         $data = $this->validated($request);
         // La ricerca dell'indirizzo va fatta fuori dalla transazione: puo' durare qualche secondo.
-        $coordinates = $this->location->coordinates(new Company(), $data);
+        $coordinates = $this->location->coordinates(new Company, $data);
 
         $company = DB::transaction(function () use ($request, $data, $coordinates) {
             $owner = new User([
@@ -209,11 +211,18 @@ class AdminCompanyController extends Controller
     {
         abort_if(blank($company->custom_domain), 404);
 
-        $result = $checker->refresh($company, $company->custom_domain);
+        // Il pannello dell'hosting si aggiorna dalla coda: qui solo DNS e certificato.
+        $panel = ! app(HostingPanel::class) instanceof NoHostingPanel;
+        $result = $checker->refresh($company, $company->custom_domain, register: ! $panel);
+
+        if ($panel) {
+            RegisterDomainOnHostingPanel::dispatch(Company::class, $company->getKey(), $company->custom_domain);
+        }
 
         return $result->connected()
             ? back()->with('success', __(':dominio e collegato.', ['dominio' => $company->custom_domain]))
-            : back()->with('error', $company->custom_domain.': '.$result->error);
+            : back()->with('error', $company->custom_domain.': '.$result->error
+                .($panel ? ' '.__("Il pannello dell'hosting si aggiorna entro un paio di minuti: poi riverifica.") : ''));
     }
 
     /** Collegamento KMoney per conto dell'azienda, con il suo numero di conto. */

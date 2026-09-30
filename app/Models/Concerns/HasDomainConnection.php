@@ -2,7 +2,7 @@
 
 namespace App\Models\Concerns;
 
-use App\Support\Domains\DomainConnectionChecker;
+use App\Jobs\RegisterDomainOnHostingPanel;
 use App\Support\Domains\HostingPanel;
 use App\Support\Domains\NoHostingPanel;
 use App\Support\Sites\HostDirectory;
@@ -40,7 +40,8 @@ trait HasDomainConnection
 
         static::deleted(fn () => HostDirectory::forget());
 
-        // Un dominio nuovo va subito sul pannello dell'hosting, dopo la risposta per non far aspettare il modulo.
+        // Un dominio nuovo va sul pannello dell'hosting dalla coda, entro un minuto: la WHM
+        // fa ripartire Apache e dentro la richiesta chiuderebbe la connessione del modulo.
         static::saved(function (self $model) {
             $host = $model->{$model->domainColumn()};
 
@@ -49,9 +50,7 @@ trait HasDomainConnection
                 return;
             }
 
-            dispatch(function () use ($model, $host) {
-                app(DomainConnectionChecker::class)->refresh($model, $host);
-            })->afterResponse();
+            RegisterDomainOnHostingPanel::dispatch(static::class, $model->getKey(), $host)->afterCommit();
         });
     }
 

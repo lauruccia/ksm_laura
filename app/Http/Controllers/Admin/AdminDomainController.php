@@ -2,14 +2,18 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Jobs\RegisterDomainOnHostingPanel;
 use App\Models\CmsPage;
 use App\Models\Company;
 use App\Models\CompanyCategory;
 use App\Models\Domain;
 use App\Models\ProductCategory;
+use App\Support\Ads\AdContext;
 use App\Support\CategoryTree;
 use App\Support\Domains\DomainConnectionChecker;
+use App\Support\Domains\HostingPanel;
 use App\Support\Domains\HostName;
+use App\Support\Domains\NoHostingPanel;
 use App\Support\Images\ImageStore;
 use App\Support\Sites\SiteContent;
 use Illuminate\Contracts\View\View;
@@ -49,11 +53,18 @@ class AdminDomainController extends AdminResourceController
     /** Verifica subito DNS e certificato, senza aspettare il giro orario. */
     public function check(Domain $domain, DomainConnectionChecker $checker): RedirectResponse
     {
-        $result = $checker->refresh($domain, $domain->domain);
+        // Il pannello dell'hosting si aggiorna dalla coda: qui solo DNS e certificato.
+        $panel = ! app(HostingPanel::class) instanceof NoHostingPanel;
+        $result = $checker->refresh($domain, $domain->domain, register: ! $panel);
+
+        if ($panel) {
+            RegisterDomainOnHostingPanel::dispatch(Domain::class, $domain->getKey(), $domain->domain);
+        }
 
         return $result->connected()
             ? back()->with('success', __(':dominio e collegato.', ['dominio' => $domain->domain]))
-            : back()->with('error', $domain->domain.': '.$result->error);
+            : back()->with('error', $domain->domain.': '.$result->error
+                .($panel ? ' '.__("Il pannello dell'hosting si aggiorna entro un paio di minuti: poi riverifica.") : ''));
     }
 
     public function create(): View
@@ -166,7 +177,7 @@ class AdminDomainController extends AdminResourceController
             'seo_image' => $image,
             'site' => ['nullable', 'array'],
 
-            'site.ads.mode' => ['nullable', Rule::in(\App\Support\Ads\AdContext::MODES)],
+            'site.ads.mode' => ['nullable', Rule::in(AdContext::MODES)],
 
             'site.hero.enabled' => ['boolean'],
             'site.hero.eyebrow' => $text,
