@@ -113,6 +113,39 @@ class Navigation
     }
 
     /**
+     * Toglie le voci Prodotti e Aziende quando il filtro del sito le lascia vuote:
+     * un dominio senza prodotti non mostra un link a uno shop vuoto. Vale anche
+     * per le voci scritte a mano, con o senza parametri (/prodotti?offerta=1).
+     *
+     * @template T of array{url: string}
+     * @param  list<T>  $items
+     * @return list<T>
+     */
+    public static function withoutEmpty(array $items): array
+    {
+        $scope = app(TenantContext::class)->scope();
+        $empty = array_keys(array_filter([
+            route('products.index', [], false) => fn () => ! $scope->hasProducts(),
+            route('companies.index', [], false) => fn () => ! $scope->hasCompanies(),
+        ], fn ($isEmpty) => $isEmpty()));
+
+        if (! $empty) {
+            return $items;
+        }
+
+        return array_values(array_filter($items, function ($item) use ($empty) {
+            $host = parse_url($item['url'], PHP_URL_HOST);
+            if ($host && strcasecmp($host, request()->getHost()) !== 0) {
+                return true;
+            }
+
+            $path = '/'.trim((string) parse_url($item['url'], PHP_URL_PATH), '/');
+
+            return ! in_array($path, $empty, true);
+        }));
+    }
+
+    /**
      * Vero se il link porta alla pagina aperta.
      *
      * Le ancore portano a un punto della pagina, non a una pagina: non si

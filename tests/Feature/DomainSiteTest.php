@@ -550,4 +550,32 @@ class DomainSiteTest extends TestCase
             ->assertSee('ksm-store-catalog--after-blocks', false)
             ->assertDontSee('ksm-store-benefits', false);
     }
+
+    public function test_prodotti_e_aziende_spariscono_dal_menu_se_il_filtro_non_ne_lascia(): void
+    {
+        $calzature = $this->company('Calzature Rossi');
+        $this->product($calzature, 'Sandalo', $this->shoes);
+        $this->domain();
+
+        $nav = function (): string {
+            preg_match('/<nav class="brand-header__nav brand-header__nav--left".*?<\/nav>/s', $this->get(self::HOST.'/contatti')->assertOk()->getContent(), $match);
+
+            return $match[0] ?? '';
+        };
+
+        // Nessun latticino: niente Prodotti, e con company_scope products nemmeno Aziende.
+        $this->assertStringNotContainsString('"/prodotti"', $nav());
+        $this->assertStringNotContainsString('"/aziende"', $nav());
+        $this->assertStringContainsString('Home', $nav());
+
+        // Con un prodotto nella categoria tornano entrambe (la risposta resta in cache qualche minuto).
+        $this->product($this->company('Caseificio Aurora'), 'Burrata', $this->buffalo);
+        \Illuminate\Support\Facades\Cache::flush();
+
+        $this->assertStringContainsString('"/prodotti"', $nav());
+        $this->assertStringContainsString('"/aziende"', $nav());
+
+        // Sul sito principale le voci restano sempre.
+        $this->get('http://localhost/contatti')->assertOk()->assertSee('/prodotti"', false);
+    }
 }

@@ -10,6 +10,7 @@ use App\Models\ProductCategory;
 use App\Support\CategoryTree;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Query\Builder as QueryBuilder;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -169,6 +170,32 @@ final class SiteScope
     public function allowsCompany(Company $company): bool
     {
         return $this->companies(Company::query()->whereKey($company->getKey()))->exists();
+    }
+
+    /** Vero se il dominio ha almeno un prodotto in vendita: senza, la voce Prodotti del menu sparisce. */
+    public function hasProducts(): bool
+    {
+        return $this->remembers('products', fn () => $this->products(Product::query()
+            ->active()
+            ->whereHas('company', fn ($q) => $q->active()->selling()))->exists());
+    }
+
+    /** Vero se il dominio ha almeno un'azienda in directory: senza, la voce Aziende del menu sparisce. */
+    public function hasCompanies(): bool
+    {
+        return $this->remembers('companies', fn () => $this->companies(Company::query()->active()->inDirectory())->exists());
+    }
+
+    /** Sul sito principale c'e' sempre tutto; sui domini la risposta vale qualche minuto. */
+    private function remembers(string $what, \Closure $check): bool
+    {
+        if (! $this->isRestricted()) {
+            return true;
+        }
+
+        $key = 'site-scope.'.$what.'.'.($this->company ? 'c'.$this->company->getKey() : 'd'.$this->domain?->getKey().'.'.$this->domain?->updated_at?->timestamp);
+
+        return (bool) Cache::remember($key, now()->addMinutes(10), fn () => (int) $check());
     }
 
     /** Aziende che si vedono solo su altri domini, non su questo (su KSM: tutte le esclusive). */

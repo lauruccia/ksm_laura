@@ -48,6 +48,10 @@
 
     $rightMenu = $rightMenu ?? \App\Support\Navigation::defaults('header_right');
 
+    // Sui domini filtrati Prodotti e Aziende spariscono se il filtro non ne lascia nessuno.
+    $leftMenu = \App\Support\Navigation::withoutEmpty($leftMenu);
+    $rightMenu = \App\Support\Navigation::withoutEmpty($rightMenu);
+
     // Barra in alto, nella fascia scura: c'e' solo se in Amministrazione ha delle voci.
     $topLeft = $menu('top_left') ?? [];
     $topRight = $menu('top_right') ?? [];

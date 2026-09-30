@@ -58,7 +58,7 @@
             <div>
                 <h4>{{ $footer['links_title'] }}</h4>
                 <ul class="ksm-footer__links">
-                    @foreach ($footer['links'] as $link)
+                    @foreach (\App\Support\Navigation::withoutEmpty($footer['links']) as $link)
                         <li><a href="{{ $link['url'] }}"><x-icon name="chevrons" :size="15" />{{ $link['label'] }}</a></li>
                     @endforeach
                     @guest
