@@ -25,10 +25,16 @@ use Throwable;
  * In entrambi i casi cPanel crea la zona DNS e AutoSSL fa il certificato
  * quando il DNS punta al server.
  *
- * Aggiunge e basta: togliere un dominio resta una scelta a mano.
+ * Togliere un dominio (Elimina in Amministrazione) chiude l'account proxy,
+ * ma solo se e' davvero un proxy di KSM (index.php con il segno
+ * PROXY_MARK), oppure toglie il parcheggio dall'account dell'app. Il
+ * dominio principale dell'app e gli altri account non si toccano mai.
  */
 class WhmHostingPanel implements HostingPanel
 {
+    /** Il segno nell'index.php dei proxy: senza, un account non si chiude. */
+    public const PROXY_MARK = 'KSM domain proxy';
+
     /** Dominio principale e domini gia' presenti sull'account, letti una volta per istanza. */
     private ?string $mainDomain = null;
 
@@ -87,6 +93,72 @@ class WhmHostingPanel implements HostingPanel
 
         $this->known[] = $host;
         $this->requestCertificate();
+
+        return null;
+    }
+
+    public function remove(string $host): ?string
+    {
+        $host = strtolower($host);
+
+        try {
+            $this->known ??= $this->domains();
+
+            if ($host === strtolower((string) $this->mainDomain)) {
+                return "Il dominio principale dell'account {$this->account} non si toglie.";
+            }
+
+            if (in_array($host, $this->known, true)) {
+                return $this->unpark($host);
+            }
+
+            $user = $this->accountFor($host);
+
+            if (! $user) {
+                return null;
+            }
+
+            if ($user === $this->account) {
+                return "{$host} sta sull'account dell'app: non si toglie da qui.";
+            }
+
+            $index = (string) $this->uapi($user, 'Fileman', 'get_file_content', ['dir' => 'public_html', 'file' => 'index.php'])
+                ->json('result.data.content', '');
+
+            if (! str_contains($index, self::PROXY_MARK)) {
+                return "L'account {$user} di {$host} non e' un proxy di KSM: va tolto a mano.";
+            }
+
+            $response = $this->http()->asForm()->post('/json-api/removeacct', ['api.version' => 1, 'username' => $user]);
+
+            if (! $response->successful() || ! $response->json('metadata.result')) {
+                return "WHM non ha chiuso l'account {$user}: ".($response->json('metadata.reason') ?: 'HTTP '.$response->status());
+            }
+        } catch (Throwable $e) {
+            return 'WHM non risponde: '.$e->getMessage();
+        }
+
+        return null;
+    }
+
+    /** Toglie un dominio parcheggiato sull'account dell'app (cPanel API 2, Park::unpark). */
+    private function unpark(string $host): ?string
+    {
+        $response = $this->http()->get('/json-api/cpanel', [
+            'cpanel_jsonapi_user' => $this->account,
+            'cpanel_jsonapi_apiversion' => 2,
+            'cpanel_jsonapi_module' => 'Park',
+            'cpanel_jsonapi_func' => 'unpark',
+            'domain' => $host,
+        ]);
+
+        $result = $response->json('cpanelresult.data.0', []);
+
+        if (! $response->successful() || empty($result['result'])) {
+            return 'WHM non ha tolto il parcheggio: '.($result['reason'] ?? $response->json('cpanelresult.error') ?? 'HTTP '.$response->status());
+        }
+
+        $this->known = array_values(array_diff($this->known, [$host]));
 
         return null;
     }

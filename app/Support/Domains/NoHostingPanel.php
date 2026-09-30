@@ -10,6 +10,11 @@ class NoHostingPanel implements HostingPanel
         return null;
     }
 
+    public function remove(string $host): ?string
+    {
+        return null;
+    }
+
     public function requestCertificate(): void
     {
     }

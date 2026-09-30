@@ -13,6 +13,9 @@ interface HostingPanel
     /** Aggiunge il dominio se manca. Null se c'e', altrimenti il motivo. */
     public function ensure(string $host): ?string;
 
+    /** Toglie il dominio dal pannello, se e' li'. Null se fatto o se non c'era, altrimenti il motivo. */
+    public function remove(string $host): ?string;
+
     /** Chiede subito il certificato, senza aspettare il giro notturno di AutoSSL. */
     public function requestCertificate(): void;
 }

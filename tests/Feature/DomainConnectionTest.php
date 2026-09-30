@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Jobs\RegisterDomainOnHostingPanel;
+use App\Jobs\RemoveDomainFromHostingPanel;
 use App\Models\Company;
 use App\Models\Domain;
 use App\Models\Role;
@@ -238,6 +239,15 @@ class DomainConnectionTest extends TestCase
                 return null;
             }
 
+            public array $removed = [];
+
+            public function remove(string $host): ?string
+            {
+                $this->removed[] = $host;
+
+                return null;
+            }
+
             public function requestCertificate(): void {}
         };
         $this->app->instance(HostingPanel::class, $panel);
@@ -295,5 +305,41 @@ class DomainConnectionTest extends TestCase
 
         $this->assertSame([], $panel->ensured);
         Queue::assertPushed(RegisterDomainOnHostingPanel::class, 2);
+    }
+
+    public function test_eliminare_un_dominio_lo_toglie_dal_pannello_dalla_coda(): void
+    {
+        Queue::fake();
+        $this->fakePanel();
+        $domain = $this->domain('ristoranticalabria.com');
+
+        $domain->delete();
+
+        Queue::assertPushed(RemoveDomainFromHostingPanel::class, fn ($job) => $job->host === 'ristoranticalabria.com');
+    }
+
+    public function test_cambiare_indirizzo_toglie_il_vecchio_dal_pannello(): void
+    {
+        Queue::fake();
+        $this->fakePanel();
+        $domain = $this->domain('vecchio.it');
+
+        $domain->update(['domain' => 'nuovo.it']);
+
+        Queue::assertPushed(RemoveDomainFromHostingPanel::class, fn ($job) => $job->host === 'vecchio.it');
+        Queue::assertNotPushed(RemoveDomainFromHostingPanel::class, fn ($job) => $job->host === 'nuovo.it');
+    }
+
+    public function test_il_lavoro_di_rimozione_non_tocca_un_indirizzo_ancora_usato(): void
+    {
+        Queue::fake();
+        $panel = $this->fakePanel();
+        $this->domain('ristoranticalabria.com');
+
+        app()->call([new RemoveDomainFromHostingPanel('ristoranticalabria.com'), 'handle']);
+        $this->assertSame([], $panel->removed);
+
+        app()->call([new RemoveDomainFromHostingPanel('eliminato.it'), 'handle']);
+        $this->assertSame(['eliminato.it'], $panel->removed);
     }
 }

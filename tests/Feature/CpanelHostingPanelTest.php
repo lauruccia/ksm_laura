@@ -143,9 +143,12 @@ class CpanelHostingPanelTest extends TestCase
                 return null;
             }
 
-            public function requestCertificate(): void
+            public function remove(string $host): ?string
             {
+                return null;
             }
+
+            public function requestCertificate(): void {}
         };
         $this->app->instance(HostingPanel::class, $panel);
         config(['ksm.server.ips' => ['203.0.113.10']]);

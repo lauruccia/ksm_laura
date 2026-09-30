@@ -3,6 +3,7 @@
 namespace App\Models\Concerns;
 
 use App\Jobs\RegisterDomainOnHostingPanel;
+use App\Jobs\RemoveDomainFromHostingPanel;
 use App\Support\Domains\HostingPanel;
 use App\Support\Domains\NoHostingPanel;
 use App\Support\Sites\HostDirectory;
@@ -40,6 +41,21 @@ trait HasDomainConnection
 
         static::deleted(fn () => HostDirectory::forget());
 
+        // Eliminato, o con un indirizzo nuovo: il vecchio va tolto dal pannello dell'hosting (dalla coda).
+        static::deleted(function (self $model) {
+            static::removeFromHostingPanel($model->getRawOriginal($model->domainColumn()));
+        });
+
+        static::saved(function (self $model) {
+            // wasRecentlyCreated resta vero per tutta la vita dell'oggetto: conta solo il valore di prima.
+            $before = $model->getRawOriginal($model->domainColumn());
+
+            if ($model->wasChanged($model->domainColumn()) && filled($before)
+                && strcasecmp($before, (string) $model->{$model->domainColumn()}) !== 0) {
+                static::removeFromHostingPanel($before);
+            }
+        });
+
         // Un dominio nuovo va sul pannello dell'hosting dalla coda, entro un minuto: la WHM
         // fa ripartire Apache e dentro la richiesta chiuderebbe la connessione del modulo.
         static::saved(function (self $model) {
@@ -52,6 +68,15 @@ trait HasDomainConnection
 
             RegisterDomainOnHostingPanel::dispatch(static::class, $model->getKey(), $host)->afterCommit();
         });
+    }
+
+    private static function removeFromHostingPanel(?string $host): void
+    {
+        if (blank($host) || app(HostingPanel::class) instanceof NoHostingPanel) {
+            return;
+        }
+
+        RemoveDomainFromHostingPanel::dispatch($host)->afterCommit();
     }
 
     public function initializeHasDomainConnection(): void

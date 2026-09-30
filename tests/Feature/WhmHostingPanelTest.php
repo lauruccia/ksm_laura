@@ -169,4 +169,70 @@ class WhmHostingPanelTest extends TestCase
             $this->proxyPanel()->ensure('cittadiostia.it'),
         );
     }
+
+    /** Una WHM finta per togliere: account del rivenditore e index.php del proxy. */
+    private function fakeRemoval(array $parked = [], array $accounts = [], string $index = '<?php /* KSM domain proxy */', array $unpark = ['result' => 1]): void
+    {
+        Http::fake(function (Request $request) use ($parked, $accounts, $index, $unpark) {
+            $url = $request->url();
+
+            return match (true) {
+                str_contains($url, 'list_domains') => Http::response(['result' => ['data' => [
+                    'main_domain' => 'ilnetworkmarketing.it', 'addon_domains' => [], 'parked_domains' => $parked, 'sub_domains' => [],
+                ]]]),
+                str_contains($url, 'unpark') => Http::response(['cpanelresult' => ['data' => [$unpark]]]),
+                str_contains($url, 'listaccts') => Http::response(['data' => ['acct' => $accounts]]),
+                ($request['cpanel_jsonapi_func'] ?? null) === 'get_file_content' => Http::response(['result' => ['status' => 1, 'data' => ['content' => $index]]]),
+                str_contains($url, 'removeacct') => Http::response(['metadata' => ['result' => 1, 'reason' => 'OK']]),
+                default => Http::response([], 404),
+            };
+        });
+    }
+
+    public function test_togliere_un_dominio_chiude_il_suo_account_proxy(): void
+    {
+        $this->fakeRemoval(accounts: [['user' => 'ristoranticala', 'domain' => 'ristoranticalabria.com']]);
+
+        $this->assertNull($this->proxyPanel()->remove('RistorantiCalabria.com'));
+
+        Http::assertSent(fn (Request $request) => str_contains($request->url(), 'removeacct') && $request['username'] === 'ristoranticala');
+    }
+
+    public function test_un_account_che_non_e_un_proxy_non_si_chiude(): void
+    {
+        $this->fakeRemoval(accounts: [['user' => 'cliente', 'domain' => 'cliente.it']], index: '<?php // un sito vero');
+
+        $this->assertSame("L'account cliente di cliente.it non e' un proxy di KSM: va tolto a mano.", $this->proxyPanel()->remove('cliente.it'));
+
+        Http::assertNotSent(fn (Request $request) => str_contains($request->url(), 'removeacct'));
+    }
+
+    public function test_un_dominio_parcheggiato_si_toglie_dall_account_dell_app(): void
+    {
+        $this->fakeRemoval(parked: ['allshoes.it']);
+
+        $this->assertNull($this->proxyPanel()->remove('allshoes.it'));
+
+        Http::assertSent(fn (Request $request) => ($request['cpanel_jsonapi_func'] ?? null) === 'unpark'
+            && $request['cpanel_jsonapi_user'] === 'ilnetwork' && $request['domain'] === 'allshoes.it');
+        Http::assertNotSent(fn (Request $request) => str_contains($request->url(), 'removeacct'));
+    }
+
+    public function test_il_dominio_principale_dell_app_non_si_toglie_mai(): void
+    {
+        $this->fakeRemoval();
+
+        $this->assertNotNull($this->proxyPanel()->remove('ilnetworkmarketing.it'));
+
+        Http::assertNotSent(fn (Request $request) => str_contains($request->url(), 'removeacct') || str_contains($request->url(), 'unpark'));
+    }
+
+    public function test_un_dominio_che_non_c_e_non_fa_niente(): void
+    {
+        $this->fakeRemoval();
+
+        $this->assertNull($this->proxyPanel()->remove('sconosciuto.it'));
+
+        Http::assertNotSent(fn (Request $request) => str_contains($request->url(), 'removeacct'));
+    }
 }

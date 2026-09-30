@@ -66,6 +66,12 @@ class CpanelHostingPanel implements HostingPanel
         return null;
     }
 
+    /** Sull'account cPanel i domini aggiunti restano: toglierli e' una scelta a mano. */
+    public function remove(string $host): ?string
+    {
+        return null;
+    }
+
     public function requestCertificate(): void
     {
         if ($this->certificateRequested) {
