@@ -143,6 +143,9 @@
                         <div class="ksm-domains-table__host">
                             <a href="{{ route('admin.domains.edit', $domain) }}">{{ $domain->domain }}</a>
                             <a class="ksm-domains-table__open" href="https://{{ $domain->domain }}" target="_blank" rel="noopener" title="Apri il sito" aria-label="Apri {{ $domain->domain }}">↗</a>
+                            {{-- Controlli esterni, in una scheda nuova: chi è registrato e dove punta il DNS nel mondo. --}}
+                            <a class="ksm-domains-table__tool" href="https://www.whois.com/whois/{{ $domain->domain }}" target="_blank" rel="noopener" title="WHOIS: registrar, scadenza e nameserver">WHOIS</a>
+                            <a class="ksm-domains-table__tool" href="https://dnschecker.org/#A/{{ $domain->domain }}" target="_blank" rel="noopener" title="DNS Checker: a quale IP punta il dominio nel mondo">DNS</a>
                         </div>
                         <div class="ksm-domains-table__meta">
                             @if ($domain->name !== $domain->domain){{ $domain->name }} · @endif{{ $domain->type }}
@@ -208,6 +211,8 @@
         .ksm-domains-table__host { display: flex; align-items: center; gap: 6px; }
         .ksm-domains-table__host a:first-child { font-weight: 600; color: var(--ksm-ink); }
         .ksm-domains-table__open { color: var(--ksm-muted); text-decoration: none; font-size: .9rem; }
+        .ksm-domains-table__tool { padding: 0 6px; border: 1px solid var(--ksm-line-soft); border-radius: var(--ksm-radius-pill); color: var(--ksm-muted); font-size: .68rem; font-weight: 600; letter-spacing: .03em; text-decoration: none; }
+        .ksm-domains-table__tool:hover { color: var(--ksm-accent-dark); border-color: var(--ksm-accent-soft); background: var(--ksm-accent-soft); }
         .ksm-domains-table__meta { margin-top: 2px; color: var(--ksm-muted); font-size: .8rem; }
         .ksm-domains-table__meta .ksm-badge { margin-left: 4px; padding: 1px 8px; font-size: .72rem; display: inline; }
         .ksm-domains-table__state { width: auto; }
