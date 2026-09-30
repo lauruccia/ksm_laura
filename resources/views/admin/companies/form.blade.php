@@ -280,7 +280,7 @@
                     <button class="ksm-btn ksm-btn--ghost ksm-btn--sm" type="submit" form="verify-domain">Verifica ora</button>
                 </p>
                 @if ($company->domain_error)
-                    <small class="ksm-error">{{ $company->domain_error }}</small>
+                    <small class="ksm-error">{{ $company->domain_error }} @include('admin.domains._error-help', ['error' => $company->domain_error])</small>
                 @endif
             @endif
         </section>

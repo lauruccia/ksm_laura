@@ -95,6 +95,7 @@
                             <span class="ksm-domain-errors__count">{{ number_format($error->total, 0, ',', '.') }}</span>
                             <span>{{ $error->domain_error }}</span>
                         </a>
+                        @include('admin.domains._error-help', ['error' => $error->domain_error])
                     </li>
                 @endforeach
             </ul>
@@ -151,7 +152,10 @@
                     <td class="ksm-domains-table__state">
                         <span class="ksm-badge {{ $badge($domain) }}">{{ $domain->connectionLabel() }}</span>
                         @if (filled($domain->domain_error))
-                            <span class="ksm-domains-table__error" title="{{ $domain->domain_error }}">{{ $domain->domain_error }}</span>
+                            <span class="ksm-domains-table__errline">
+                                <span class="ksm-domains-table__error" title="{{ $domain->domain_error }}">{{ $domain->domain_error }}</span>
+                                @include('admin.domains._error-help', ['error' => $domain->domain_error])
+                            </span>
                         @endif
                     </td>
                     <td class="ksm-muted ksm-domains-table__when" title="{{ $domain->domain_checked_at?->format('d/m/Y H:i') }}">{{ $domain->domain_checked_at?->locale('it')->diffForHumans(short: true) ?? 'Mai' }}</td>
@@ -192,6 +196,7 @@
 
         .ksm-domain-errors { margin-bottom: 14px; padding: 12px 16px; border-radius: var(--ksm-radius-lg); background: #FDECEC; color: var(--ksm-danger); font-size: .88rem; }
         .ksm-domain-errors ul { list-style: none; margin: 6px 0 0; padding: 0; display: grid; gap: 4px; }
+        .ksm-domain-errors li { display: flex; gap: 8px; align-items: center; }
         .ksm-domain-errors a { display: flex; gap: 10px; align-items: baseline; color: inherit; text-decoration: none; }
         .ksm-domain-errors a:hover span:last-child { text-decoration: underline; }
         .ksm-domain-errors__count { flex: none; min-width: 34px; padding: 1px 8px; border-radius: var(--ksm-radius-pill); background: #fff; font-weight: 700; text-align: center; }
@@ -207,8 +212,9 @@
         .ksm-domains-table__meta .ksm-badge { margin-left: 4px; padding: 1px 8px; font-size: .72rem; display: inline; }
         .ksm-domains-table__state { width: auto; }
         .ksm-domains-table__state .ksm-badge { white-space: nowrap; }
-        /* L'errore su una riga sola: intero passando sopra con il mouse, o in cima fra i piu' frequenti. */
-        .ksm-domains-table__error { display: block; margin-top: 4px; max-width: 340px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; color: var(--ksm-danger); font-size: .78rem; cursor: help; }
+        /* L'errore su una riga sola: intero passando sopra con il mouse; il "?" accanto dice come risolverlo. */
+        .ksm-domains-table__errline { display: flex; align-items: center; gap: 6px; margin-top: 4px; }
+        .ksm-domains-table__error { display: block; max-width: 340px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; color: var(--ksm-danger); font-size: .78rem; cursor: help; }
         .ksm-domains-table__when { white-space: nowrap; font-size: .85rem; }
         .ksm-domains-table__actions { width: 1%; white-space: nowrap; }
         .ksm-domains-table__actions .ksm-rowactions { flex-wrap: nowrap; justify-content: flex-end; }
