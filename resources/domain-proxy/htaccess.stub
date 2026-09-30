@@ -1,0 +1,4 @@
+# KSM domain proxy: tutte le richieste passano da index.php
+RewriteEngine On
+RewriteCond %{REQUEST_URI} !^/index\.php$
+RewriteRule ^ index.php [L,QSA]

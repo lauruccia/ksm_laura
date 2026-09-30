@@ -67,12 +67,20 @@ return [
      * In alternativa, la WHM di un rivenditore che parcheggia i domini
      * sull'account dell'app (permesso park-dns): serve quando il
      * pacchetto dell'account non ammette alias. Se c'e', vince su cpanel.
+     * Con un pacchetto proxy, se anche il parcheggio viene rifiutato il
+     * dominio riceve un suo account che inoltra tutto all'app.
      */
     'whm' => [
         'url' => env('KSM_WHM_URL'),
         'reseller' => env('KSM_WHM_RESELLER'),
         'token' => env('KSM_WHM_TOKEN'),
         'account' => env('KSM_WHM_ACCOUNT'),
+        // Quando l'account non accetta altri domini: un account minuscolo per dominio
+        // con questo pacchetto, e dentro un proxy verso l'app. Vuoto: solo parcheggio.
+        'proxy_plan' => env('KSM_WHM_PROXY_PLAN'),
+        // Dove il proxy inoltra le richieste: l'indirizzo dell'app.
+        'proxy_target' => env('KSM_WHM_PROXY_TARGET', env('APP_URL')),
+        'contact_email' => env('KSM_WHM_CONTACT_EMAIL'),
     ],
 
     /*

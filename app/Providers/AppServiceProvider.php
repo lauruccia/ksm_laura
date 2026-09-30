@@ -27,14 +27,16 @@ class AppServiceProvider extends ServiceProvider
         // Solo con un token cPanel i domini si aggiungono da soli all'account.
         $this->app->singleton(HostingPanel::class, function () {
             // Con la configurazione in cache di prima le chiavi mancano del tutto.
-            $whm = (array) config('ksm.whm', []) + ['url' => null, 'reseller' => null, 'token' => null, 'account' => null];
+            $whm = (array) config('ksm.whm', []) + ['url' => null, 'reseller' => null, 'token' => null, 'account' => null,
+                'proxy_plan' => null, 'proxy_target' => null, 'contact_email' => null];
             $cpanel = (array) config('ksm.cpanel', []) + ['url' => null, 'user' => null, 'token' => null, 'docroot' => 'ksm-next/public'];
 
             return match (true) {
-                filled($whm['url']) && filled($whm['reseller']) && filled($whm['token']) && filled($whm['account'])
-                    => new WhmHostingPanel($whm['url'], $whm['reseller'], $whm['token'], $whm['account']),
-                filled($cpanel['url']) && filled($cpanel['user']) && filled($cpanel['token'])
-                    => new CpanelHostingPanel($cpanel['url'], $cpanel['user'], $cpanel['token'], $cpanel['docroot']),
+                filled($whm['url']) && filled($whm['reseller']) && filled($whm['token']) && filled($whm['account']) => new WhmHostingPanel(
+                    $whm['url'], $whm['reseller'], $whm['token'], $whm['account'],
+                    $whm['proxy_plan'], $whm['proxy_target'], $whm['contact_email'],
+                ),
+                filled($cpanel['url']) && filled($cpanel['user']) && filled($cpanel['token']) => new CpanelHostingPanel($cpanel['url'], $cpanel['user'], $cpanel['token'], $cpanel['docroot']),
                 default => new NoHostingPanel,
             };
         });
