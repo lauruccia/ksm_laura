@@ -116,13 +116,14 @@ class WhmHostingPanelTest extends TestCase
         Http::assertNotSent(fn (Request $request) => str_contains($request->url(), 'createacct'));
     }
 
-    public function test_a_refused_park_becomes_a_proxy_account(): void
+    public function test_with_a_proxy_plan_a_new_domain_gets_its_own_account(): void
     {
         config(['ksm.server.ips' => ['86.107.33.88']]);
         $this->fakeFullWhm(taken: ['cittadiostia']);
 
         $this->assertNull($this->proxyPanel()->ensure('CittaDiOstia.it'));
 
+        Http::assertNotSent(fn (Request $request) => str_contains($request->url(), 'create_parked_domain_for_user'));
         Http::assertSent(fn (Request $request) => str_contains($request->url(), 'createacct')
             && $request['domain'] === 'cittadiostia.it'
             && $request['username'] === 'cittadiostia1'

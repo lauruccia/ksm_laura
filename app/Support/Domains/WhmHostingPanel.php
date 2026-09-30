@@ -11,13 +11,13 @@ use Throwable;
 /**
  * I domini dell'app sulla WHM del rivenditore.
  *
- * Prima si prova a parcheggiare il dominio sull'account che ospita l'app
- * (permesso park-dns, come WHM -> Parcheggia un dominio): tutto arriva
- * nella cartella del dominio principale, che porta all'app.
+ * Senza pacchetto proxy il dominio si parcheggia sull'account che ospita
+ * l'app (permesso park-dns, come WHM -> Parcheggia un dominio): tutto
+ * arriva nella cartella del dominio principale, che porta all'app.
  *
- * Quando l'account non accetta altri domini (Serverplan ferma gli alias a
- * un tetto che il rivenditore non puo' alzare) e c'e' un pacchetto per i
- * proxy, al dominio si da' un account cPanel tutto suo, minuscolo, con un
+ * Con un pacchetto proxy (KSM_WHM_PROXY_PLAN) al dominio si da' invece un
+ * account cPanel tutto suo, minuscolo, con il suo certificato: quello
+ * dell'account dell'app si ferma a 100 nomi. Nell'account c'e' un
  * index.php che inoltra ogni richiesta all'app e passa il dominio vero in
  * X-Forwarded-Host. Per l'app il dominio e' collegato come gli altri:
  * basta che KSM_TRUSTED_PROXIES contenga l'IP del server.
@@ -62,9 +62,13 @@ class WhmHostingPanel implements HostingPanel
                 return null;
             }
 
-            // Un collegamento gia' fatto con un account proxy: si riscrivono solo i file.
-            if ($this->usesProxyAccounts() && ($user = $this->accountFor($host))) {
-                return $this->installProxy($user, $host);
+            // Con un pacchetto proxy ogni dominio nuovo ha un account suo, senza parcheggio:
+            // il certificato dell'account dell'app non contiene piu' di 100 nomi, e un
+            // dominio parcheggiato oltre quel tetto resterebbe senza https.
+            if ($this->usesProxyAccounts()) {
+                $user = $this->accountFor($host);
+
+                return $user ? $this->installProxy($user, $host) : $this->createProxyAccount($host);
             }
 
             $response = $this->http()->get('/json-api/create_parked_domain_for_user', [
@@ -75,9 +79,7 @@ class WhmHostingPanel implements HostingPanel
             ]);
 
             if (! $response->successful() || ! $response->json('metadata.result')) {
-                $reason = 'WHM non ha parcheggiato il dominio: '.($response->json('metadata.reason') ?: 'HTTP '.$response->status());
-
-                return $this->usesProxyAccounts() ? $this->createProxyAccount($host, $reason) : $reason;
+                return 'WHM non ha parcheggiato il dominio: '.($response->json('metadata.reason') ?: 'HTTP '.$response->status());
             }
         } catch (Throwable $e) {
             return 'WHM non risponde: '.$e->getMessage();
@@ -129,7 +131,7 @@ class WhmHostingPanel implements HostingPanel
         return null;
     }
 
-    private function createProxyAccount(string $host, string $parkError): ?string
+    private function createProxyAccount(string $host): ?string
     {
         $user = $this->freeUsername($host);
 
@@ -144,7 +146,7 @@ class WhmHostingPanel implements HostingPanel
         ]));
 
         if (! $response->successful() || ! $response->json('metadata.result')) {
-            return $parkError.'; account proxy non creato: '.($response->json('metadata.reason') ?: 'HTTP '.$response->status());
+            return 'Account proxy non creato: '.($response->json('metadata.reason') ?: 'HTTP '.$response->status());
         }
 
         return $this->installProxy($user, $host);
