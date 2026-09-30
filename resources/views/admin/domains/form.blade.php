@@ -271,7 +271,7 @@
                 <p>La fascia grande in cima alla pagina. Ogni campo dice dove compare: <strong>home e shop</strong>, oppure <strong>solo shop</strong>. Nella home i due pulsanti sono fissi: Esplora le aziende e Scopri i prodotti. I campi vuoti usano il testo grigio d'esempio.</p>
                 <label class="ksm-domain-form__switch">
                     <input type="hidden" name="site[hero][enabled]" value="0">
-                    <input type="checkbox" name="site[hero][enabled]" value="1" @checked($siteOn('hero.enabled', true))> Mostra l'apertura nello shop
+                    <input type="checkbox" name="site[hero][enabled]" value="1" @checked($siteOn('hero.enabled', false))> Mostra l'apertura nello shop
                 </label>
                 <div class="ksm-formgrid">
                     @foreach ([
@@ -325,6 +325,10 @@
                     <input type="hidden" name="site[benefits][enabled]" value="0">
                     <input type="checkbox" name="site[benefits][enabled]" value="1" @checked($siteOn('benefits.enabled', true))> Mostra i vantaggi
                 </label>
+                <label class="ksm-domain-form__switch">
+                    <input type="hidden" name="site[benefits][shop]" value="0">
+                    <input type="checkbox" name="site[benefits][shop]" value="1" @checked($siteOn('benefits.shop', false))> Anche nello shop (sopra il catalogo)
+                </label>
                 <div class="ksm-domain-form__benefit ksm-muted" style="font-size: .8rem; margin-bottom: 4px;"><span>Icona</span><span>Titolo</span><span>Riga sotto</span></div>
                 @for ($i = 0; $i < 4; $i++)
                     <div class="ksm-domain-form__benefit">
@@ -346,7 +350,7 @@
                 <p><strong>Solo shop.</strong> I riquadri con foto delle categorie, sotto i vantaggi. Spunta quelle da mostrare. Senza spunte: le sottocategorie della categoria del dominio. La foto di ogni riquadro si carica da Categorie prodotti.</p>
                 <label class="ksm-domain-form__switch">
                     <input type="hidden" name="site[categories][enabled]" value="0">
-                    <input type="checkbox" name="site[categories][enabled]" value="1" @checked($siteOn('categories.enabled', true))> Mostra le categorie
+                    <input type="checkbox" name="site[categories][enabled]" value="1" @checked($siteOn('categories.enabled', false))> Mostra le categorie
                 </label>
                 <div class="ksm-formgrid">
                     <div class="ksm-field">
@@ -380,7 +384,7 @@
                 <p><strong>Solo shop.</strong> Una fila di prodotti in evidenza e, sotto, il catalogo completo con i filtri. Nella home i prodotti in evidenza sono scelti in automatico.</p>
                 <label class="ksm-domain-form__switch">
                     <input type="hidden" name="site[featured][enabled]" value="0">
-                    <input type="checkbox" name="site[featured][enabled]" value="1" @checked($siteOn('featured.enabled', true))> Mostra i prodotti in evidenza
+                    <input type="checkbox" name="site[featured][enabled]" value="1" @checked($siteOn('featured.enabled', false))> Mostra i prodotti in evidenza
                 </label>
                 <div class="ksm-formgrid">
                     <div class="ksm-field">

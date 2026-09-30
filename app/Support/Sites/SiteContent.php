@@ -33,9 +33,7 @@ final class SiteContent
     /** Voci di menu e link del piede per gruppo. */
     public const LINK_ROWS = 6;
 
-    public function __construct(private readonly ?Domain $domain = null)
-    {
-    }
+    public function __construct(private readonly ?Domain $domain = null) {}
 
     public function isNetworkSite(): bool
     {
@@ -56,6 +54,34 @@ final class SiteContent
         $value = data_get($this->domain?->site, "$block.enabled");
 
         return $value === null ? $default : (bool) $value;
+    }
+
+    /**
+     * I blocchi in cima allo shop di un dominio. Di partenza sono tutti spenti:
+     * lo shop apre sul catalogo come la directory delle aziende, e in
+     * Amministrazione, Domini, si accende quello che serve. I vantaggi hanno
+     * una casella in piu' perche' la stessa fascia vale anche per la home.
+     */
+    public function showsInShop(string $block): bool
+    {
+        return match ($block) {
+            'benefits' => $this->enabled('benefits') && (bool) data_get($this->domain?->site, 'benefits.shop', false),
+            'categories' => $this->categories()['enabled'],
+            'featured' => $this->featured()['enabled'],
+            default => $this->enabled($block, false),
+        };
+    }
+
+    /** Vero se lo shop del dominio ha almeno un blocco sopra il catalogo. */
+    public function hasShopBlocks(): bool
+    {
+        foreach (['hero', 'benefits', 'categories', 'featured'] as $block) {
+            if ($this->showsInShop($block)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public function hero(): array
@@ -116,7 +142,7 @@ final class SiteContent
     public function categories(): array
     {
         return [
-            'enabled' => $this->enabled('categories'),
+            'enabled' => $this->enabled('categories', false),
             'title' => $this->get('categories.title', __('storefront.categories')),
             'link_label' => $this->get('categories.link_label', __('site.shop_all_products')),
             'ids' => array_map('intval', (array) $this->get('categories.ids', [])),
@@ -124,13 +150,13 @@ final class SiteContent
         ];
     }
 
-    /** La fila di prodotti in evidenza: sul sito principale non c'e'. */
+    /** La fila di prodotti in evidenza: sul sito principale non c'e', sui domini si accende. */
     public function featured(): array
     {
         $sort = $this->get('featured.sort', 'bestsellers');
 
         return [
-            'enabled' => $this->enabled('featured', $this->isNetworkSite()),
+            'enabled' => $this->enabled('featured', false),
             'title' => $this->get('featured.title', __('storefront.featured_title')),
             'subtitle' => $this->get('featured.subtitle', __('storefront.featured_subtitle')),
             'sort' => array_key_exists($sort, self::FEATURED_SORTS) ? $sort : 'bestsellers',

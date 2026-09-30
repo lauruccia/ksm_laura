@@ -61,20 +61,22 @@
     @endphp
 
     {{-- Apertura, vantaggi, riquadri e vetrina sono il sito di un dominio: li
-         sceglie in Amministrazione, Domini. Sul sito principale il catalogo
-         apre da solo, come la directory delle aziende. --}}
-    @if ($onDomain)
+         accende in Amministrazione, Domini (di partenza sono spenti). Senza
+         blocchi, e sul sito principale, il catalogo apre da solo, come la
+         directory delle aziende. --}}
+    @php($storeBlocks = $onDomain && $tenant->content()->hasShopBlocks())
+    @if ($storeBlocks)
         @include('pages.products.partials.storefront')
     @endif
 
     {{-- Stessa impostazione della directory aziende: categorie a sinistra;
          ricerca, banner e griglia a destra. --}}
-    @if (! $onDomain || $catalog['enabled'] || request()->hasAny(['categoria', 'cerca', 'marca', 'offerta', 'page']))
-    <section class="ksm-section ksm-store-catalog @if ($onDomain) ksm-store-catalog--after-blocks @endif" id="catalogo">
+    @if (! $storeBlocks || $catalog['enabled'] || request()->hasAny(['categoria', 'cerca', 'marca', 'offerta', 'page']))
+    <section class="ksm-section ksm-store-catalog @if ($storeBlocks) ksm-store-catalog--after-blocks @endif" id="catalogo">
         {{-- A tutta larghezza come la directory; sui domini resta nella colonna
              dei blocchi che gli stanno sopra. --}}
-        <div class="ksm-container @unless ($onDomain) ksm-directory__container @endunless">
-            @if ($onDomain)
+        <div class="ksm-container @unless ($storeBlocks) ksm-directory__container @endunless">
+            @if ($storeBlocks)
                 <div class="ksm-section-head ksm-shop__head">
                     <div>
                         <h2>{{ $currentCategory?->name ?? $catalog['title'] ?? __('storefront.catalog') }}</h2>

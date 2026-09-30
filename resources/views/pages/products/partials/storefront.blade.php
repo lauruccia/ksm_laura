@@ -14,7 +14,7 @@
     $featured = $site->featured();
 @endphp
 
-@if ($site->enabled('hero'))
+@if ($site->showsInShop('hero'))
     <section class="ksm-store-hero @if ($hero['has_photo']) ksm-store-hero--photo @endif">
         {{-- Sul sito principale l'immagine e' uguale per tutti: la foto di un prodotto
              metterebbe in vetrina una sola azienda fra tutte quelle del circuito. --}}
@@ -50,8 +50,8 @@
 @endif
 
 <div class="ksm-container">
-    @if ($site->enabled('benefits'))
-        <div class="ksm-store-benefits @unless ($site->enabled('hero')) ksm-store-benefits--flat @endunless">
+    @if ($site->showsInShop('benefits'))
+        <div class="ksm-store-benefits @unless ($site->showsInShop('hero')) ksm-store-benefits--flat @endunless">
             @foreach ($benefits as $benefit)
                 <div><x-icon :name="$benefit['icon']" :size="32" /><span><strong>{{ $benefit['title'] }}</strong>@if ($benefit['text'])<small>{{ $benefit['text'] }}</small>@endif</span></div>
             @endforeach

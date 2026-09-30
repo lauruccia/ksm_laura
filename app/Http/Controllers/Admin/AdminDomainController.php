@@ -194,6 +194,7 @@ class AdminDomainController extends AdminResourceController
             'site.hero.script' => ['nullable', 'string', 'max:120'],
 
             'site.benefits.enabled' => ['boolean'],
+            'site.benefits.shop' => ['boolean'],
             'site.benefits.items' => ['nullable', 'array', 'max:4'],
             'site.benefits.items.*.icon' => ['nullable', Rule::in(array_keys(SiteContent::BENEFIT_ICONS))],
             'site.benefits.items.*.title' => ['nullable', 'string', 'max:80'],

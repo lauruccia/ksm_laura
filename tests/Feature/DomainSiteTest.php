@@ -2,17 +2,28 @@
 
 namespace Tests\Feature;
 
+use App\Mail\ContactMessage;
+use App\Models\AdminSetting;
+use App\Models\Advertisement;
 use App\Models\Company;
+use App\Models\CompanyCategory;
 use App\Models\Domain;
+use App\Models\Order;
 use App\Models\Plan;
 use App\Models\Product;
 use App\Models\ProductCategory;
 use App\Models\Role;
 use App\Models\User;
+use App\Support\Ads\AdContext;
+use App\Support\Ads\Placements;
 use App\Support\PlanCapabilities;
+use App\Support\Sites\SiteScope;
+use App\Support\TenantContext;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Tests\TestCase;
 
 /**
@@ -51,14 +62,14 @@ class DomainSiteTest extends TestCase
     {
         $user = User::create(['name' => $name, 'email' => uniqid().'@example.test', 'password' => 'password', 'user_type' => 'vendor']);
 
-        return Company::create(['user_id' => $user->id, 'plan_id' => $this->plan->id, 'name' => $name, 'slug' => \Illuminate\Support\Str::slug($name), 'is_active' => true]);
+        return Company::create(['user_id' => $user->id, 'plan_id' => $this->plan->id, 'name' => $name, 'slug' => Str::slug($name), 'is_active' => true]);
     }
 
     private function product(Company $company, string $name, ProductCategory $category): Product
     {
         return Product::create([
             'company_id' => $company->id, 'category_id' => $category->id, 'name' => $name,
-            'slug' => \Illuminate\Support\Str::slug($name), 'price' => 14.9, 'stock' => 5, 'status' => 'active',
+            'slug' => Str::slug($name), 'price' => 14.9, 'stock' => 5, 'status' => 'active',
         ]);
     }
 
@@ -123,8 +134,8 @@ class DomainSiteTest extends TestCase
             'phone' => '081 555 1234',
             'header_accent' => '#2f9e44',
             'site' => [
-                'hero' => ['title' => 'La vera Mozzarella di Bufala,', 'highlight' => 'fresca a casa tua.', 'script' => 'Il gusto della tradizione', 'badge_title' => '100%', 'badge_text' => 'Latte di bufala italiano', 'badge_flag' => true],
-                'benefits' => ['items' => [['icon' => 'truck', 'title' => 'Spedizione refrigerata', 'text' => 'Freschezza garantita']]],
+                'hero' => ['enabled' => true, 'title' => 'La vera Mozzarella di Bufala,', 'highlight' => 'fresca a casa tua.', 'script' => 'Il gusto della tradizione', 'badge_title' => '100%', 'badge_text' => 'Latte di bufala italiano', 'badge_flag' => true],
+                'benefits' => ['shop' => true, 'items' => [['icon' => 'truck', 'title' => 'Spedizione refrigerata', 'text' => 'Freschezza garantita']]],
                 'menu' => ['left' => [['label' => 'Offerte', 'url' => '/prodotti?offerta=1']]],
                 'footer' => ['about' => 'Specialità artigianali dalla Campania.', 'legal' => 'Caseificio Aurora srl · P. IVA 01234567890'],
                 'seo' => ['title' => 'Mozzarella di bufala fresca online'],
@@ -164,7 +175,7 @@ class DomainSiteTest extends TestCase
 
     public function test_sottotitolo_e_motto_del_sito_principale_vengono_dalle_impostazioni(): void
     {
-        \App\Models\AdminSetting::current()->update(['header_tagline' => 'Il Portale dei Portali', 'header_subline' => 'Uno · Due']);
+        AdminSetting::current()->update(['header_tagline' => 'Il Portale dei Portali', 'header_subline' => 'Uno · Due']);
 
         $this->get('http://localhost/')
             ->assertOk()
@@ -189,7 +200,7 @@ class DomainSiteTest extends TestCase
             'hero_image' => UploadedFile::fake()->image('hero.jpg', 1600, 800),
         ])->assertRedirect()->assertSessionHasNoErrors();
 
-        $image = \App\Models\AdminSetting::current()->hero_image;
+        $image = AdminSetting::current()->hero_image;
         Storage::disk('public')->assertExists($image);
         $this->get('http://localhost/')->assertOk()->assertSee('storage/'.$image, false);
 
@@ -201,7 +212,7 @@ class DomainSiteTest extends TestCase
         // dopo la visita al dominio route() userebbe il suo indirizzo.
         $this->actingAs($admin)->put('http://localhost'.route('admin.settings.update', [], false), ['website_name' => 'KSM', 'remove_hero_image' => '1'])
             ->assertRedirect();
-        $this->assertNull(\App\Models\AdminSetting::current()->hero_image);
+        $this->assertNull(AdminSetting::current()->hero_image);
         Storage::disk('public')->assertMissing($image);
     }
 
@@ -213,10 +224,10 @@ class DomainSiteTest extends TestCase
         $this->product($caseificio, 'Bocconcini', $this->buffalo);
 
         $buyer = User::create(['name' => 'Cliente', 'email' => 'cliente@example.test', 'password' => 'password', 'user_type' => 'buyer']);
-        $order = \App\Models\Order::create(['user_id' => $buyer->id, 'company_id' => $caseificio->id, 'subtotal' => 30, 'total' => 30, 'status' => 'paid']);
+        $order = Order::create(['user_id' => $buyer->id, 'company_id' => $caseificio->id, 'subtotal' => 30, 'total' => 30, 'status' => 'paid']);
         $order->items()->create(['product_id' => $best->id, 'product_name' => $best->name, 'product_price' => 15, 'quantity' => 2, 'subtotal' => 30]);
 
-        $this->domain(['site' => ['featured' => ['title' => 'I più venduti', 'sort' => 'bestsellers']]]);
+        $this->domain(['site' => ['featured' => ['enabled' => true, 'title' => 'I più venduti', 'sort' => 'bestsellers']]]);
 
         $this->get(self::HOST.'/')
             ->assertOk()
@@ -308,9 +319,9 @@ class DomainSiteTest extends TestCase
 
     public function test_ristoranti_di_una_regione_e_solo_i_loro_voucher(): void
     {
-        $restaurants = \App\Models\CompanyCategory::create(['name' => 'Ristoranti', 'slug' => 'ristoranti']);
-        $pizzerie = \App\Models\CompanyCategory::create(['name' => 'Pizzerie', 'slug' => 'pizzerie', 'parent_id' => $restaurants->id]);
-        $shops = \App\Models\CompanyCategory::create(['name' => 'Negozi', 'slug' => 'negozi']);
+        $restaurants = CompanyCategory::create(['name' => 'Ristoranti', 'slug' => 'ristoranti']);
+        $pizzerie = CompanyCategory::create(['name' => 'Pizzerie', 'slug' => 'pizzerie', 'parent_id' => $restaurants->id]);
+        $shops = CompanyCategory::create(['name' => 'Negozi', 'slug' => 'negozi']);
         $voucher = ProductCategory::create(['name' => 'Voucher', 'slug' => 'voucher']);
 
         $place = fn (string $name, $category, string $city, string $region) => tap($this->company($name))
@@ -418,16 +429,16 @@ class DomainSiteTest extends TestCase
         }
         $domain = $this->domain(['type' => 'city', 'city' => 'Ostia', 'product_category_id' => null, 'company_scope' => 'category']);
 
-        $cities = (new \App\Support\Sites\SiteScope($domain))->companies(Company::query())->pluck('city')->sort()->values()->all();
+        $cities = (new SiteScope($domain))->companies(Company::query())->pluck('city')->sort()->values()->all();
 
         $this->assertSame(['Lido di Ostia', 'Ostia', 'Ostia Antica', 'Ostia-Lido'], $cities);
     }
 
     public function test_banner_scelti_dal_dominio_e_citta_della_regione(): void
     {
-        $campaign = fn (array $attributes) => \App\Models\Advertisement::create($attributes + [
+        $campaign = fn (array $attributes) => Advertisement::create($attributes + [
             'name' => 'Campagna', 'link' => 'https://example.test', 'img' => 'advertisements/x.png',
-            'locations' => [\App\Support\Ads\Placements::HOME_BELOW_HEADER], 'billing' => 'period', 'status' => 1,
+            'locations' => [Placements::HOME_BELOW_HEADER], 'billing' => 'period', 'status' => 1,
         ]);
         $cosenza = $this->company('Trattoria Cosenza');
         $cosenza->update(['city' => 'Cosenza', 'region' => 'Calabria']);
@@ -438,8 +449,8 @@ class DomainSiteTest extends TestCase
         $aCosenza = $campaign(['target_cities' => ['Cosenza']]);
         $aRoma = $campaign(['target_cities' => ['Roma']]);
 
-        app(\App\Support\TenantContext::class)->useDomain($domain);
-        $context = \App\Support\Ads\AdContext::current();
+        app(TenantContext::class)->useDomain($domain);
+        $context = AdContext::current();
 
         // Un dominio di regione vale come le sue citta'.
         $this->assertTrue($aCosenza->matches($context));
@@ -447,20 +458,20 @@ class DomainSiteTest extends TestCase
         $this->assertTrue($ovunque->matches($context));
 
         $domain->update(['site' => ['ads' => ['mode' => 'targeted']]]);
-        app(\App\Support\TenantContext::class)->useDomain($domain->fresh());
-        $context = \App\Support\Ads\AdContext::current();
+        app(TenantContext::class)->useDomain($domain->fresh());
+        $context = AdContext::current();
         $this->assertFalse($ovunque->matches($context));
         $this->assertTrue($mirata->matches($context));
 
         $domain->update(['site' => ['ads' => ['mode' => 'none']]]);
-        app(\App\Support\TenantContext::class)->useDomain($domain->fresh());
-        $this->assertFalse($mirata->matches(\App\Support\Ads\AdContext::current()));
+        app(TenantContext::class)->useDomain($domain->fresh());
+        $this->assertFalse($mirata->matches(AdContext::current()));
     }
 
     public function test_contatti_ed_email_portano_il_nome_e_l_indirizzo_del_dominio(): void
     {
-        \Illuminate\Support\Facades\Mail::fake();
-        \App\Models\AdminSetting::current()->update(['website_email' => 'info@ksm.test', 'address' => 'Sede KSM']);
+        Mail::fake();
+        AdminSetting::current()->update(['website_email' => 'info@ksm.test', 'address' => 'Sede KSM']);
         $this->domain(['email' => 'ordini@mozzarelledibufala.test', 'address' => 'Via dei Caseifici 12']);
 
         $this->get(self::HOST.'/contatti')
@@ -473,7 +484,7 @@ class DomainSiteTest extends TestCase
         $this->post(self::HOST.'/contatti', ['name' => 'Anna', 'email' => 'anna@example.test', 'message' => 'Spedite a Milano?'])
             ->assertSessionHasNoErrors();
 
-        \Illuminate\Support\Facades\Mail::assertSent(\App\Mail\ContactMessage::class, function ($mail) {
+        Mail::assertSent(ContactMessage::class, function ($mail) {
             return $mail->hasTo('ordini@mozzarelledibufala.test')
                 && $mail->siteName === 'Mozzarelle di bufala'
                 && $mail->envelope()->subject === 'Nuovo messaggio da Mozzarelle di bufala';
@@ -510,5 +521,33 @@ class DomainSiteTest extends TestCase
             'name' => 'Amministratore', 'email' => 'admin'.uniqid().'@example.test', 'password' => 'password',
             'user_type' => 'admin', 'role_id' => $role->id, 'is_active' => true,
         ]);
+    }
+
+    public function test_di_partenza_lo_shop_del_dominio_apre_sul_catalogo_come_la_directory(): void
+    {
+        $this->product($this->company('Caseificio Aurora'), 'Ricotta di bufala', $this->buffalo);
+        $this->domain();
+
+        $this->get(self::HOST.'/prodotti')
+            ->assertOk()
+            ->assertSee('Ricotta di bufala')
+            ->assertSee('ksm-directory__container', false)
+            ->assertDontSee('ksm-store-hero', false)
+            ->assertDontSee('ksm-store-benefits', false)
+            ->assertDontSee('ksm-store-featured', false)
+            ->assertDontSee('ksm-store-catalog--after-blocks', false);
+    }
+
+    public function test_i_blocchi_dello_shop_si_accendono_dal_dominio(): void
+    {
+        $this->product($this->company('Caseificio Aurora'), 'Ricotta di bufala', $this->buffalo);
+        $this->domain(['site' => ['hero' => ['enabled' => true, 'title' => 'Bufala fresca,'], 'categories' => ['enabled' => true]]]);
+
+        $this->get(self::HOST.'/prodotti')
+            ->assertOk()
+            ->assertSee('ksm-store-hero', false)
+            ->assertSee('Bufala fresca,')
+            ->assertSee('ksm-store-catalog--after-blocks', false)
+            ->assertDontSee('ksm-store-benefits', false);
     }
 }
