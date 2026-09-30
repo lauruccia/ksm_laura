@@ -6,6 +6,10 @@
  */
 
 const KSM_TARGET = '{{TARGET}}';
+// L'app sta su questo stesso server: la connessione va sempre a questo IP e non
+// esce dalla macchina, quindi non si pretende che il nome nel certificato
+// corrisponda (su cPanel il certificato di ksm.it puo' non contenere ksm.it).
+const KSM_SERVER_IP = '{{SERVER_IP}}';
 
 $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 $uri    = $_SERVER['REQUEST_URI'] ?? '/';
@@ -82,6 +86,12 @@ curl_setopt_array($ch, [
     CURLOPT_CONNECTTIMEOUT => 10,
     CURLOPT_TIMEOUT        => 120,
 ]);
+if (KSM_SERVER_IP !== '') {
+    $target = parse_url(KSM_TARGET);
+    $port = $target['port'] ?? (($target['scheme'] ?? 'https') === 'https' ? 443 : 80);
+    curl_setopt($ch, CURLOPT_RESOLVE, [$target['host'] . ':' . $port . ':' . KSM_SERVER_IP]);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
+}
 
 if ($method === 'HEAD') {
     curl_setopt($ch, CURLOPT_NOBODY, true);

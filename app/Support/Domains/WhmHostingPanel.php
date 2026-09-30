@@ -155,8 +155,11 @@ class WhmHostingPanel implements HostingPanel
     {
         $files = [
             '.htaccess' => file_get_contents(resource_path('domain-proxy/htaccess.stub')),
-            'index.php' => str_replace('{{TARGET}}', rtrim((string) $this->proxyTarget, '/'),
-                file_get_contents(resource_path('domain-proxy/index.php.stub'))),
+            'index.php' => str_replace(
+                ['{{TARGET}}', '{{SERVER_IP}}'],
+                [rtrim((string) $this->proxyTarget, '/'), (string) (config('ksm.server.ips')[0] ?? '')],
+                file_get_contents(resource_path('domain-proxy/index.php.stub')),
+            ),
         ];
 
         foreach ($files as $name => $content) {

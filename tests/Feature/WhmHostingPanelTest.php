@@ -118,6 +118,7 @@ class WhmHostingPanelTest extends TestCase
 
     public function test_a_refused_park_becomes_a_proxy_account(): void
     {
+        config(['ksm.server.ips' => ['86.107.33.88']]);
         $this->fakeFullWhm(taken: ['cittadiostia']);
 
         $this->assertNull($this->proxyPanel()->ensure('CittaDiOstia.it'));
@@ -131,7 +132,8 @@ class WhmHostingPanelTest extends TestCase
         Http::assertSent(fn (Request $request) => ($request['cpanel_jsonapi_func'] ?? null) === 'save_file_content'
             && $request['cpanel_jsonapi_user'] === 'cittadiostia1'
             && $request['file'] === 'index.php'
-            && str_contains($request['content'], "const KSM_TARGET = 'https://ksm.it';"));
+            && str_contains($request['content'], "const KSM_TARGET = 'https://ksm.it';")
+            && str_contains($request['content'], "const KSM_SERVER_IP = '86.107.33.88';"));
         Http::assertSent(fn (Request $request) => ($request['cpanel_jsonapi_func'] ?? null) === 'save_file_content'
             && $request['file'] === '.htaccess'
             && str_contains($request['content'], 'RewriteRule ^ index.php'));
