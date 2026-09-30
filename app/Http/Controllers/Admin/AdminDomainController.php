@@ -7,16 +7,21 @@ use App\Models\CmsPage;
 use App\Models\Company;
 use App\Models\CompanyCategory;
 use App\Models\Domain;
+use App\Models\HostingSetting;
 use App\Models\ProductCategory;
 use App\Support\Ads\AdContext;
+use App\Support\BulkSelection;
 use App\Support\CategoryTree;
+use App\Support\Domains\CpanelHostingPanel;
 use App\Support\Domains\DomainConnectionChecker;
 use App\Support\Domains\HostingPanel;
 use App\Support\Domains\HostName;
 use App\Support\Domains\NoHostingPanel;
+use App\Support\Domains\WhmHostingPanel;
 use App\Support\Images\ImageStore;
 use App\Support\Sites\SiteContent;
 use Illuminate\Contracts\View\View;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -48,6 +53,221 @@ class AdminDomainController extends AdminResourceController
     protected function rowActions(): array
     {
         return [['Verifica ora', 'admin.domains.check', 'PATCH']];
+    }
+
+    /** Stati del collegamento per i filtri, nell'ordine in cui si risolvono. */
+    public const STATES = [
+        'errore' => 'Con errore',
+        'da_verificare' => 'Da verificare',
+        'dns' => 'DNS da configurare',
+        'certificato' => 'Certificato in attesa',
+        'collegato' => 'Collegato',
+    ];
+
+    public const SORTS = [
+        'recenti' => 'Più recenti',
+        'nome' => 'Nome (A-Z)',
+        'dominio' => 'Dominio (A-Z)',
+        'stato' => 'Stato (da sistemare prima)',
+        'verifica' => 'Verificati da più tempo',
+    ];
+
+    public const PER_PAGE = [20, 50, 100, 200];
+
+    /**
+     * L'elenco ha una vista sua: con centinaia di domini servono filtri per
+     * stato, tipo e attivo, l'ordinamento, e i contatori per stato in cima.
+     */
+    public function index(Request $request): View
+    {
+        $perPage = in_array($request->integer('per_pagina'), self::PER_PAGE, true) ? $request->integer('per_pagina') : 50;
+
+        $records = $this->sorted($this->filters(Domain::query(), $request), $request->string('ordina')->toString())
+            ->paginate($perPage)
+            ->withQueryString();
+
+        // I contatori seguono ricerca, tipo e attivo, non lo stato scelto: dicono quanti ce ne sono per ogni stato.
+        $counts = [];
+        foreach (array_keys(self::STATES) as $state) {
+            $counts[$state] = $this->filters(Domain::query(), $request->duplicate(array_merge($request->query(), ['stato' => $state])))->count();
+        }
+
+        return view('admin.domains.index', [
+            'records' => $records,
+            'counts' => $counts,
+            'states' => self::STATES,
+            'sorts' => self::SORTS,
+            'perPageOptions' => self::PER_PAGE,
+            'types' => Domain::TYPES,
+            'hosting' => $this->hostingSummary(),
+        ] + $this->shared());
+    }
+
+    public function filters(Builder $query, Request $request): Builder
+    {
+        $term = trim($request->string('cerca')->toString());
+
+        return $query
+            ->when($term !== '', fn ($q) => $q->where(fn ($q) => $q->where('name', 'like', "%$term%")->orWhere('domain', 'like', "%$term%")))
+            ->when(in_array($request->input('tipo'), Domain::TYPES, true), fn ($q) => $q->where('type', $request->input('tipo')))
+            ->when(in_array($request->input('attivo'), ['1', '0'], true), fn ($q) => $q->where('is_active', $request->input('attivo') === '1'))
+            ->when($request->input('stato'), fn ($q, $state) => match ($state) {
+                'collegato' => $q->whereNotNull('dns_verified_at')->whereNotNull('ssl_verified_at'),
+                'certificato' => $q->whereNotNull('dns_verified_at')->whereNull('ssl_verified_at'),
+                'dns' => $q->whereNotNull('domain_checked_at')->whereNull('dns_verified_at'),
+                'da_verificare' => $q->whereNull('domain_checked_at'),
+                'errore' => $q->whereNotNull('domain_error')->where('domain_error', '!=', ''),
+                default => $q,
+            });
+    }
+
+    private function sorted(Builder $query, string $sort): Builder
+    {
+        return match ($sort) {
+            'nome' => $query->orderBy('name')->orderBy('domain'),
+            'dominio' => $query->orderBy('domain'),
+            // Prima quelli da sistemare: mai verificati, DNS, certificato, poi i collegati.
+            'stato' => $query->orderByRaw('CASE WHEN domain_checked_at IS NULL THEN 0 WHEN dns_verified_at IS NULL THEN 1 WHEN ssl_verified_at IS NULL THEN 2 ELSE 3 END')->orderBy('domain'),
+            'verifica' => $query->orderByRaw('domain_checked_at IS NULL DESC')->orderBy('domain_checked_at')->orderBy('domain'),
+            default => $query->latest()->orderByDesc('id'),
+        };
+    }
+
+    /**
+     * Azioni in blocco: verifica (solo DNS e certificato), ricollega (di nuovo
+     * sul pannello dell'hosting, poi verifica), attiva, disattiva, elimina.
+     * Verifica e ricollega vanno in coda: con centinaia di domini una pagina
+     * sola non basterebbe, e la WHM fa ripartire Apache.
+     */
+    public function bulk(Request $request): RedirectResponse
+    {
+        $actions = ['verify', 'reconnect', 'activate', 'deactivate', 'delete'];
+        $request->validate(BulkSelection::rules($actions, onlySelected: ['delete']), BulkSelection::messages());
+
+        $query = BulkSelection::query($request, Domain::query(), $this->filters(...));
+        $action = $request->input('action');
+
+        if ($action === 'delete') {
+            $count = BulkSelection::deleteEach($query);
+
+            return back()->with('success', trans_choice(':count dominio eliminato.|:count domini eliminati.', $count));
+        }
+
+        if (in_array($action, ['activate', 'deactivate'], true)) {
+            $count = 0;
+            $query->chunkById(200, function ($domains) use ($action, &$count) {
+                foreach ($domains as $domain) {
+                    $domain->update(['is_active' => $action === 'activate']);
+                    $count++;
+                }
+            });
+
+            return back()->with('success', trans_choice(':count dominio aggiornato.|:count domini aggiornati.', $count));
+        }
+
+        $count = 0;
+        $register = $action === 'reconnect';
+        $query->chunkById(200, function ($domains) use ($register, &$count) {
+            foreach ($domains as $domain) {
+                RegisterDomainOnHostingPanel::dispatch(Domain::class, $domain->getKey(), $domain->domain, $register);
+                $count++;
+            }
+        });
+
+        return back()->with('success', trans_choice(
+            $register
+                ? ':count dominio messo in coda per il ricollegamento: lo stato si aggiorna nei prossimi minuti.|:count domini messi in coda per il ricollegamento: lo stato si aggiorna nei prossimi minuti.'
+                : ':count dominio messo in coda per la verifica: lo stato si aggiorna nei prossimi minuti.|:count domini messi in coda per la verifica: lo stato si aggiorna nei prossimi minuti.',
+            $count
+        ));
+    }
+
+    /** Server e pannello in uso, per la riga in cima all'elenco e la pagina Server e hosting. */
+    private function hostingSummary(): array
+    {
+        $panel = app(HostingPanel::class);
+
+        return [
+            'panel' => match (true) {
+                $panel instanceof WhmHostingPanel => 'WHM',
+                $panel instanceof CpanelHostingPanel => 'cPanel',
+                default => 'Nessun pannello',
+            },
+            'ips' => (array) config('ksm.server.ips'),
+            'cname' => config('ksm.server.cname'),
+            'source' => rescue(fn () => HostingSetting::query()->value('panel'), null, false) ?: 'env',
+        ];
+    }
+
+    public function hosting(): View
+    {
+        return view('admin.domains.hosting', [
+            'setting' => HostingSetting::current(),
+            'panels' => HostingSetting::PANELS,
+            'hosting' => $this->hostingSummary(),
+            'env' => [
+                'ips' => implode(', ', (array) config('ksm.server.ips')),
+                'whm' => array_filter(['url' => config('ksm.whm.url'), 'account' => config('ksm.whm.account'), 'proxy_plan' => config('ksm.whm.proxy_plan')]),
+            ],
+            'domainCount' => Domain::count(),
+        ]);
+    }
+
+    public function updateHosting(Request $request): RedirectResponse
+    {
+        $setting = HostingSetting::current();
+        $panel = $request->input('panel');
+
+        $data = $request->validate([
+            'panel' => ['required', Rule::in(array_keys(HostingSetting::PANELS))],
+            'server_ips' => ['nullable', 'required_unless:panel,env', 'string', 'max:255', function (string $attribute, mixed $value, \Closure $fail) {
+                foreach (array_filter(array_map('trim', explode(',', (string) $value))) as $ip) {
+                    if (! filter_var($ip, FILTER_VALIDATE_IP)) {
+                        $fail("{$ip} non è un indirizzo IP.");
+                    }
+                }
+            }],
+            'server_cname' => ['nullable', 'string', 'max:255'],
+            'cpanel_url' => ['nullable', 'required_if:panel,cpanel', 'url', 'max:255'],
+            'cpanel_user' => ['nullable', 'required_if:panel,cpanel', 'string', 'max:64'],
+            'cpanel_token' => ['nullable', Rule::requiredIf($panel === 'cpanel' && blank($setting->cpanel_token)), 'string', 'max:255'],
+            'cpanel_docroot' => ['nullable', 'string', 'max:255'],
+            'whm_url' => ['nullable', 'required_if:panel,whm', 'url', 'max:255'],
+            'whm_reseller' => ['nullable', 'required_if:panel,whm', 'string', 'max:64'],
+            'whm_token' => ['nullable', Rule::requiredIf($panel === 'whm' && blank($setting->whm_token)), 'string', 'max:255'],
+            'whm_account' => ['nullable', 'required_if:panel,whm', 'string', 'max:64'],
+            'whm_proxy_plan' => ['nullable', 'string', 'max:128'],
+            'whm_proxy_target' => ['nullable', 'url', 'max:255'],
+            'whm_contact_email' => ['nullable', 'email', 'max:255'],
+        ], [
+            'server_ips.required_unless' => 'Scrivi l\'IP del server: i domini dei clienti devono puntare lì.',
+        ]);
+
+        // Un token vuoto nel modulo vuol dire "lascia quello salvato".
+        foreach (['cpanel_token', 'whm_token'] as $token) {
+            if (blank($data[$token] ?? null)) {
+                unset($data[$token]);
+            }
+        }
+
+        $setting->update($data);
+        app()->forgetInstance(HostingPanel::class);
+
+        return redirect()->route('admin.domains.hosting')->with('success', __('Impostazioni salvate. Prova la connessione, poi ricollega i domini se hai cambiato server.'));
+    }
+
+    /** Prova la connessione con il pannello scelto, senza cambiare niente. */
+    public function testHosting(): RedirectResponse
+    {
+        $panel = app(HostingPanel::class);
+
+        if (! method_exists($panel, 'probe')) {
+            return back()->with('success', __('Nessun pannello da provare: i domini vanno aggiunti al server web a mano (o ci pensa Caddy sul VPS).'));
+        }
+
+        $error = $panel->probe();
+
+        return $error ? back()->with('error', $error) : back()->with('success', __('Connessione riuscita.'));
     }
 
     /** Verifica subito DNS e certificato, senza aspettare il giro orario. */

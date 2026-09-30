@@ -176,6 +176,12 @@ Route::middleware(['auth', 'admin'])
             Route::patch('/domini-in-blocco', [AdminDomainController::class, 'bulk'])->name('domains.bulk');
             Route::patch('/domini/{domain}/verifica', [AdminDomainController::class, 'check'])
                 ->name('domains.check');
+            // Server e pannello dell'hosting: cambiarli sposta tutti i domini, quindi servono le impostazioni.
+            Route::middleware('can:'.P::SETTINGS_MANAGE)->group(function () {
+                Route::get('/domini-server', [AdminDomainController::class, 'hosting'])->name('domains.hosting');
+                Route::put('/domini-server', [AdminDomainController::class, 'updateHosting'])->name('domains.hosting.update');
+                Route::patch('/domini-server/prova', [AdminDomainController::class, 'testHosting'])->name('domains.hosting.test');
+            });
             Route::resource('pagine', AdminCmsPageController::class)
                 ->parameters(['pagine' => 'page'])->names('cms');
             Route::patch('/pagine-in-blocco', [AdminCmsPageController::class, 'bulk'])->name('cms.bulk');

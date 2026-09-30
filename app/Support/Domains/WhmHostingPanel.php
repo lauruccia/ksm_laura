@@ -163,6 +163,26 @@ class WhmHostingPanel implements HostingPanel
         return null;
     }
 
+    /** Prova la connessione dall'Amministrazione: null se va, altrimenti cosa non va. */
+    public function probe(): ?string
+    {
+        try {
+            $domains = $this->domains();
+
+            if ($this->usesProxyAccounts()) {
+                $plans = array_column((array) $this->http()->get('/json-api/listpkgs', ['api.version' => 1])->throw()->json('data.pkg', []), 'name');
+
+                if (! in_array($this->proxyPlan, $plans, true)) {
+                    return "Il pacchetto {$this->proxyPlan} non esiste tra quelli del rivenditore.";
+                }
+            }
+        } catch (Throwable $e) {
+            return 'WHM non risponde: '.$e->getMessage();
+        }
+
+        return null;
+    }
+
     public function requestCertificate(): void
     {
         foreach (array_unique($this->certificateUsers) as $user) {

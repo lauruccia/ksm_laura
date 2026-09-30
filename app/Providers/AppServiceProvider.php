@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Models\HostingSetting;
 use App\Models\SmtpSetting;
 use App\Support\Ads\AdServer;
 use App\Support\Domains\CpanelHostingPanel;
@@ -26,6 +27,9 @@ class AppServiceProvider extends ServiceProvider
 
         // Solo con un token cPanel i domini si aggiungono da soli all'account.
         $this->app->singleton(HostingPanel::class, function () {
+            // Server e pannello scelti in Amministrazione valgono piu' del .env.
+            HostingSetting::applyToConfig();
+
             // Con la configurazione in cache di prima le chiavi mancano del tutto.
             $whm = (array) config('ksm.whm', []) + ['url' => null, 'reseller' => null, 'token' => null, 'account' => null,
                 'proxy_plan' => null, 'proxy_target' => null, 'contact_email' => null];

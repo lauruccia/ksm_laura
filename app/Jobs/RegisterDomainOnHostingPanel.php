@@ -10,7 +10,8 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 
 /**
- * Porta un dominio sul pannello dell'hosting e ne verifica il collegamento.
+ * Porta un dominio sul pannello dell'hosting e ne verifica il collegamento
+ * ("Ricollega"), o lo verifica soltanto ("Verifica" in blocco).
  *
  * Gira in coda, non dentro la richiesta: sulla WHM creare un account o
  * parcheggiare un dominio fa ripartire Apache, e la pagina che ha salvato
@@ -30,6 +31,8 @@ class RegisterDomainOnHostingPanel implements ShouldQueue
         public readonly string $modelClass,
         public readonly int|string $modelId,
         public readonly string $host,
+        // Falso per "Verifica" in blocco: solo DNS e certificato, il pannello non si tocca.
+        public readonly bool $register = true,
     ) {}
 
     /** Attese fra un tentativo e l'altro, in secondi. */
@@ -47,6 +50,6 @@ class RegisterDomainOnHostingPanel implements ShouldQueue
             return;
         }
 
-        $checker->refresh($model, $this->host);
+        $checker->refresh($model, $this->host, $this->register);
     }
 }

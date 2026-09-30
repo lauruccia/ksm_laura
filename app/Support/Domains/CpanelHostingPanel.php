@@ -72,6 +72,18 @@ class CpanelHostingPanel implements HostingPanel
         return null;
     }
 
+    /** Prova la connessione dall'Amministrazione: null se va, altrimenti cosa non va. */
+    public function probe(): ?string
+    {
+        try {
+            $this->domains();
+        } catch (Throwable $e) {
+            return 'cPanel non risponde: '.$e->getMessage();
+        }
+
+        return null;
+    }
+
     public function requestCertificate(): void
     {
         if ($this->certificateRequested) {
