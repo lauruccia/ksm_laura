@@ -75,7 +75,7 @@ class CompanyDirectory
             ->orderByRaw('case when plans.id is null then 1 else 0 end')
             ->orderByDesc('plans.priority')
             ->orderByDesc('plans.price')
-            ->orderByRaw($this->shuffleKey('companies.id', $seed))
+            ->orderByRaw(self::shuffleKey('companies.id', $seed))
             // La chiave puo' ripetersi: l'id rende l'ordine totale, cosi'
             // nessuna azienda salta o si ripete da una pagina all'altra.
             ->orderBy('companies.id');
@@ -91,7 +91,7 @@ class CompanyDirectory
      * danno ordini che non si somigliano. Nella query finiscono solo interi
      * calcolati qui, mai testo della richiesta.
      */
-    private function shuffleKey(string $column, int $seed): string
+    public static function shuffleKey(string $column, int $seed): string
     {
         $m = self::MODULUS;
         $multiplier = crc32("a:$seed") % ($m - 1) + 1;

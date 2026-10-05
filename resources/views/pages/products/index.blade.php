@@ -32,10 +32,16 @@
         ]));
 
         $sortOptions = [
-            '' => __('site.shop_sort_newest'),
+            '' => __('site.shop_sort_random'),
+            'recenti' => __('site.shop_sort_newest'),
+            'vecchi' => __('site.shop_sort_oldest'),
             'prezzo' => __('site.shop_sort_price_asc'),
             'prezzo_desc' => __('site.shop_sort_price_desc'),
             'nome' => __('site.shop_sort_name'),
+            'nome_desc' => __('site.shop_sort_name_desc'),
+            'kmoney' => __('site.shop_sort_kmoney_desc'),
+            'kmoney_asc' => __('site.shop_sort_kmoney_asc'),
+            'sconto' => __('site.shop_sort_discount'),
         ];
 
         // Il catalogo con i filtri si puo' spegnere per dominio, ma resta se si sta gia' filtrando.

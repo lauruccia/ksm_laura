@@ -7,6 +7,7 @@ use App\Models\ProductBrand;
 use App\Models\ProductCategory;
 use App\Support\Cart;
 use App\Support\CategoryTree;
+use App\Support\CompanyDirectory;
 use App\Support\PlanCapabilities;
 use App\Support\TenantContext;
 use Illuminate\Contracts\View\View;
@@ -46,6 +47,11 @@ class ProductController extends Controller
 
         $categoryId = $request->integer('categoria');
 
+        // Senza un ordine scelto il catalogo si mescola a ogni visita. Il seme viaggia
+        // con la paginazione: senza, la pagina due rimescolerebbe i prodotti gia' visti sulla uno.
+        $sort = $request->string('ordina')->toString();
+        $seed = CompanyDirectory::seed($request->integer('mix'));
+
         $products = (clone $visible)
             ->with(['company', 'category', 'brand', 'variants'])
             ->withAvg('reviews', 'rating')
@@ -63,9 +69,16 @@ class ProductController extends Controller
             ->when($request->boolean('disponibili'), fn ($q) => $q->available())
             ->when($request->boolean('kmoney'), fn ($q) => $q->where('kmoney_percent', '>', 0))
             ->when($request->boolean('offerta'), fn ($q) => $q->where('discount_price', '>', 0)->whereColumn('discount_price', '<', 'price'))
-            ->orderByRaw($this->sortColumn($request->string('ordina')->toString()).' '.$this->sortDirection($request->string('ordina')->toString()))
+            ->orderByRaw($this->sortExpression($sort, $seed))
+            // Il mescolamento e i pari merito: l'id rende l'ordine totale, cosi'
+            // nessun prodotto salta o si ripete da una pagina all'altra.
+            ->orderBy('products.id')
             ->paginate($this->perPage($request))
             ->withQueryString();
+
+        if ($this->isRandom($sort)) {
+            $products->appends('mix', $seed);
+        }
 
         // Prodotti visibili per categoria, per i contatori della barra laterale.
         $counts = (clone $visible)
@@ -239,17 +252,35 @@ class ProductController extends Controller
         return in_array($perPage, self::PER_PAGE_OPTIONS, true) ? $perPage : self::PER_PAGE_DEFAULT;
     }
 
-    private function sortColumn(string $sort): string
+    /** Casuale e' l'ordine predefinito: vale sia senza scelta sia con quella esplicita. */
+    private function isRandom(string $sort): bool
     {
-        return match ($sort) {
-            'prezzo', 'prezzo_desc' => Product::FINAL_PRICE_SQL,
-            'nome' => 'products.name',
-            default => 'products.created_at',
-        };
+        return ! in_array($sort, self::SORTS, true);
     }
 
-    private function sortDirection(string $sort): string
+    /** Valori di `ordina` che scelgono un ordine fisso. */
+    private const SORTS = [
+        'recenti', 'vecchi', 'prezzo', 'prezzo_desc', 'nome', 'nome_desc', 'kmoney', 'kmoney_asc', 'sconto',
+    ];
+
+    /** Espressione ORDER BY (colonna e verso); il resto lo mette chi chiama. */
+    private function sortExpression(string $sort, int $seed): string
     {
-        return in_array($sort, ['prezzo_desc', ''], true) || $sort === '' ? 'desc' : 'asc';
+        // Sconto in percentuale sul prezzo di listino; zero se il prodotto non e' in offerta.
+        $discount = 'CASE WHEN products.discount_price > 0 AND products.discount_price < products.price'
+            .' THEN (products.price - products.discount_price) * 1.0 / products.price ELSE 0 END';
+
+        return match ($sort) {
+            'recenti' => 'products.created_at desc',
+            'vecchi' => 'products.created_at asc',
+            'prezzo' => Product::FINAL_PRICE_SQL.' asc',
+            'prezzo_desc' => Product::FINAL_PRICE_SQL.' desc',
+            'nome' => 'products.name asc',
+            'nome_desc' => 'products.name desc',
+            'kmoney' => 'products.kmoney_percent desc',
+            'kmoney_asc' => 'products.kmoney_percent asc',
+            'sconto' => "$discount desc",
+            default => CompanyDirectory::shuffleKey('products.id', $seed),
+        };
     }
 }
