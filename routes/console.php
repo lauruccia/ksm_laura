@@ -58,6 +58,12 @@ Schedule::call(function () {
 })->name('cache:prune-expired')->dailyAt('04:30');
 
 /*
+ * Le visite delle statistiche piu' vecchie del tempo di conservazione
+ * (KSM_ANALYTICS_RETENTION_DAYS) si cancellano di notte.
+ */
+$inProcess('analytics:prune')->dailyAt('04:45');
+
+/*
  * La coda: notifiche di pagamento e stato KMoney arrivano dai webhook e si
  * elaborano qui. Non c'e' un processo sempre acceso, quindi ogni minuto si
  * svuota la coda e ci si ferma prima del giro dopo. Sta per ultima: puo'

@@ -8,6 +8,24 @@ return [
     /* Host che servono la piattaforma e non una vetrina. */
     'platform_hosts' => array_filter(explode(',', (string) env('KSM_PLATFORM_HOSTS', 'ksm.it,localhost,127.0.0.1'))),
 
+    /*
+     * Statistiche delle visite (amministrazione > Statistiche visite).
+     * Senza cookie e senza dati personali: IP e User-Agent non si salvano.
+     */
+    'analytics' => [
+        'enabled' => (bool) env('KSM_ANALYTICS', true),
+        // Fuso con cui si decide il giorno e l'ora di una visita.
+        'timezone' => env('KSM_ANALYTICS_TIMEZONE', 'Europe/Rome'),
+        // Non contare chi ha attivo "Do Not Track" o Global Privacy Control.
+        'respect_dnt' => (bool) env('KSM_ANALYTICS_RESPECT_DNT', true),
+        // Dopo quanti giorni le visite si cancellano (giro notturno analytics:prune).
+        'retention_days' => (int) env('KSM_ANALYTICS_RETENTION_DAYS', 400),
+        // Per il paese di chi visita: intestazioni messe da un servizio davanti al sito...
+        'country_headers' => ['CF-IPCountry', 'CloudFront-Viewer-Country', 'X-Vercel-IP-Country', 'X-Country-Code'],
+        // ...oppure il file GeoLite2-Country.mmdb di MaxMind (serve geoip2/geoip2).
+        'geoip_database' => env('KSM_GEOIP_DATABASE'),
+    ],
+
     /* Lingue disponibili nel selettore di intestazione. */
     'locales' => [
         'it' => 'Italiano',

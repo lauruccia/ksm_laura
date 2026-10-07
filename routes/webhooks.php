@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AdvertisementViewController;
+use App\Http\Controllers\AnalyticsDurationController;
 use App\Http\Controllers\TlsAuthorizationController;
 use App\Http\Controllers\WebhookController;
 use Illuminate\Support\Facades\Route;
@@ -33,3 +34,11 @@ Route::get('/tls/autorizza', TlsAuthorizationController::class)->name('tls.autho
 Route::post('/banner/{advertisement}/vista', AdvertisementViewController::class)
     ->middleware(['signed:relative', 'throttle:120,1'])
     ->name('ads.view');
+
+/*
+ * Durata di una visita, segnalata dalla pagina con sendBeacon quando si chiude.
+ * Niente sessione: vale la sigla casuale che il sito ha scritto nella pagina.
+ */
+Route::post('/stat/durata', AnalyticsDurationController::class)
+    ->middleware('throttle:240,1')
+    ->name('analytics.duration');

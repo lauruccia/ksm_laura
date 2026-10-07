@@ -7,6 +7,7 @@
         'box'      => '<path d="m12 3 8 4.5v9L12 21l-8-4.5v-9L12 3Z"/><path d="m4 7.5 8 4.5 8-4.5"/><path d="M12 12v9"/>',
         'building' => '<path d="M4 21V6a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v15"/><path d="M14 10h4a2 2 0 0 1 2 2v9"/><path d="M8 8h2"/><path d="M8 12h2"/><path d="M8 16h2"/><path d="M2 21h20"/>',
         'chart'    => '<path d="M4 20V10"/><path d="M10 20V4"/><path d="M16 20v-7"/><path d="M22 20H2"/>',
+        'clock'    => '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.2 2"/>',
         'users'    => '<circle cx="9" cy="8" r="3.2"/><path d="M3 20a6 6 0 0 1 12 0"/><path d="M16.5 5.6a3.2 3.2 0 0 1 0 5.8"/><path d="M18 14.6A6 6 0 0 1 21.5 20"/>',
         'arrow'    => '<path d="M5 12h13"/><path d="m12.5 5.5 6 6.5-6 6.5"/>',
         'pin'      => '<path d="M12 21s7-5.6 7-11a7 7 0 1 0-14 0c0 5.4 7 11 7 11Z"/><circle cx="12" cy="10" r="2.6"/>',

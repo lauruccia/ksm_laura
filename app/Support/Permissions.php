@@ -13,6 +13,8 @@ final class Permissions
 {
     public const DASHBOARD_VIEW = 'dashboard.view';
 
+    public const ANALYTICS_VIEW = 'analytics.view';
+
     public const COMPANIES_VIEW = 'companies.view';
 
     public const COMPANIES_MANAGE = 'companies.manage';
@@ -56,6 +58,7 @@ final class Permissions
         return [
             'Riepilogo' => [
                 self::DASHBOARD_VIEW => 'Vedere il riepilogo',
+                self::ANALYTICS_VIEW => 'Vedere le statistiche delle visite',
             ],
             'Aziende' => [
                 self::COMPANIES_VIEW => 'Vedere le aziende',

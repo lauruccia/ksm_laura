@@ -39,6 +39,8 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->web(append: [
             App\Http\Middleware\ResolveTenant::class,
             App\Http\Middleware\SetLocale::class,
+            // Per ultimo: la riga si scrive a risposta inviata (terminate).
+            App\Http\Middleware\TrackPageView::class,
         ]);
 
         // Il sito si decide prima dell'accesso e dei parametri delle rotte: su un host

@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\AdminAdvertisementController;
 use App\Http\Controllers\Admin\AdminAdvertiserController;
+use App\Http\Controllers\Admin\AdminAnalyticsController;
 use App\Http\Controllers\Admin\AdminCmsPageController;
 use App\Http\Controllers\Admin\AdminCompanyCategoryController;
 use App\Http\Controllers\Admin\AdminCompanyController;
@@ -42,6 +43,14 @@ Route::middleware(['auth', 'admin'])
     ->group(function () {
         Route::get('/', [AdminDashboardController::class, 'index'])
             ->middleware('can:'.P::DASHBOARD_VIEW)->name('dashboard');
+
+        /* Statistiche visite -------------------------------------------- */
+
+        Route::middleware('can:'.P::ANALYTICS_VIEW)->prefix('statistiche')->name('analytics.')->group(function () {
+            Route::get('/', [AdminAnalyticsController::class, 'index'])->name('index');
+            Route::get('/esporta/{type}', [AdminAnalyticsController::class, 'export'])
+                ->whereIn('type', ['giorni', 'pagine', 'sorgenti'])->name('export');
+        });
 
         /* Aziende ------------------------------------------------------- */
 

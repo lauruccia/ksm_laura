@@ -865,3 +865,26 @@ chiave dell'app). La posta in uscita scritta in **Impostazioni** vale solo
 se e' accesa la sua casella; spenta, valgono i `MAIL_*` del `.env`. I campi lasciati vuoti non
 sovrascrivono i valori gia salvati, e i valori esistenti non vengono
 ristampati nelle pagine.
+
+## Statistiche visite
+
+Amministrazione > **Statistiche visite** (permesso `analytics.view`: il super amministratore
+lo ha da solo, gli altri ruoli si spuntano in Ruoli e permessi). Mostra, per tutti i siti della
+rete o per uno solo e per il periodo scelto: visitatori, visite, pagine viste, pagine per visita,
+durata media, rimbalzo (con il confronto sul periodo prima), andamento, pagine piu' viste e di
+ingresso, provenienza (ricerca, social, email, siti esterni, campagne `utm_*`), paesi,
+dispositivi, browser, sistemi, orari e siti piu' visitati. Esporta in CSV.
+
+- **Senza cookie e senza dati personali.** `TrackPageView` scrive una riga in `page_views` a
+  risposta inviata; IP e User-Agent non si salvano, servono solo per un'impronta che cambia ogni
+  notte. La durata la manda `public/js/analytics.js` quando la pagina si lascia.
+- **Non si contano**: bot, richieste non GET, chi amministra dopo l'accesso, "Do Not Track" e
+  Global Privacy Control, aree riservate e indirizzi con codici (`TrackPageView::EXCLUDED`).
+- **Paese**: arriva da un'intestazione del servizio davanti al sito (`CF-IPCountry`...) o dal file
+  GeoLite2-Country di MaxMind (`KSM_GEOIP_DATABASE`, serve `geoip2/geoip2`). Senza, resta
+  "Non rilevato".
+- **Conservazione**: `analytics:prune` (ogni notte) cancella oltre `KSM_ANALYTICS_RETENTION_DAYS`
+  giorni (400). `KSM_ANALYTICS=false` spegne tutto.
+- La tabella nasce con la migrazione `create_page_views_table` (il deploy la lancia da solo);
+  `docs/statistiche-visite.sql` e' lo stesso a mano.
+- Va citata nella pagina privacy: dati statistici anonimi, nessun cookie.

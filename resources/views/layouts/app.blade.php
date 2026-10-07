@@ -4,6 +4,10 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    {{-- Statistiche visite: sigla della pagina vista, rimandata da analytics.js con la durata. --}}
+    @if ($analyticsUid = request()->attributes->get(\App\Http\Middleware\TrackPageView::ATTRIBUTE))
+        <meta name="ksm-pv" content="{{ $analyticsUid }}" data-url="{{ route('analytics.duration', [], false) }}">
+    @endif
 
     @php
         // Sull'indirizzo principale di un dominio titolo e descrizione li decide il dominio.
@@ -60,6 +64,9 @@
 
     <script src="{{ asset('js/ksm.js') }}?v={{ filemtime(public_path('js/ksm.js')) }}" defer></script>
     <script src="{{ asset('js/ads.js') }}?v={{ filemtime(public_path('js/ads.js')) }}" defer></script>
+    @if ($analyticsUid)
+        <script src="{{ asset('js/analytics.js') }}?v={{ filemtime(public_path('js/analytics.js')) }}" defer></script>
+    @endif
     @stack('scripts')
 </body>
 </html>

@@ -1,8 +1,8 @@
 // Tabelle dei pannelli sul telefono: ogni cella prende il nome della sua
 // colonna, cosi' il CSS puo' mostrare la riga come una scheda (vedi
-// .ksm-table--stack in components.css). Le celle unite, come "Nessun
+// .ksm-table--stack in components.css; data-flat la salta). Le celle unite, come "Nessun
 // risultato", restano senza nome e occupano tutta la larghezza.
-document.querySelectorAll('.ksm-table-wrap > .ksm-table').forEach((table) => {
+document.querySelectorAll('.ksm-table-wrap > .ksm-table:not([data-flat])').forEach((table) => {
     const heads = [...table.querySelectorAll('thead th')].map((th) => th.textContent.trim());
 
     if (!heads.length) {

@@ -7,6 +7,10 @@
     <li><a href="{{ route('admin.dashboard') }}" @if (request()->routeIs('admin.dashboard')) aria-current="page" @endif><x-icon name="dashboard" :size="18" /><span>Riepilogo</span></a></li>
 @endcan
 
+@can(P::ANALYTICS_VIEW)
+    <li><a href="{{ route('admin.analytics.index') }}" @if (request()->routeIs('admin.analytics.*')) aria-current="page" @endif><x-icon name="chart" :size="18" /><span>Statistiche visite</span></a></li>
+@endcan
+
 @canany([P::COMPANIES_VIEW, P::CATALOG_VIEW])
     <li class="ksm-panel__sep">Marketplace</li>
 @endcanany
