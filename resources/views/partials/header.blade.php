@@ -18,7 +18,8 @@
     }
     $siteTagline = $siteTagline ?? $presentation['tagline'] ?? ($mainSite ? $settings->header_tagline : null) ?? ($isShopHeader ? __('header.shop_tagline') : trim(__('site.claim_line1').' '.__('site.claim_line2')));
     $siteSubline = $siteSubline ?? $presentation['subline'] ?? ($mainSite ? $settings->header_subline : null) ?? ($isShopHeader ? __('header.shop_subline') : __('site.claim_tagline'));
-    $logoUrl = $logoUrl ?? $presentation['logo'] ?? ($tenant->brandLogo() ? asset('storage/'.$tenant->brandLogo()) : null);
+    // Sul sito principale il logo e' quello caricato in Amministrazione, Impostazioni.
+    $logoUrl = $logoUrl ?? $presentation['logo'] ?? ($tenant->brandLogo() ? asset('storage/'.$tenant->brandLogo()) : ($mainSite && $settings->site_logo ? asset('storage/'.$settings->site_logo) : null));
 
     // Un dominio della rete puo' scrivere il proprio menu e non mostra le pagine CMS di KSM;
     // sul sito principale i menu si scrivono in Amministrazione, Menu. Il dominio di

@@ -24,7 +24,7 @@
     @php
         $presentation = app(\App\Support\HeaderPresentation::class)->resolve(request(), null);
         $brandName = $presentation['name'] ?? $tenant->brandName();
-        $brandLogo = $presentation['logo'] ?? ($tenant->brandLogo() ? asset('storage/'.$tenant->brandLogo()) : null);
+        $brandLogo = $presentation['logo'] ?? ($tenant->brandLogo() ? asset('storage/'.$tenant->brandLogo()) : (! $tenant->isNetworkSite() && ! $tenant->isCompanySite() && $settings->site_logo ? asset('storage/'.$settings->site_logo) : null));
     @endphp
 
     <header class="ksm-co-header">
