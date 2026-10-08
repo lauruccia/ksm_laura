@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Support\Analytics\Insights;
 use App\Support\Analytics\Period;
 use App\Support\Analytics\Report;
 use Illuminate\Contracts\View\View;
@@ -23,7 +24,9 @@ class AdminAnalyticsController extends Controller
         $period = Period::fromRequest($request);
         $report = new Report($period, $this->host($request));
 
+        $deep = new Insights($period, $report->host);
         $empty = $report->isEmpty();
+        $none = collect();
 
         return view('admin.analytics.index', [
             'period' => $period,
@@ -46,6 +49,39 @@ class AdminAnalyticsController extends Controller
             'systems' => $empty ? collect() : $report->systems(6),
             'heatmap' => $empty ? null : $report->heatmap(),
             'sites' => $report->host === null && ! $empty ? $report->sites(20) : collect(),
+
+            // Piu' a fondo.
+            'goals' => $deep->goals(),
+            'funnel' => $empty ? [] : $deep->funnel(),
+            'conversionSources' => $empty ? $none : $deep->conversionSources(),
+            'returningEnabled' => $deep->returningEnabled(),
+            'audience' => $empty ? null : $deep->audience(),
+            'behaviour' => $empty ? [] : $deep->audienceBehaviour(),
+            'cohorts' => $empty ? [] : $deep->cohorts(),
+            'companies' => $empty ? $none : $deep->companies(),
+            'products' => $empty ? $none : $deep->products(),
+            'storefronts' => $empty ? $none : $deep->storefronts(),
+            'searches' => $empty ? $none : $deep->searches(),
+            'keywords' => $empty ? $none : $deep->keywords(),
+            'exitPages' => $empty ? $none : $deep->exitPages(),
+            'regions' => $empty ? $none : $deep->regions(),
+            'cities' => $empty ? $none : $deep->cities(),
+            'hasPlaces' => $empty ? false : $deep->hasPlaces(),
+        ]);
+    }
+
+    /** Tutto su una pagina sola: da dove si arriva, dove si va dopo, quanto ci si ferma. */
+    public function page(Request $request): View
+    {
+        $period = Period::fromRequest($request);
+        $path = '/'.ltrim(mb_substr((string) $request->query('path', '/'), 0, 255), '/');
+        $insights = new Insights($period, $this->host($request));
+
+        return view('admin.analytics.page', [
+            'period' => $period,
+            'host' => $insights->host,
+            'path' => $path,
+            'page' => $insights->page($path),
         ]);
     }
 

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Models\Advertiser;
 use App\Models\User;
+use App\Support\Analytics\Conversions;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -63,6 +64,8 @@ class AdvertiserRegisterController extends Controller
 
         event(new Registered($user));
         Auth::login($user);
+
+        Conversions::track($request, Conversions::SIGNUP, null, $user->id);
 
         if (! $user->sendVerificationCode()) {
             return redirect()->route('verification.show')

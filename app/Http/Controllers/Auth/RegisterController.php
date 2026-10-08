@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Models\Plan;
 use App\Models\User;
+use App\Support\Analytics\Conversions;
 use App\Support\AuthReturn;
 use App\Support\TenantContext;
 use Illuminate\Auth\Events\Registered;
@@ -130,6 +131,8 @@ class RegisterController extends Controller
 
         event(new Registered($user));
         Auth::login($user);
+
+        Conversions::track($request, Conversions::SIGNUP, null, $user->id);
 
         // Il codice parte qui: senza, la pagina di verifica chiede un numero
         // che non e' mai stato spedito.

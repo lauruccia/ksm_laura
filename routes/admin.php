@@ -48,6 +48,7 @@ Route::middleware(['auth', 'admin'])
 
         Route::middleware('can:'.P::ANALYTICS_VIEW)->prefix('statistiche')->name('analytics.')->group(function () {
             Route::get('/', [AdminAnalyticsController::class, 'index'])->name('index');
+            Route::get('/pagina', [AdminAnalyticsController::class, 'page'])->name('page');
             Route::get('/esporta/{type}', [AdminAnalyticsController::class, 'export'])
                 ->whereIn('type', ['giorni', 'pagine', 'sorgenti'])->name('export');
         });

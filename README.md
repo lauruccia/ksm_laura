@@ -880,11 +880,31 @@ dispositivi, browser, sistemi, orari e siti piu' visitati. Esporta in CSV.
   notte. La durata la manda `public/js/analytics.js` quando la pagina si lascia.
 - **Non si contano**: bot, richieste non GET, chi amministra dopo l'accesso, "Do Not Track" e
   Global Privacy Control, aree riservate e indirizzi con codici (`TrackPageView::EXCLUDED`).
-- **Paese**: arriva da un'intestazione del servizio davanti al sito (`CF-IPCountry`...) o dal file
-  GeoLite2-Country di MaxMind (`KSM_GEOIP_DATABASE`, serve `geoip2/geoip2`). Senza, resta
-  "Non rilevato".
+- **Paese, regione e citta'**: il paese arriva da un'intestazione del servizio davanti al sito
+  (`CF-IPCountry`...) o da un archivio `.mmdb` (DB-IP City Lite, gratuito, o GeoLite2) letto da
+  `MmdbReader`, un lettore senza dipendenze (il server non installa pacchetti). L'archivio
+  (`KSM_GEOIP_DATABASE`, predefinito `storage/app/geoip/dbip-city-lite.mmdb`) si scarica con
+  `php artisan analytics:geo-update` (a mano, ogni tanto: non e' nel calendario perche' pesa decine
+  di MB) oppure si carica da cPanel. Regione e citta' si salvano solo per l'Italia, tradotte in
+  italiano da `Places`. Senza archivio restano "Non rilevato". DB-IP richiede l'attribuzione
+  (CC BY 4.0): e' nella pagina. La citta' dall'IP e' approssimata.
+- **Obiettivi** (`conversions`, `Conversions::track`): registrazioni (privato, azienda,
+  inserzionista), prodotto nel carrello, ordine creato alla cassa (con importo) e messaggio dal
+  modulo contatti. Si legano alla visita in corso (stessa impronta del giorno) per copiare canale,
+  fonte e campagna, cosi' la pagina mostra quali fonti portano ordini; il percorso visita > scheda
+  > carrello > cassa > ordine e' il "funnel". Stesse esclusioni delle pagine viste.
+- **Nuovi e di ritorno**: serve un cookie anonimo `ksm_vid` (numero casuale, 13 mesi, si salva
+  solo la sua impronta). **Spento di default**: si accende con `KSM_ANALYTICS_RETURNING=true`.
+  Con il cookie le statistiche non sono piu' "senza cookie": valutare informativa e banner (non e'
+  un parere legale). Abilita anche le coorti settimanali di ritorno.
+- **Parole cercate**: la ricerca interna (`?cerca=`) si salva in minuscolo, senza email ne' lunghe
+  cifre. Le parole dai motori (`q=`, `query=`...) si colgono solo se il motore le passa: Google no
+  (servono i dati di Google Search Console, non integrati). `utm_term` delle campagne si salva.
+- **Per pagina**: ogni pagina e azienda/prodotto porta a `statistiche/pagina?path=` con viste,
+  ingressi, uscite, rimbalzo, tempo, pagine prima e dopo e fonti (`Insights::page`).
 - **Conservazione**: `analytics:prune` (ogni notte) cancella oltre `KSM_ANALYTICS_RETENTION_DAYS`
   giorni (400). `KSM_ANALYTICS=false` spegne tutto.
-- La tabella nasce con la migrazione `create_page_views_table` (il deploy la lancia da solo);
-  `docs/statistiche-visite.sql` e' lo stesso a mano.
+- Le tabelle nascono con le migrazioni `create_page_views_table` e `deepen_analytics` (il deploy
+  le lancia da solo); `docs/statistiche-visite.sql` e `docs/statistiche-approfondite.sql` sono lo
+  stesso a mano.
 - Va citata nella pagina privacy: dati statistici anonimi, nessun cookie.

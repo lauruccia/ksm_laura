@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Mail\ContactMessage;
 use App\Models\AdminSetting;
 use App\Models\Company;
+use App\Support\Analytics\Conversions;
 use App\Support\TenantContext;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -60,6 +61,8 @@ class ContactController extends Controller
             return $this->failed();
         }
 
+        Conversions::track($request, Conversions::CONTACT, null, $tenant->company()?->id);
+
         return back()->with('success', __('Messaggio inviato.'));
     }
 
@@ -73,6 +76,8 @@ class ContactController extends Controller
         if ($company->email && ! $this->deliver($company->email, new ContactMessage($data, $company->name))) {
             return $this->failed();
         }
+
+        Conversions::track($request, Conversions::CONTACT, null, $company->id);
 
         return back()->with('success', __('Messaggio inviato all azienda.'));
     }

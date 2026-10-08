@@ -103,13 +103,15 @@ final class TrafficSource
                 'source' => $utmSource,
                 'medium' => $medium,
                 'campaign' => $campaign,
+                // utm_term e' la parola chiave che chi fa la campagna ha comprato.
+                'keyword' => self::term($query['utm_term'] ?? null),
             ];
         }
 
         $host = self::host($referrer);
 
         if ($host === null || $host === HostDirectory::normalise($ownHost)) {
-            return ['channel' => self::DIRECT, 'source' => null, 'medium' => null, 'campaign' => $campaign];
+            return ['channel' => self::DIRECT, 'source' => null, 'medium' => null, 'campaign' => $campaign, 'keyword' => null];
         }
 
         foreach (self::KNOWN as $needle => [$channel, $name]) {
@@ -118,13 +120,58 @@ final class TrafficSource
                 : $host === $needle || str_ends_with($host, '.'.$needle);
 
             if ($matches) {
-                return ['channel' => $channel, 'source' => $name, 'medium' => null, 'campaign' => $campaign];
+                return [
+                    'channel' => $channel,
+                    'source' => $name,
+                    'medium' => null,
+                    'campaign' => $campaign,
+                    'keyword' => $channel === self::SEARCH ? self::referrerKeyword($referrer) : null,
+                ];
             }
         }
 
         $channel = HostDirectory::knows($host) ? self::NETWORK : self::REFERRAL;
 
-        return ['channel' => $channel, 'source' => $host, 'medium' => null, 'campaign' => $campaign];
+        return ['channel' => $channel, 'source' => $host, 'medium' => null, 'campaign' => $campaign, 'keyword' => null];
+    }
+
+    /**
+     * Cosa ha scritto chi arriva da un motore di ricerca, se il motore lo dice.
+     * Google e quasi tutti gli altri non lo passano piu' dal 2011 (indirizzo
+     * cifrato): resta vuoto e va letto da Google Search Console. Qui si coglie
+     * solo cio' che arriva davvero, ad esempio da motori minori.
+     */
+    private static function referrerKeyword(?string $referrer): ?string
+    {
+        parse_str((string) parse_url((string) $referrer, PHP_URL_QUERY), $params);
+
+        foreach (['q', 'query', 'p', 'text', 'wd', 'searchfor', 'qt'] as $name) {
+            if (is_string($params[$name] ?? null) && ($term = self::term($params[$name])) !== null) {
+                return $term;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Testo cercato, pulito: minuscolo, breve, senza indirizzi email ne' lunghe
+     * serie di cifre (potrebbero essere dati di una persona: non si salvano).
+     */
+    public static function term(mixed $value): ?string
+    {
+        if (! is_string($value)) {
+            return null;
+        }
+
+        $term = mb_strtolower(trim(preg_replace('/\s+/u', ' ', $value) ?? ''));
+        $term = preg_replace('/[\x00-\x1F\x7F]+/u', '', $term) ?? $term;
+
+        if ($term === '' || mb_strlen($term) > 100 || str_contains($term, '@') || preg_match('/\d{6,}/', $term) === 1) {
+            return null;
+        }
+
+        return $term;
     }
 
     private static function channelFromMedium(?string $medium, string $source): string

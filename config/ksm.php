@@ -22,8 +22,12 @@ return [
         'retention_days' => (int) env('KSM_ANALYTICS_RETENTION_DAYS', 400),
         // Per il paese di chi visita: intestazioni messe da un servizio davanti al sito...
         'country_headers' => ['CF-IPCountry', 'CloudFront-Viewer-Country', 'X-Vercel-IP-Country', 'X-Country-Code'],
-        // ...oppure il file GeoLite2-Country.mmdb di MaxMind (serve geoip2/geoip2).
-        'geoip_database' => env('KSM_GEOIP_DATABASE'),
+        // ...oppure un archivio .mmdb (DB-IP City Lite o MaxMind GeoLite2): da' anche regione e citta'.
+        // Si carica a mano in storage/app/geoip o con `php artisan analytics:geo-update`.
+        'geoip_database' => env('KSM_GEOIP_DATABASE', storage_path('app/geoip/dbip-city-lite.mmdb')),
+        // Cookie anonimo per riconoscere chi torna dopo giorni: spento di default.
+        // Accendendolo si salva un cookie sul dispositivo: valuta se serve il consenso.
+        'returning_visitors' => (bool) env('KSM_ANALYTICS_RETURNING', false),
     ],
 
     /* Lingue disponibili nel selettore di intestazione. */

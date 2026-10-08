@@ -23,6 +23,7 @@ class PruneAnalytics extends Command
         $cutoff = now(config('ksm.analytics.timezone'))->subDays($days)->toDateString();
 
         $deleted = DB::table('page_views')->where('day', '<', $cutoff)->delete();
+        DB::table('conversions')->where('day', '<', $cutoff)->delete();
 
         $this->info("Visite cancellate: $deleted (precedenti al $cutoff).");
 

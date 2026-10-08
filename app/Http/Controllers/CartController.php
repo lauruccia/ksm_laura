@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Company;
 use App\Models\Product;
+use App\Support\Analytics\Conversions;
 use App\Support\Cart;
 use App\Support\PlanCapabilities;
 use Illuminate\Contracts\View\View;
@@ -48,6 +49,8 @@ class CartController extends Controller
         $parked = $this->cart->belongsToOtherCompany($product) ? $this->cart->company() : null;
 
         $this->cart->add($product, $request->integer('quantita', 1), $variant);
+
+        Conversions::track($request, Conversions::CART, null, $product->id);
 
         return back()->with('success', $parked
             ? __('Prodotto aggiunto: stai ordinando da :nuovo. Il carrello di :sospeso resta in attesa.', [

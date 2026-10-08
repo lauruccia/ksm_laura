@@ -17,6 +17,7 @@ class PageView extends Model
     // `day` resta testo "2026-10-05": un cast a data lo scriverebbe con l'ora, e i raggruppamenti per giorno non tornerebbero.
     protected $casts = [
         'is_entry' => 'boolean',
+        'is_returning' => 'boolean',
         'duration' => 'integer',
         'created_at' => 'datetime',
     ];

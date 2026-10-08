@@ -2,11 +2,12 @@
 
 namespace App\Http\Middleware;
 
-use App\Support\Ads\BotDetector;
 use App\Support\Analytics\PageViewRecorder;
+use App\Support\Analytics\Visitors;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Symfony\Component\HttpFoundation\Cookie;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
@@ -31,13 +32,54 @@ class TrackPageView
 
     public const ATTRIBUTE = 'analytics.uid';
 
+    /** Impronta del cookie di ritorno e se e' stato appena assegnato (solo con KSM_ANALYTICS_RETURNING). */
+    public const VID = 'analytics.vid';
+
+    public const VID_NEW = 'analytics.vid_new';
+
     public function handle(Request $request, Closure $next): Response
     {
+        $cookie = null;
+
         if ($this->shouldCount($request)) {
             $request->attributes->set(self::ATTRIBUTE, (string) Str::ulid());
+            $cookie = $this->returningCookie($request);
         }
 
-        return $next($request);
+        $response = $next($request);
+
+        // Il cookie parte solo con una pagina vera, non con un reindirizzamento o un'immagine.
+        if ($cookie && $response->getStatusCode() === 200
+            && str_contains((string) $response->headers->get('Content-Type'), 'text/html')) {
+            $response->headers->setCookie($cookie);
+        }
+
+        return $response;
+    }
+
+    /**
+     * Visitatori di ritorno: se acceso in configurazione, un cookie anonimo
+     * (numero casuale, nessun dato personale) dura 13 mesi. Ne salviamo solo
+     * l'impronta. Spento di default: senza, non esiste nessun cookie.
+     */
+    private function returningCookie(Request $request): ?Cookie
+    {
+        if (! config('ksm.analytics.returning_visitors')) {
+            return null;
+        }
+
+        $value = $request->cookies->get(Visitors::COOKIE);
+        $isNew = ! is_string($value) || preg_match('/^[a-f0-9]{32}$/', $value) !== 1;
+
+        if ($isNew) {
+            $value = bin2hex(random_bytes(16));
+        }
+
+        $request->attributes->set(self::VID, Visitors::cookieHash($value));
+        $request->attributes->set(self::VID_NEW, $isNew);
+
+        // Si rinnova a ogni visita: chi torna ogni tanto non scade mai.
+        return cookie(Visitors::COOKIE, $value, 60 * 24 * 395, '/', null, $request->isSecure(), true, false, 'lax');
     }
 
     public function terminate(Request $request, Response $response): void
@@ -63,7 +105,7 @@ class TrackPageView
 
     private function shouldCount(Request $request): bool
     {
-        if (! config('ksm.analytics.enabled') || ! $request->isMethod('GET') || $request->expectsJson() || $request->ajax()) {
+        if (! $request->isMethod('GET') || $request->expectsJson() || $request->ajax()) {
             return false;
         }
 
@@ -71,21 +113,6 @@ class TrackPageView
             return false;
         }
 
-        if (config('ksm.analytics.respect_dnt') && ($request->headers->get('DNT') === '1' || $request->headers->get('Sec-GPC') === '1')) {
-            return false;
-        }
-
-        // Pagina preparata in anticipo dal browser: nessuno la sta guardando.
-        if (str_contains((string) ($request->headers->get('Sec-Purpose') ?? $request->headers->get('Purpose')), 'prefetch')
-            || str_contains((string) $request->headers->get('Sec-Purpose'), 'prerender')) {
-            return false;
-        }
-
-        if (BotDetector::isBot($request->userAgent())) {
-            return false;
-        }
-
-        // Chi amministra il sito lo guarda spesso: le sue visite falserebbero i numeri.
-        return ! $request->user()?->isAdmin();
+        return Visitors::countable($request);
     }
 }

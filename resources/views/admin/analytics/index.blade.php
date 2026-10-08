@@ -16,6 +16,7 @@
         'visitors' => 'accent', 'sessions' => 'dark', 'views' => 'dark',
         'pages_per_session' => 'dark', 'avg_duration' => 'money', 'bounce_rate' => 'muted',
     ];
+    $pageLink = fn ($target) => route('admin.analytics.page', $exportQuery + ['path' => $target]);
     $days = ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom'];
 @endphp
 
@@ -125,8 +126,14 @@
             </div>
         </section>
     @else
+        <nav class="ksm-subnav" aria-label="Sezioni">
+            <a href="#andamento">Andamento</a><a href="#pagine">Pagine</a><a href="#provenienza">Provenienza</a>
+            <a href="#obiettivi">Obiettivi</a><a href="#aziende">Aziende e prodotti</a><a href="#pubblico">Pubblico</a>
+            <a href="#ritorno">Nuovi e di ritorno</a><a href="#regioni">Regioni e città</a><a href="#quando">Quando</a>
+        </nav>
+
         {{-- Andamento ------------------------------------------------------------------- --}}
-        <section class="ksm-box">
+        <section class="ksm-box" id="andamento">
             <div class="ksm-box__head">
                 <h2>Andamento {{ ['hour' => 'ora per ora', 'day' => 'giorno per giorno', 'month' => 'mese per mese'][$granularity] }}</h2>
                 <span class="ksm-legend">
@@ -139,7 +146,7 @@
         </section>
 
         {{-- Pagine ---------------------------------------------------------------------- --}}
-        <div class="ksm-panel-grid ksm-panel-grid--even">
+        <div class="ksm-panel-grid ksm-panel-grid--even" id="pagine">
             <section class="ksm-box">
                 <div class="ksm-box__head">
                     <h2>Pagine più viste</h2>
@@ -155,7 +162,7 @@
                         @foreach ($pages as $page)
                             <tr>
                                 <td>
-                                    <span class="ksm-path" title="{{ $page->path }}">{{ $page->path }}</span>
+                                    <a class="ksm-path" href="{{ $pageLink($page->path) }}" title="Dettaglio: {{ $page->path }}">{{ $page->path }}</a>
                                     <span class="ksm-meter ksm-meter--thin"><i style="width: {{ round($page->share * 100) }}%"></i></span>
                                 </td>
                                 <td class="is-num">{{ Format::number($page->views) }}</td>
@@ -192,7 +199,7 @@
         </div>
 
         {{-- Provenienza ---------------------------------------------------------------- --}}
-        <div class="ksm-panel-grid ksm-panel-grid--even">
+        <div class="ksm-panel-grid ksm-panel-grid--even" id="provenienza">
             <section class="ksm-box">
                 <div class="ksm-box__head"><h2>Da dove arrivano</h2></div>
 
@@ -255,8 +262,11 @@
             </section>
         @endif
 
+        @include('admin.analytics._goals')
+        @include('admin.analytics._catalogue')
+
         {{-- Pubblico ------------------------------------------------------------------- --}}
-        <div class="ksm-panel-grid ksm-panel-grid--even">
+        <div class="ksm-panel-grid ksm-panel-grid--even" id="pubblico">
             <section class="ksm-box">
                 <div class="ksm-box__head"><h2>Paesi</h2></div>
 
@@ -275,7 +285,7 @@
                 @if ($countries->count() === 1 && $countries->first()->key === null)
                     <p class="ksm-box__hint" style="margin: 14px 0 0;">
                         Il paese non viene rilevato: serve un servizio davanti al sito che lo indichi
-                        (per esempio Cloudflare) oppure il file GeoLite2 di MaxMind. Vedi KSM_GEOIP_DATABASE.
+                        (per esempio Cloudflare) oppure l'archivio geografico .mmdb (vedi sotto, «Regioni italiane»).
                     </p>
                 @endif
             </section>
@@ -304,8 +314,10 @@
             </section>
         </div>
 
+        @include('admin.analytics._audience')
+
         {{-- Quando --------------------------------------------------------------------- --}}
-        <section class="ksm-box">
+        <section class="ksm-box" id="quando">
             <div class="ksm-box__head">
                 <h2>Quando arrivano</h2>
                 <span class="ksm-muted" style="font-size: .82rem;">pagine viste per giorno della settimana e ora (ora italiana)</span>
@@ -358,7 +370,8 @@
     <details class="ksm-box ksm-howto">
         <summary>Come si contano questi numeri</summary>
         <ul>
-            <li><strong>Senza cookie.</strong> L'indirizzo IP non si salva: serve solo a calcolare un'impronta che cambia ogni notte. Non si può risalire a una persona, né riconoscerla da un giorno all'altro.</li>
+            <li><strong>Di base senza cookie.</strong> L'indirizzo IP non si salva: serve solo a calcolare un'impronta che cambia ogni notte (e, con l'archivio geografico, regione e città). Non si può risalire a una persona, né riconoscerla da un giorno all'altro. Solo se si accende <code>KSM_ANALYTICS_RETURNING</code> un cookie anonimo permette di distinguere nuovi e di ritorno.</li>
+            <li><strong>Obiettivi</strong> si contano nel momento dell'azione (iscrizione, carrello, ordine avviato, messaggio inviato) e si legano alla visita in corso per sapere da quale fonte arrivava. Un «ordine» è creato alla cassa, non necessariamente già pagato.</li>
             <li><strong>Visitatori</strong> sono persone distinte per giorno: chi torna dopo qualche giorno conta di nuovo.</li>
             <li><strong>Visite</strong> sono gruppi di pagine della stessa persona senza pause oltre i 30 minuti. <strong>Rimbalzo</strong> è la visita che si ferma alla prima pagina.</li>
             <li><strong>Durata</strong> è il tempo in cui la pagina è rimasta in primo piano, comunicato dal browser quando la si lascia. Se il browser non lo comunica, conta zero: la durata vera è un po' più alta.</li>

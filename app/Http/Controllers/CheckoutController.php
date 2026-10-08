@@ -13,6 +13,7 @@ use App\Payments\KMoney\CheckoutSplit;
 use App\Payments\KMoney\KMoneySplitter;
 use App\Payments\PaymentCompletion;
 use App\Payments\PaymentException;
+use App\Support\Analytics\Conversions;
 use App\Support\Cart;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -124,6 +125,8 @@ class CheckoutController extends Controller
 
         $order = $this->createOrder(collect($data)->except('salva_dati')->all(), $company, $items, $shipping, $split);
         $first = $order->pendingPayment();
+
+        Conversions::track($request, Conversions::ORDER, (float) $order->total, $order->id);
 
         try {
             $redirectUrl = $this->start($order, $first);
