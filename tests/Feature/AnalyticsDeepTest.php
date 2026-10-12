@@ -10,10 +10,12 @@ use App\Models\Role;
 use App\Models\User;
 use App\Support\Analytics\Conversions;
 use App\Support\Analytics\Geo;
+use App\Support\Analytics\Humans;
 use App\Support\Analytics\Insights;
 use App\Support\Analytics\MmdbReader;
 use App\Support\Analytics\Period;
 use App\Support\Analytics\TrafficSource;
+use App\Support\ContactGuard;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Mail;
@@ -29,6 +31,12 @@ class AnalyticsDeepTest extends TestCase
     use RefreshDatabase;
 
     private const CHROME = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36';
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        Humans::forget();
+    }
 
     private function fixture(): string
     {
@@ -190,7 +198,7 @@ class AnalyticsDeepTest extends TestCase
         $headers = ['User-Agent' => self::CHROME, 'Referer' => 'https://www.google.com/'];
 
         $this->withHeaders($headers)->get('/contatti')->assertOk();
-        $this->withHeaders($headers)->post('/contatti', ['name' => 'Anna', 'email' => 'anna@example.test', 'message' => 'Buongiorno'])->assertRedirect();
+        $this->withHeaders($headers)->post('/contatti', ['name' => 'Anna', 'email' => 'anna@example.test', 'message' => 'Buongiorno'] + ContactGuard::passing())->assertRedirect();
 
         $conversion = Conversion::first();
         $this->assertNotNull($conversion);
@@ -205,7 +213,7 @@ class AnalyticsDeepTest extends TestCase
         Mail::fake();
 
         $this->withHeaders(['User-Agent' => self::CHROME, 'DNT' => '1'])
-            ->post('/contatti', ['name' => 'Anna', 'email' => 'anna@example.test', 'message' => 'Buongiorno'])->assertRedirect();
+            ->post('/contatti', ['name' => 'Anna', 'email' => 'anna@example.test', 'message' => 'Buongiorno'] + ContactGuard::passing())->assertRedirect();
 
         $this->assertSame(0, Conversion::count());
     }
@@ -384,9 +392,13 @@ class AnalyticsDeepTest extends TestCase
 
         // Tre persone alla prima visita; una torna dopo una settimana.
         foreach (['a', 'b', 'c'] as $v) {
-            $this->row(['vid' => str_repeat($v, 40), 'day' => $monday->toDateString()]);
+            $this->row(['vid' => str_repeat($v, 40), 'day' => $monday->toDateString(), 'duration' => 8]);
         }
-        $this->row(['vid' => str_repeat('a', 40), 'day' => $monday->addWeek()->toDateString()]);
+        $this->row(['vid' => str_repeat('a', 40), 'day' => $monday->addWeek()->toDateString(), 'duration' => 8]);
+        // Un programma senza cookie: un identificativo nuovo a ogni richiesta, mai tempo di lettura. Non conta.
+        foreach (range(1, 20) as $i) {
+            $this->row(['vid' => sha1("bot$i"), 'day' => $monday->toDateString()]);
+        }
 
         $cohorts = $this->insights()->cohorts();
 
@@ -395,6 +407,36 @@ class AnalyticsDeepTest extends TestCase
         $this->assertEquals(1.0, $cohorts[0]['weeks'][0]);
         $this->assertEqualsWithDelta(1 / 3, $cohorts[0]['weeks'][1], 0.001);
         $this->assertEquals(0.0, $cohorts[0]['weeks'][2]);
+    }
+
+    public function test_regioni_scritte_in_inglese_si_uniscono_a_quelle_in_italiano(): void
+    {
+        $this->row(['is_entry' => true, 'country' => 'IT', 'region' => 'The Marches', 'city' => 'Rome']);
+        $this->row(['is_entry' => true, 'country' => 'IT', 'region' => 'Marche', 'city' => 'Roma']);
+        $this->row(['is_entry' => true, 'country' => 'IT', 'region' => 'Basilicate']);
+
+        $regions = $this->insights()->regions();
+
+        $this->assertSame(['Marche', 'Basilicata'], $regions->pluck('label')->all());
+        $this->assertSame(2, $regions[0]->count);
+        $this->assertSame(['Roma'], $this->insights()->cities()->pluck('label')->all());
+    }
+
+    public function test_le_parole_da_google_e_gli_indirizzi_non_sono_ricerche(): void
+    {
+        $google = TrafficSource::classify('https://www.google.com/url?q=cittadinepi&sa=t', [], 'ksm.it');
+        $address = TrafficSource::classify('https://www.bing.com/search?q=quartieriroma.it', [], 'ksm.it');
+        $real = TrafficSource::classify('https://www.bing.com/search?q=olio+bio', [], 'ksm.it');
+
+        $this->assertNull($google['keyword']);
+        $this->assertNull($address['keyword']);
+        $this->assertSame('olio bio', $real['keyword']);
+
+        // Righe gia' salvate: quelle "da Google" non si mostrano.
+        $this->row(['is_entry' => true, 'channel' => 'search', 'source' => 'Google', 'keyword' => 'cittadinepi']);
+        $this->row(['is_entry' => true, 'channel' => 'search', 'source' => 'Bing', 'keyword' => 'olio bio']);
+
+        $this->assertSame(['olio bio'], $this->insights()->keywords()->pluck('term')->all());
     }
 
     public function test_aziende_e_prodotti_si_mostrano_con_il_nome_e_non_con_l_indirizzo(): void

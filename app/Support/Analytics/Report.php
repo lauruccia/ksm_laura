@@ -27,6 +27,7 @@ final class Report
     public function __construct(
         public readonly Period $period,
         public readonly ?string $host = null,
+        public readonly bool $humans = false,
     ) {}
 
     /** Il filtro comune: giorni del periodo e, se scelto, un solo sito. */
@@ -36,7 +37,8 @@ final class Report
 
         return DB::table('page_views')
             ->whereBetween('day', [$period->from->toDateString(), $period->to->toDateString()])
-            ->when($this->host && ! $allSites, fn (Builder $query) => $query->where('host', $this->host));
+            ->when($this->host && ! $allSites, fn (Builder $query) => $query->where('host', $this->host))
+            ->when($this->humans, fn (Builder $query) => $query->whereIn('page_views.session_id', Humans::sessions($period, $allSites ? null : $this->host)));
     }
 
     private function entries(): Builder

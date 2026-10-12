@@ -7,6 +7,7 @@
         <div class="ksm-container ksm-grid ksm-grid--2">
             <form class="ksm-card" style="padding: 24px;" method="POST" action="{{ route('contact.send') }}">
                 @csrf
+                <x-contact-guard />
                 <h2>{{ __('site.nav_contact') }}</h2>
 
                 <div class="ksm-field">

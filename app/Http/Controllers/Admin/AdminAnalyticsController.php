@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Support\Analytics\Humans;
 use App\Support\Analytics\Insights;
 use App\Support\Analytics\Period;
 use App\Support\Analytics\Report;
@@ -22,14 +23,17 @@ class AdminAnalyticsController extends Controller
     public function index(Request $request): View
     {
         $period = Period::fromRequest($request);
-        $report = new Report($period, $this->host($request));
+        $humans = $request->boolean('umani');
+        $report = new Report($period, $this->host($request), $humans);
 
-        $deep = new Insights($period, $report->host);
+        $deep = new Insights($period, $report->host, $humans);
         $empty = $report->isEmpty();
         $none = collect();
 
         return view('admin.analytics.index', [
             'period' => $period,
+            'humans' => $humans,
+            'humanInfo' => Humans::summary($period, $report->host),
             'report' => $report,
             'host' => $report->host,
             'hosts' => $this->hostOptions($report->host),
@@ -75,10 +79,12 @@ class AdminAnalyticsController extends Controller
     {
         $period = Period::fromRequest($request);
         $path = '/'.ltrim(mb_substr((string) $request->query('path', '/'), 0, 255), '/');
-        $insights = new Insights($period, $this->host($request));
+        $humans = $request->boolean('umani');
+        $insights = new Insights($period, $this->host($request), $humans);
 
         return view('admin.analytics.page', [
             'period' => $period,
+            'humans' => $humans,
             'host' => $insights->host,
             'path' => $path,
             'page' => $insights->page($path),
@@ -92,7 +98,7 @@ class AdminAnalyticsController extends Controller
     public function export(Request $request, string $type): StreamedResponse
     {
         $period = Period::fromRequest($request);
-        $report = new Report($period, $this->host($request));
+        $report = new Report($period, $this->host($request), $request->boolean('umani'));
         $name = 'statistiche-'.$type.'-'.$period->from->format('Ymd').'-'.$period->to->format('Ymd').'.csv';
 
         return response()->streamDownload(function () use ($report, $type) {

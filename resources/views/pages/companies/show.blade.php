@@ -295,6 +295,7 @@
 
                         <form class="ksm-mini__form" method="POST" action="{{ route('companies.contact', $company->slug) }}">
                             @csrf
+                            <x-contact-guard />
                             <div class="ksm-field">
                                 <label class="ksm-label" for="contatto-nome">Nome</label>
                                 <input class="ksm-input" id="contatto-nome" name="name" required value="{{ old('name') }}">

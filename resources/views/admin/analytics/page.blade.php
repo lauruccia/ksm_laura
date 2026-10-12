@@ -2,7 +2,7 @@
 @use('App\Support\Analytics\Period')
 
 @php
-    $keep = array_filter(['sito' => $host] + ($period->key === 'personalizzato'
+    $keep = array_filter(['sito' => $host, 'umani' => $humans ? 1 : null] + ($period->key === 'personalizzato'
         ? ['dal' => $period->from->toDateString(), 'al' => $period->to->toDateString()]
         : ['periodo' => $period->key]));
     $pageLink = fn ($target) => route('admin.analytics.page', $keep + ['path' => $target]);

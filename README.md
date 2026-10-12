@@ -902,6 +902,16 @@ dispositivi, browser, sistemi, orari e siti piu' visitati. Esporta in CSV.
   (servono i dati di Google Search Console, non integrati). `utm_term` delle campagne si salva.
 - **Per pagina**: ogni pagina e azienda/prodotto porta a `statistiche/pagina?path=` con viste,
   ingressi, uscite, rimbalzo, tempo, pagine prima e dopo e fonti (`Insights::page`).
+- **Traffico probabilmente umano** (`Humans`): l'interruttore in cima alla pagina (`?umani=1`)
+  nasconde le visite senza tempo di lettura, con oltre 40 pagine o da paesi dove meno del 5% delle
+  visite legge (almeno 100 visite; l'elenco si ricava dai dati, l'Italia non vi entra). Non e' una
+  prova: chi ha un browser che non comunica la durata viene nascosto. Vale per tutte le sezioni,
+  CSV compresi. Le coorti usano sempre solo visite cosi' filtrate.
+- **Modulo contatti anti-spam** (`ContactGuard`, `<x-contact-guard />`): campo trappola `website`,
+  gettone cifrato `_cg` con l'ora di apertura (minimo 2 secondi, massimo 7 giorni), 3 o piu' link =
+  spam, `throttle:6,60` per indirizzo. Lo spam riceve "Messaggio inviato" ma non parte nulla e non
+  conta come obiettivo; chi ha il modulo scaduto vede un invito a ricaricare. Un nuovo modulo
+  contatti deve includere il componente.
 - **Conservazione**: `analytics:prune` (ogni notte) cancella oltre `KSM_ANALYTICS_RETENTION_DAYS`
   giorni (400). `KSM_ANALYTICS=false` spegne tutto.
 - Le tabelle nascono con le migrazioni `create_page_views_table` e `deepen_analytics` (il deploy

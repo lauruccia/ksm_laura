@@ -35,7 +35,7 @@ Route::get('/aziende/{company:slug}', [CompanyController::class, 'show'])->name(
 Route::post('/aziende/{company:slug}/recensioni', [ReviewController::class, 'storeForCompany'])
     ->name('companies.reviews.store');
 Route::post('/aziende/{company:slug}/contatto', [ContactController::class, 'sendToCompany'])
-    ->name('companies.contact');
+    ->middleware('throttle:6,60')->name('companies.contact');
 
 Route::get('/prodotti', [ProductController::class, 'index'])->name('products.index');
 Route::get('/prodotti/{product:slug}', [ProductController::class, 'show'])->name('products.show');
@@ -46,7 +46,7 @@ Route::post('/prodotti/{product:slug}/recensioni', [ReviewController::class, 'st
 Route::get('/piani', [PlanController::class, 'index'])->middleware('platform')->name('plans.index');
 
 Route::get('/contatti', [ContactController::class, 'show'])->name('contact');
-Route::post('/contatti', [ContactController::class, 'send'])->name('contact.send');
+Route::post('/contatti', [ContactController::class, 'send'])->middleware('throttle:6,60')->name('contact.send');
 
 Route::get('/traccia-ordine', [OrderTrackingController::class, 'form'])->name('orders.track');
 Route::post('/traccia-ordine', [OrderTrackingController::class, 'lookup'])->name('orders.track.lookup');

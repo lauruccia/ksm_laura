@@ -2,9 +2,9 @@
 @use('App\Support\Analytics\Period')
 
 @php
-    $keep = array_filter(['sito' => $host]);
+    $keep = array_filter(['sito' => $host, 'umani' => $humans ? 1 : null]);
     $link = fn (array $extra = []) => route('admin.analytics.index', $keep + $extra);
-    $exportQuery = array_filter(['sito' => $host] + ($period->key === 'personalizzato'
+    $exportQuery = array_filter(['sito' => $host, 'umani' => $humans ? 1 : null] + ($period->key === 'personalizzato'
         ? ['dal' => $period->from->toDateString(), 'al' => $period->to->toDateString()]
         : ['periodo' => $period->key]));
 
@@ -54,6 +54,9 @@
             @if ($period->key !== 'personalizzato')
                 <input type="hidden" name="periodo" value="{{ $period->key }}">
             @endif
+            @if ($humans)
+                <input type="hidden" name="umani" value="1">
+            @endif
 
             <select class="ksm-select" name="sito" aria-label="Sito" onchange="this.form.submit()">
                 <option value="">Tutti i siti</option>
@@ -81,6 +84,33 @@
                 <a href="{{ route('admin.analytics.export', ['type' => 'sorgenti'] + $exportQuery) }}">Provenienza</a>
             </div>
         </details>
+    </div>
+
+    {{-- Tutto il traffico o solo quello probabilmente umano ----------------------------- --}}
+    @php
+        $pick = fn (bool $on) => route('admin.analytics.index', array_filter(['sito' => $host, 'umani' => $on ? 1 : null] + ($period->key === 'personalizzato'
+            ? ['dal' => $period->from->toDateString(), 'al' => $period->to->toDateString()]
+            : ['periodo' => $period->key])));
+    @endphp
+    <div class="ksm-human">
+        <nav class="ksm-seg" aria-label="Tipo di traffico">
+            <a href="{{ $pick(false) }}" @if (! $humans) aria-current="true" @endif>Tutto il traffico</a>
+            <a href="{{ $pick(true) }}" @if ($humans) aria-current="true" @endif>Solo traffico probabilmente umano</a>
+        </nav>
+        @if ($humanInfo['total'] > 0)
+            <p class="ksm-muted">
+                @if ($humans)
+                    Nascoste {{ Format::number($humanInfo['hidden']) }} visite su {{ Format::number($humanInfo['total']) }}
+                    ({{ Format::percent($humanInfo['share']) }}): senza tempo di lettura, con oltre {{ App\Support\Analytics\Humans::MAX_PAGES }} pagine
+                    @if ($humanInfo['countries'])
+                        o da paesi dove quasi nessuno legge ({{ collect($humanInfo['countries'])->map(fn ($c) => Format::country($c))->implode(', ') }})
+                    @endif
+                    — non è una prova: una persona con un browser che non comunica il tempo viene nascosta anch'essa.
+                @elseif ($humanInfo['share'] >= 0.3)
+                    Circa {{ Format::percent($humanInfo['share']) }} delle visite sembra automatico (nessun tempo di lettura, scansioni del sito, paesi di data center). Prova «solo traffico probabilmente umano» per vedere i numeri senza.
+                @endif
+            </p>
+        @endif
     </div>
 
     {{-- Schede ------------------------------------------------------------------------ --}}
@@ -118,7 +148,7 @@
         <section class="ksm-box">
             <div class="ksm-chart ksm-chart--empty">
                 <x-icon name="chart" :size="28" />
-                <p>Nessuna visita in questo periodo.</p>
+                <p>{{ $humans ? 'Nessuna visita probabilmente umana in questo periodo.' : 'Nessuna visita in questo periodo.' }}</p>
                 <span class="ksm-muted">
                     Le visite si contano dal momento della pubblicazione di questa funzione. Non entrano nei conti
                     i programmi automatici, chi amministra il sito dopo aver fatto accesso e chi ha attivato "Do Not Track".
@@ -356,7 +386,7 @@
                                 <td class="is-num">{{ Format::number($site->views) }}</td>
                                 <td class="is-num">{{ Format::number($site->visitors) }}</td>
                                 <td class="is-num">{{ Format::number($site->sessions) }}</td>
-                                <td class="is-num"><a href="{{ route('admin.analytics.index', ($period->key === 'personalizzato' ? ['dal' => $period->from->toDateString(), 'al' => $period->to->toDateString()] : ['periodo' => $period->key]) + ['sito' => $site->host]) }}">Apri</a></td>
+                                <td class="is-num"><a href="{{ route('admin.analytics.index', ($period->key === 'personalizzato' ? ['dal' => $period->from->toDateString(), 'al' => $period->to->toDateString()] : ['periodo' => $period->key]) + array_filter(['sito' => $site->host, 'umani' => $humans ? 1 : null])) }}">Apri</a></td>
                             </tr>
                         @endforeach
                         </tbody>

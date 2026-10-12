@@ -14,6 +14,7 @@ final class Places
         'tuscany' => 'Toscana', 'apulia' => 'Puglia', 'puglia' => 'Puglia', 'sicily' => 'Sicilia', 'sardinia' => 'Sardegna',
         'trentinosouthtyrol' => 'Trentino-Alto Adige', 'trentinoaltoadige' => 'Trentino-Alto Adige',
         'friuliveneziagiulia' => 'Friuli-Venezia Giulia', 'emiliaromagna' => 'Emilia-Romagna',
+        'themarches' => 'Marche', 'basilicate' => 'Basilicata', 'valledaosta' => "Valle d'Aosta", 'trentinoaltoadigesudtirol' => 'Trentino-Alto Adige',
         'lazio' => 'Lazio', 'latium' => 'Lazio', 'veneto' => 'Veneto', 'liguria' => 'Liguria', 'campania' => 'Campania',
         'marche' => 'Marche', 'marches' => 'Marche', 'abruzzo' => 'Abruzzo', 'abruzzi' => 'Abruzzo', 'calabria' => 'Calabria',
         'umbria' => 'Umbria', 'basilicata' => 'Basilicata', 'molise' => 'Molise',

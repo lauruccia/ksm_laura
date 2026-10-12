@@ -125,7 +125,7 @@ final class TrafficSource
                     'source' => $name,
                     'medium' => null,
                     'campaign' => $campaign,
-                    'keyword' => $channel === self::SEARCH ? self::referrerKeyword($referrer) : null,
+                    'keyword' => $channel === self::SEARCH && $name !== 'Google' ? self::referrerKeyword($referrer) : null,
                 ];
             }
         }
@@ -138,15 +138,18 @@ final class TrafficSource
     /**
      * Cosa ha scritto chi arriva da un motore di ricerca, se il motore lo dice.
      * Google e quasi tutti gli altri non lo passano piu' dal 2011 (indirizzo
-     * cifrato): resta vuoto e va letto da Google Search Console. Qui si coglie
-     * solo cio' che arriva davvero, ad esempio da motori minori.
+     * cifrato): resta vuoto e va letto da Google Search Console. Un `q=` che
+     * arriva da Google e' un reindirizzamento o un referrer falso, non una
+     * ricerca, e si ignora. Qui si coglie solo cio' che arriva davvero, ad
+     * esempio da motori minori; un indirizzo di sito al posto di parole non
+     * e' una ricerca.
      */
     private static function referrerKeyword(?string $referrer): ?string
     {
         parse_str((string) parse_url((string) $referrer, PHP_URL_QUERY), $params);
 
         foreach (['q', 'query', 'p', 'text', 'wd', 'searchfor', 'qt'] as $name) {
-            if (is_string($params[$name] ?? null) && ($term = self::term($params[$name])) !== null) {
+            if (is_string($params[$name] ?? null) && ($term = self::term($params[$name])) !== null && ! self::looksLikeAddress($term)) {
                 return $term;
             }
         }
@@ -172,6 +175,12 @@ final class TrafficSource
         }
 
         return $term;
+    }
+
+    /** Un indirizzo web (reindirizzamento o spam) non e' una parola cercata. */
+    private static function looksLikeAddress(string $term): bool
+    {
+        return preg_match('#^(https?://|www\.)|^\S+\.[a-z]{2,}(/|$)#i', $term) === 1;
     }
 
     private static function channelFromMedium(?string $medium, string $source): string

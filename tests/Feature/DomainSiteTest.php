@@ -481,7 +481,7 @@ class DomainSiteTest extends TestCase
             ->assertDontSee('Sede KSM')
             ->assertDontSee('info@ksm.test');
 
-        $this->post(self::HOST.'/contatti', ['name' => 'Anna', 'email' => 'anna@example.test', 'message' => 'Spedite a Milano?'])
+        $this->post(self::HOST.'/contatti', ['name' => 'Anna', 'email' => 'anna@example.test', 'message' => 'Spedite a Milano?'] + \App\Support\ContactGuard::passing())
             ->assertSessionHasNoErrors();
 
         Mail::assertSent(ContactMessage::class, function ($mail) {

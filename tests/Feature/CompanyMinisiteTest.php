@@ -124,7 +124,7 @@ class CompanyMinisiteTest extends TestCase
             'name' => 'Giulia',
             'email' => 'giulia@example.test',
             'message' => 'Avete posto sabato sera?',
-        ])->assertRedirect()->assertSessionHas('success');
+        ] + \App\Support\ContactGuard::passing())->assertRedirect()->assertSessionHas('success');
 
         Mail::assertSent(ContactMessage::class);
     }
@@ -138,7 +138,7 @@ class CompanyMinisiteTest extends TestCase
             'name' => 'Giulia',
             'email' => 'giulia@example.test',
             'message' => 'Avete posto sabato sera?',
-        ])->assertRedirect(route('companies.show', $company->slug))
+        ] + \App\Support\ContactGuard::passing())->assertRedirect(route('companies.show', $company->slug))
             ->assertSessionHasErrors('message')
             ->assertSessionHasInput('message', 'Avete posto sabato sera?');
     }

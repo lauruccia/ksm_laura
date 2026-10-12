@@ -19,6 +19,7 @@ final class Insights
     public function __construct(
         public readonly Period $period,
         public readonly ?string $host = null,
+        public readonly bool $humans = false,
     ) {}
 
     private function views(?Period $period = null): Builder
@@ -27,7 +28,8 @@ final class Insights
 
         return DB::table('page_views')
             ->whereBetween('day', [$period->from->toDateString(), $period->to->toDateString()])
-            ->when($this->host, fn (Builder $query) => $query->where('host', $this->host));
+            ->when($this->host, fn (Builder $query) => $query->where('host', $this->host))
+            ->when($this->humans, fn (Builder $query) => $query->whereIn('page_views.session_id', Humans::sessions($period, $this->host)));
     }
 
     private function entries(?Period $period = null): Builder
@@ -41,7 +43,9 @@ final class Insights
 
         return DB::table('conversions')
             ->whereBetween('day', [$period->from->toDateString(), $period->to->toDateString()])
-            ->when($this->host, fn (Builder $query) => $query->where('host', $this->host));
+            ->when($this->host, fn (Builder $query) => $query->where('host', $this->host))
+            // Gli obiettivi senza visita (un invio diretto del modulo, senza aver aperto pagine) non hanno chi li giustifichi.
+            ->when($this->humans, fn (Builder $query) => $query->whereIn('conversions.session_id', Humans::sessions($period, $this->host)));
     }
 
     /* Obiettivi ---------------------------------------------------------- */
@@ -242,25 +246,38 @@ final class Insights
         $thisWeek = CarbonImmutable::now(config('ksm.analytics.timezone'))->startOfWeek();
         $start = $thisWeek->subWeeks($weeks - 1);
 
-        $first = DB::table('page_views')->whereNotNull('vid')
-            ->when($this->host, fn (Builder $query) => $query->where('host', $this->host))
-            ->selectRaw('vid, min(day) as first_day')->groupBy('vid')
-            ->havingRaw('min(day) >= ?', [$start->toDateString()])
-            ->pluck('first_day', 'vid');
-
-        if ($first->isEmpty()) {
-            return [];
-        }
+        // Solo visite probabilmente umane: un programma senza cookie ne riceve uno nuovo a ogni richiesta e gonfierebbe le persone.
+        $window = new Period($start, $thisWeek->endOfWeek()->startOfDay(), 'coorti');
 
         $active = [];
 
-        foreach ($first->keys()->chunk(500) as $chunk) {
-            DB::table('page_views')->whereIn('vid', $chunk->all())->where('day', '>=', $start->toDateString())
-                ->when($this->host, fn (Builder $query) => $query->where('host', $this->host))
-                ->select('vid', 'day')->distinct()->get()
-                ->each(function ($row) use (&$active) {
-                    $active[$row->vid][] = $row->day;
-                });
+        DB::table('page_views')->whereNotNull('vid')->where('day', '>=', $start->toDateString())
+            ->whereIn('session_id', Humans::sessions($window, $this->host))
+            ->when($this->host, fn (Builder $query) => $query->where('host', $this->host))
+            ->select('vid', 'day')->distinct()->get()
+            ->each(function ($row) use (&$active) {
+                $active[$row->vid][] = $row->day;
+            });
+
+        if ($active === []) {
+            return [];
+        }
+
+        // Il giorno della prima visita si cerca su tutta la storia di quelle persone, non solo nelle ultime settimane.
+        $first = collect();
+
+        foreach (array_chunk(array_keys($active), 500) as $chunk) {
+            $first = $first->union(
+                DB::table('page_views')->whereIn('vid', $chunk)
+                    ->when($this->host, fn (Builder $query) => $query->where('host', $this->host))
+                    ->selectRaw('vid, min(day) as first_day')->groupBy('vid')
+                    ->havingRaw('min(day) >= ?', [$start->toDateString()])
+                    ->pluck('first_day', 'vid')
+            );
+        }
+
+        if ($first->isEmpty()) {
+            return [];
         }
 
         $cohorts = [];
@@ -384,7 +401,8 @@ final class Insights
      */
     public function keywords(int $limit = 10): Collection
     {
-        return $this->entries()->whereNotNull('keyword')
+        // Google non comunica le ricerche: le parole "da Google" gia' salvate sono reindirizzamenti o referrer falsi.
+        return $this->entries()->whereNotNull('keyword')->where(fn ($q) => $q->whereNull('source')->orWhere('source', '!=', 'Google'))
             ->selectRaw('keyword, source, count(*) as total')->groupBy('keyword', 'source')
             ->orderByDesc('total')->orderBy('keyword')->limit($limit)->get()
             ->map(fn ($row) => (object) ['term' => $row->keyword, 'source' => $row->source, 'count' => (int) $row->total]);
@@ -413,8 +431,13 @@ final class Insights
     private function places(string $column, int $limit): Collection
     {
         $rows = $this->entries()->where('country', 'IT')->whereNotNull($column)
-            ->selectRaw("$column as name, count(*) as total")->groupBy($column)
-            ->orderByDesc('total')->orderBy($column)->get();
+            ->selectRaw("$column as name, count(*) as total")->groupBy($column)->get();
+
+        // I nomi si traducono anche in lettura: righe vecchie come "The Marches" o "Basilicate" si uniscono a quelle in italiano.
+        $translate = $column === 'region' ? fn ($name) => Places::region($name) : fn ($name) => Places::city($name);
+        $rows = $rows->groupBy(fn ($row) => $translate($row->name))
+            ->map(fn ($group, $name) => (object) ['name' => $name, 'total' => $group->sum('total')])
+            ->sortBy([['total', 'desc'], ['name', 'asc']])->values();
 
         $all = max(1, (int) $rows->sum('total'));
 
@@ -505,6 +528,7 @@ final class Insights
             ->where('p.path', $path)
             ->whereBetween('p.day', [$this->period->from->toDateString(), $this->period->to->toDateString()])
             ->when($this->host, fn (Builder $q) => $q->where('p.host', $this->host))
+            ->when($this->humans, fn (Builder $q) => $q->whereIn('p.session_id', Humans::sessions($this->period, $this->host)))
             ->selectRaw('n.path as path, count(*) as total')
             ->groupBy('n.path')->orderByDesc('total')->orderBy('n.path')->limit($limit);
 

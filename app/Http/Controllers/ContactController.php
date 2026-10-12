@@ -6,6 +6,7 @@ use App\Mail\ContactMessage;
 use App\Models\AdminSetting;
 use App\Models\Company;
 use App\Support\Analytics\Conversions;
+use App\Support\ContactGuard;
 use App\Support\TenantContext;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -46,6 +47,10 @@ class ContactController extends Controller
 
     public function send(Request $request, TenantContext $tenant): RedirectResponse
     {
+        if ($blocked = $this->blocked($request)) {
+            return $blocked;
+        }
+
         $data = $this->validated($request);
 
         // Il messaggio va a chi gestisce il sito: l'azienda sul suo dominio, il dominio
@@ -70,6 +75,10 @@ class ContactController extends Controller
     {
         // Il modulo sta sulla pagina dell'azienda: senza pagina, o se l'azienda non e' di questo sito, non c'e'.
         abort_unless($company->hasPage() && app(TenantContext::class)->scope()->allowsCompany($company), 404);
+
+        if ($blocked = $this->blocked($request)) {
+            return $blocked;
+        }
 
         $data = $this->validated($request);
 
@@ -98,6 +107,30 @@ class ContactController extends Controller
 
             return false;
         }
+    }
+
+    /**
+     * Scarta i moduli compilati da programmi. Lo spam riceve lo stesso
+     * "Messaggio inviato", cosi' non impara cosa lo ha tradito; una persona con
+     * il modulo scaduto o troppo veloce viene invitata a riprovare.
+     */
+    private function blocked(Request $request): ?RedirectResponse
+    {
+        $reason = ContactGuard::inspect($request);
+
+        if ($reason === null) {
+            return null;
+        }
+
+        Log::info('Messaggio del modulo contatti scartato', ['reason' => $reason, 'host' => $request->getHost()]);
+
+        if ($reason === ContactGuard::TRAP) {
+            return back()->with('success', __('Messaggio inviato.'));
+        }
+
+        return back()->withInput()->withErrors([
+            'message' => __('Il modulo e\' scaduto o e\' stato inviato troppo in fretta: ricarica la pagina e riprova.'),
+        ]);
     }
 
     private function failed(): RedirectResponse
