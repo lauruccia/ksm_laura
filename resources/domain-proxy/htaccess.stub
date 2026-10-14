@@ -1,4 +1,12 @@
 # KSM domain proxy: tutte le richieste passano da index.php
 RewriteEngine On
+
+# Crawler di scraping/SEO/AI: 403 subito, senza avviare PHP. Ogni richiesta che
+# arriva a index.php occupa uno slot PHP qui e un altro sull'app: con decine di
+# domini, i bot esauriscono i processi del server (mod_fcgid "can't apply process slot").
+RewriteCond %{HTTP_USER_AGENT} (GPTBot|ClaudeBot|SemrushBot|AhrefsBot|MJ12bot|DotBot|PetalBot|Bytespider|DataForSeoBot|BLEXBot|Barkrowler|ImagesiftBot|Amazonbot|CCBot|meta-externalagent|Baiduspider|Sogou|YisouSpider|360Spider|YandexBot|SeznamBot|trendiction|MixrankBot|zoominfobot|DomainStatsBot|ResearchBot|scrapy|python-urllib) [NC,OR]
+RewriteCond %{HTTP_USER_AGENT} ^-?$
+RewriteRule ^ - [F,L]
+
 RewriteCond %{REQUEST_URI} !^/index\.php$
 RewriteRule ^ index.php [L,QSA]
