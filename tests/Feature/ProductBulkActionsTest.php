@@ -109,6 +109,55 @@ class ProductBulkActionsTest extends TestCase
         $this->assertModelMissing($b);
     }
 
+    public function test_l_amministratore_cambia_categoria_marca_e_azienda_in_blocco(): void
+    {
+        $from = $this->company('Caseificio');
+        $to = $this->company('Salumificio');
+        [$a, $b, $c] = [$this->product($from, 'Mozzarella'), $this->product($from, 'Ricotta'), $this->product($from, 'Burrata')];
+        $category = \App\Models\ProductCategory::create(['name' => 'Latticini', 'slug' => 'latticini']);
+        $brand = \App\Models\ProductBrand::create(['name' => 'Sila', 'slug' => 'sila']);
+        $admin = $this->admin();
+
+        $this->actingAs($admin)
+            ->patch(route('admin.products.bulk'), ['action' => 'category', 'category_id' => $category->id, 'ids' => [$a->id, $b->id]])
+            ->assertSessionHasNoErrors()
+            ->assertSessionHas('success', 'Categoria aggiornata su 2 prodotti.');
+        $this->assertSame($category->id, $a->fresh()->category_id);
+        $this->assertNull($c->fresh()->category_id);
+
+        // Vuoto toglie la categoria.
+        $this->patch(route('admin.products.bulk'), ['action' => 'category', 'category_id' => '', 'ids' => [$b->id]]);
+        $this->assertNull($b->fresh()->category_id);
+
+        $this->patch(route('admin.products.bulk'), ['action' => 'brand', 'brand_id' => $brand->id, 'scope' => 'all'])
+            ->assertSessionHasNoErrors();
+        $this->assertSame(3, \App\Models\Product::where('brand_id', $brand->id)->count());
+
+        $this->patch(route('admin.products.bulk'), ['action' => 'company', 'company_id' => $to->id, 'ids' => [$a->id, $b->id]])
+            ->assertSessionHasNoErrors()
+            ->assertSessionHas('success', '2 prodotti spostati a Salumificio.');
+        $this->assertSame($to->id, $a->fresh()->company_id);
+        $this->assertSame($from->id, $c->fresh()->company_id);
+
+        // Senza azienda di destinazione non si sposta nulla.
+        $this->patch(route('admin.products.bulk'), ['action' => 'company', 'ids' => [$c->id]])
+            ->assertSessionHasErrors('company_id');
+        $this->assertSame($from->id, $c->fresh()->company_id);
+    }
+
+    public function test_il_venditore_non_puo_cambiare_azienda_in_blocco(): void
+    {
+        $mine = $this->company('Caseificio');
+        $other = $this->company('Salumificio');
+        $cheese = $this->product($mine, 'Mozzarella');
+
+        $this->actingAs($mine->user)
+            ->patch(route('vendor.products.bulk'), ['action' => 'company', 'company_id' => $other->id, 'ids' => [$cheese->id]])
+            ->assertSessionHasErrors('action');
+
+        $this->assertSame($mine->id, $cheese->fresh()->company_id);
+    }
+
     public function test_il_venditore_agisce_solo_sui_suoi_prodotti(): void
     {
         $mine = $this->company('Caseificio');

@@ -5,7 +5,8 @@
     $noun e $nounOne (per esempio "prodotti" e "prodotto"). Facoltativi:
     $feminine (true per aziende, pagine: "Nessuna azienda selezionata"),
     $percentSteps (quote KMoney, se c'e' l'azione "kmoney"), $statuses
-    (valore => etichetta, se c'e' l'azione "status"), $onlySelected (azioni
+    (valore => etichetta, se c'e' l'azione "status"), $categories, $brands e
+    $companies (id => nome, se ci sono le azioni "category", "brand" e "company"), $onlySelected (azioni
     che non valgono su "tutti i risultati", come eliminare). Le caselle delle righe si
     legano con form="bulk" name="ids[]" data-bulk-item; quella in testa
     alla tabella ha data-bulk-page. Vedi public/js/bulk.js.
@@ -62,6 +63,36 @@
                 <select class="ksm-select" id="bulk_status" name="status" data-bulk-extra="status">
                     @foreach ($statuses as $value => $label)
                         <option value="{{ $value }}">{{ $label }}</option>
+                    @endforeach
+                </select>
+            @endisset
+
+            @isset($actions['category'])
+                <label class="ksm-sr-only" for="bulk_category">Categoria</label>
+                <select class="ksm-select" id="bulk_category" name="category_id" data-bulk-extra="category">
+                    <option value="">Nessuna categoria</option>
+                    @foreach ($categories as $id => $name)
+                        <option value="{{ $id }}">{{ $name }}</option>
+                    @endforeach
+                </select>
+            @endisset
+
+            @isset($actions['brand'])
+                <label class="ksm-sr-only" for="bulk_brand">Marca</label>
+                <select class="ksm-select" id="bulk_brand" name="brand_id" data-bulk-extra="brand">
+                    <option value="">Nessuna marca</option>
+                    @foreach ($brands as $id => $name)
+                        <option value="{{ $id }}">{{ $name }}</option>
+                    @endforeach
+                </select>
+            @endisset
+
+            @isset($actions['company'])
+                <label class="ksm-sr-only" for="bulk_company">Azienda</label>
+                <select class="ksm-select" id="bulk_company" name="company_id" data-bulk-extra="company">
+                    <option value="">Scegli l'azienda…</option>
+                    @foreach ($companies as $id => $name)
+                        <option value="{{ $id }}">{{ $name }}</option>
                     @endforeach
                 </select>
             @endisset

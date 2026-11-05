@@ -28,6 +28,9 @@ class AdminProductController extends Controller
                 ->paginate(25)
                 ->withQueryString(),
             'company' => $request->integer('azienda') ? Company::find($request->integer('azienda')) : null,
+            'categories' => ProductCategory::orderBy('name')->pluck('name', 'id'),
+            'brands' => ProductBrand::orderBy('name')->pluck('name', 'id'),
+            'companies' => Company::orderBy('name')->pluck('name', 'id'),
         ]);
     }
 
@@ -40,15 +43,25 @@ class AdminProductController extends Controller
             ->when(in_array($request->input('stato'), ['active', 'inactive'], true), fn ($q) => $q->where('status', $request->input('stato')));
     }
 
+    /** Azioni in blocco dell'elenco: quelle comuni a tutti gli elenchi, piu' categoria, marca e azienda. */
+    public const BULK_ACTIONS = ['activate', 'deactivate', 'kmoney', 'category', 'brand', 'company', 'delete'];
+
     /**
-     * Attiva, disattiva, cambia la quota KMoney o elimina piu' prodotti insieme:
-     * quelli spuntati o tutti i risultati della ricerca, su ogni pagina.
+     * Attiva, disattiva, cambia la quota KMoney, la categoria, la marca o l'azienda,
+     * o elimina piu' prodotti insieme: quelli spuntati o tutti i risultati della
+     * ricerca, su ogni pagina.
      */
     public function bulk(Request $request, KMoneyPercentages $percentages): RedirectResponse
     {
-        $request->validate(BulkSelection::rules() + [
+        $request->validate(BulkSelection::rules(self::BULK_ACTIONS) + [
             'percent' => ['required_if:action,kmoney', 'nullable', Rule::in(array_merge(['auto'], KMoneyShare::STEPS))],
-        ], BulkSelection::messages());
+            // Vuoto toglie la categoria o la marca.
+            'category_id' => ['nullable', 'integer', Rule::exists(ProductCategory::class, 'id')],
+            'brand_id' => ['nullable', 'integer', Rule::exists(ProductBrand::class, 'id')],
+            'company_id' => ['required_if:action,company', 'nullable', 'integer', Rule::exists(Company::class, 'id')],
+        ], BulkSelection::messages() + [
+            'company_id.required_if' => __("Scegli l'azienda a cui spostare i prodotti."),
+        ]);
 
         $query = BulkSelection::query($request, Product::query(), $this->filters(...));
 
@@ -57,9 +70,74 @@ class AdminProductController extends Controller
             'deactivate' => trans_choice(':count prodotto disattivato.|:count prodotti disattivati.', $query->update(['status' => 'inactive'])),
             'delete' => trans_choice(':count prodotto eliminato.|:count prodotti eliminati.', BulkSelection::deleteEach($query)),
             'kmoney' => $this->applyKMoney($percentages, $query->pluck('id')->all(), $request->input('percent')),
+            'category' => $this->applyCategory($percentages, $query, $request->integer('category_id') ?: null),
+            'brand' => trans_choice('Marca aggiornata su :count prodotto.|Marca aggiornata su :count prodotti.', $this->updateEach(
+                $query, fn () => ['brand_id' => $request->integer('brand_id') ?: null],
+            )['count']),
+            'company' => $this->applyCompany($percentages, $query, Company::findOrFail($request->integer('company_id'))),
         };
 
         return back()->with('success', $message);
+    }
+
+    /**
+     * Un prodotto alla volta, cosi' partono gli eventi del modello (versione e
+     * notifiche ai gestionali, come nella modifica singola).
+     *
+     * @param  \Closure(Product): array<string, mixed>  $attributes
+     * @return array{count: int, byCompany: array<int, list<int>>}
+     */
+    private function updateEach(Builder $query, \Closure $attributes): array
+    {
+        $count = 0;
+        $byCompany = [];
+
+        $query->chunkById(200, function ($products) use ($attributes, &$count, &$byCompany) {
+            foreach ($products as $product) {
+                $product->update($attributes($product));
+                $byCompany[$product->company_id][] = $product->id;
+                $count++;
+            }
+        });
+
+        return ['count' => $count, 'byCompany' => $byCompany];
+    }
+
+    /** La stessa categoria su piu' prodotti; la quota KMoney segue le scelte per categoria del venditore. */
+    private function applyCategory(KMoneyPercentages $percentages, Builder $query, ?int $categoryId): string
+    {
+        $done = $this->updateEach($query, fn () => ['category_id' => $categoryId]);
+
+        foreach (Company::whereKey(array_keys($done['byCompany']))->get() as $company) {
+            $percentages->refresh($company, $done['byCompany'][$company->id]);
+        }
+
+        return trans_choice('Categoria aggiornata su :count prodotto.|Categoria aggiornata su :count prodotti.', $done['count']);
+    }
+
+    /**
+     * Sposta i prodotti a un'altra azienda. La categoria resta; una quota KMoney
+     * scelta sul prodotto si adatta a quelle ammesse dal conto della nuova azienda,
+     * poi la quota effettiva si ricalcola con le regole della nuova azienda.
+     */
+    private function applyCompany(KMoneyPercentages $percentages, Builder $query, Company $target): string
+    {
+        $steps = KMoneyShare::steps($target->paymentSettings()->first());
+
+        $done = $this->updateEach($query, fn (Product $product) => [
+            'company_id' => $target->id,
+            'kmoney_discount_percent' => $product->kmoney_discount_percent === null
+                ? null
+                : KMoneyShare::fit(KMoneyShare::snap($product->kmoney_discount_percent), $steps),
+        ]);
+
+        $ids = array_merge(...array_values($done['byCompany'] ?: [[]]));
+
+        if ($ids) {
+            $percentages->refresh($target, $ids);
+        }
+
+        return trans_choice(':count prodotto spostato a :company.|:count prodotti spostati a :company.', $done['count'], ['company' => $target->name]);
     }
 
     /**

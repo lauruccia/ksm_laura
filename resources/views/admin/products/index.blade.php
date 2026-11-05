@@ -58,9 +58,15 @@
                 'activate' => 'Attiva',
                 'deactivate' => 'Disattiva',
                 'kmoney' => 'Cambia quota KMoney',
+                'category' => 'Cambia categoria',
+                'brand' => 'Cambia marca',
+                'company' => 'Cambia azienda',
                 'delete' => 'Elimina',
             ],
             'percentSteps' => \App\Payments\KMoney\KMoneyShare::STEPS,
+            'categories' => $categories,
+            'brands' => $brands,
+            'companies' => $companies,
         ])
     @endif
 
