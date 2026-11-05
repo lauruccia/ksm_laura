@@ -29,6 +29,7 @@
             @unless ($inDebt)
                 <a class="ksm-btn ksm-btn--ghost ksm-btn--sm" href="{{ route('vendor.kmoney.edit') }}">Quote KMoney</a>
             @endunless
+            <a class="ksm-btn ksm-btn--ghost ksm-btn--sm" href="{{ route('vendor.products.import') }}">Importa CSV</a>
             <a class="ksm-btn ksm-btn--primary ksm-btn--sm" href="{{ route('vendor.products.create') }}">Nuovo prodotto</a>
         </span>
     </div>

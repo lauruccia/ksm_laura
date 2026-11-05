@@ -10,6 +10,7 @@ use App\Http\Controllers\Vendor\VendorKMoneyController;
 use App\Http\Controllers\Vendor\VendorOrderController;
 use App\Http\Controllers\Vendor\VendorPaymentSettingController;
 use App\Http\Controllers\Vendor\VendorProductController;
+use App\Http\Controllers\Vendor\VendorProductImportController;
 use App\Http\Controllers\Vendor\VendorProfileController;
 use Illuminate\Support\Facades\Route;
 
@@ -57,6 +58,13 @@ Route::middleware(['auth', 'vendor'])
                 ->name('products.status');
             Route::patch('/prodotti-in-blocco', [VendorProductController::class, 'bulk'])
                 ->name('products.bulk');
+
+            // Import da CSV in formato WooCommerce (anche quello esportato da kmoney).
+            Route::get('/prodotti-importa', [VendorProductImportController::class, 'create'])->name('products.import');
+            Route::post('/prodotti-importa/analizza', [VendorProductImportController::class, 'analyze'])
+                ->middleware('throttle:20,1')->name('products.import.analyze');
+            Route::post('/prodotti-importa/conferma', [VendorProductImportController::class, 'apply'])
+                ->middleware('throttle:20,1')->name('products.import.apply');
 
             // Quote KMoney: su piu' prodotti selezionati e per categoria.
             Route::patch('/prodotti-kmoney', [VendorKMoneyController::class, 'bulk'])->name('products.kmoney');
