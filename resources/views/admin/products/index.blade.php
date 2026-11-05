@@ -42,6 +42,7 @@
         @if ($canManage)
             {{-- Filtrato per azienda, il prodotto nuovo e' gia' suo. --}}
             <span class="ksm-listhead__actions">
+                <a class="ksm-btn ksm-btn--ghost ksm-btn--sm" href="{{ route('admin.products.import', array_filter(['azienda' => $company?->id])) }}">Importa CSV</a>
                 <a class="ksm-btn ksm-btn--primary ksm-btn--sm" href="{{ route('admin.products.create', array_filter(['azienda' => $company?->id])) }}">Nuovo prodotto</a>
             </span>
         @endif

@@ -15,6 +15,7 @@ use App\Http\Controllers\Admin\AdminPlanController;
 use App\Http\Controllers\Admin\AdminProductBrandController;
 use App\Http\Controllers\Admin\AdminProductCategoryController;
 use App\Http\Controllers\Admin\AdminProductController;
+use App\Http\Controllers\Admin\AdminProductImportController;
 use App\Http\Controllers\Admin\AdminProfileController;
 use App\Http\Controllers\Admin\AdminRoleController;
 use App\Http\Controllers\Admin\AdminSettingController;
@@ -106,6 +107,13 @@ Route::middleware(['auth', 'admin'])
         Route::middleware('can:'.P::CATALOG_MANAGE)->group(function () {
             Route::get('/prodotti/nuovo', [AdminProductController::class, 'create'])->name('products.create');
             Route::post('/prodotti', [AdminProductController::class, 'store'])->name('products.store');
+
+            // Import da CSV in formato WooCommerce (anche quello esportato da kmoney), su un'azienda a scelta.
+            Route::get('/prodotti-importa', [AdminProductImportController::class, 'create'])->name('products.import');
+            Route::post('/prodotti-importa/analizza', [AdminProductImportController::class, 'analyze'])
+                ->middleware('throttle:20,1')->name('products.import.analyze');
+            Route::post('/prodotti-importa/conferma', [AdminProductImportController::class, 'apply'])
+                ->middleware('throttle:20,1')->name('products.import.apply');
         });
 
         Route::middleware('can:'.P::CATALOG_VIEW)->group(function () {
