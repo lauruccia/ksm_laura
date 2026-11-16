@@ -76,8 +76,8 @@ class DomainSiteTest extends TestCase
     private function domain(array $attributes = []): Domain
     {
         return Domain::create(array_merge([
-            'name' => 'Mozzarelle di bufala', 'domain' => 'mozzarelledibufala.test', 'type' => 'category',
-            'product_category_id' => $this->dairy->id, 'company_scope' => 'products', 'entry_page' => 'shop', 'is_active' => true,
+            'name' => 'Mozzarelle di bufala', 'domain' => 'mozzarelledibufala.test',
+            'product_category_ids' => [$this->dairy->id], 'companies_with_products' => true, 'entry_page' => 'shop', 'is_active' => true,
         ], $attributes));
     }
 
@@ -252,9 +252,9 @@ class DomainSiteTest extends TestCase
             'name' => 'Mozzarelle di bufala',
             'domain' => 'https://www.MozzarelleDiBufala.it/',
             'is_active' => '1',
-            'type' => 'category',
-            'product_category_id' => $this->dairy->id,
-            'company_scope' => 'products',
+            'product_scope' => 'companies',
+            'product_category_ids' => [$this->dairy->id],
+            'companies_with_products' => '1',
             'entry_page' => 'shop',
             'header_accent' => '#2f9e44',
             'logo' => UploadedFile::fake()->image('logo.png', 400, 200),
@@ -277,9 +277,9 @@ class DomainSiteTest extends TestCase
             'name' => 'Mozzarelle di bufala',
             'domain' => 'https://www.MozzarelleDiBufala.it/',
             'is_active' => '1',
-            'type' => 'category',
-            'product_category_id' => $this->dairy->id,
-            'company_scope' => 'products',
+            'product_scope' => 'companies',
+            'product_category_ids' => [$this->dairy->id],
+            'companies_with_products' => '1',
             'entry_page' => 'shop',
             'logo' => UploadedFile::fake()->image('logo.png', 400, 200),
             'hero_image' => UploadedFile::fake()->image('hero.jpg', 1600, 800),
@@ -309,7 +309,7 @@ class DomainSiteTest extends TestCase
         $image = $domain->site['hero']['image'];
         $this->actingAs($admin)->put(route('admin.domains.update', $domain), [
             'name' => 'Mozzarelle di bufala', 'domain' => 'mozzarelledibufala.it', 'is_active' => '1',
-            'type' => 'category', 'company_scope' => 'products', 'entry_page' => 'shop',
+            'product_scope' => 'companies', 'product_category_ids' => [$this->dairy->id], 'companies_with_products' => '1', 'entry_page' => 'shop',
             'site' => ['hero' => ['title' => 'Nuovo titolo']],
         ])->assertSessionHasNoErrors();
         $this->assertSame($image, $domain->fresh()->site['hero']['image']);
@@ -338,9 +338,9 @@ class DomainSiteTest extends TestCase
         $this->product($negozio, 'Voucher souvenir', $voucher);
 
         $this->domain([
-            'name' => 'Ristoranti Calabria', 'domain' => 'ristoranticalabria.test', 'type' => 'category+city',
-            'city' => 'calabria', 'company_category_id' => $restaurants->id, 'product_category_id' => $voucher->id,
-            'company_scope' => 'category', 'entry_page' => 'companies',
+            'name' => 'Ristoranti Calabria', 'domain' => 'ristoranticalabria.test',
+            'filter_place' => 'calabria', 'company_category_ids' => [$restaurants->id], 'product_category_ids' => [$voucher->id],
+            'companies_with_products' => false, 'entry_page' => 'companies',
         ]);
 
         // Aziende: i ristoranti calabresi, sottocategorie comprese, anche senza voucher.
@@ -400,7 +400,7 @@ class DomainSiteTest extends TestCase
     public function test_la_home_usa_i_vantaggi_del_dominio_e_senza_luogo_tiene_il_filtro_regioni(): void
     {
         $domain = $this->domain([
-            'type' => 'city', 'city' => 'Ostia', 'product_category_id' => null, 'entry_page' => 'home',
+            'filter_place' => 'Ostia', 'product_category_ids' => null, 'entry_page' => 'home',
             'site' => ['benefits' => ['items' => [['icon' => 'pin', 'title' => 'Aziende del quartiere', 'text' => 'A due passi da casa'], ['icon' => 'star', 'title' => '']]]],
         ]);
 
@@ -427,7 +427,7 @@ class DomainSiteTest extends TestCase
         foreach (['Ostia', 'Lido di Ostia', 'Ostia Antica', 'Ostiano', 'Ostia-Lido'] as $city) {
             $this->company('Azienda '.$city)->update(['city' => $city]);
         }
-        $domain = $this->domain(['type' => 'city', 'city' => 'Ostia', 'product_category_id' => null, 'company_scope' => 'category']);
+        $domain = $this->domain(['filter_place' => 'Ostia', 'product_category_ids' => null, 'companies_with_products' => false]);
 
         $cities = (new SiteScope($domain))->companies(Company::query())->pluck('city')->sort()->values()->all();
 
@@ -443,7 +443,7 @@ class DomainSiteTest extends TestCase
         $cosenza = $this->company('Trattoria Cosenza');
         $cosenza->update(['city' => 'Cosenza', 'region' => 'Calabria']);
 
-        $domain = $this->domain(['type' => 'city', 'city' => 'Calabria', 'product_category_id' => null]);
+        $domain = $this->domain(['filter_place' => 'Calabria', 'product_category_ids' => null]);
         $ovunque = $campaign([]);
         $mirata = $campaign(['target_domains' => [$domain->id]]);
         $aCosenza = $campaign(['target_cities' => ['Cosenza']]);
@@ -563,7 +563,7 @@ class DomainSiteTest extends TestCase
             return $match[0] ?? '';
         };
 
-        // Nessun latticino: niente Prodotti, e con company_scope products nemmeno Aziende.
+        // Nessun latticino: niente Prodotti, e chiedendo aziende con prodotti nemmeno Aziende.
         $this->assertStringNotContainsString('"/prodotti"', $nav());
         $this->assertStringNotContainsString('"/aziende"', $nav());
         $this->assertStringContainsString('Home', $nav());

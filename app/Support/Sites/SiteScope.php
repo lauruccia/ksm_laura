@@ -20,15 +20,20 @@ use Illuminate\Support\Facades\DB;
  * carrello e mappa del sito. Cio' che resta fuori non si vede, nemmeno
  * aprendo l'indirizzo a mano. Sul sito principale non filtra nulla.
  *
+ * Tre blocchi indipendenti, e un campo vuoto non limita nulla:
+ *
+ *  - aziende: quelle delle categorie azienda scelte (con le sottocategorie)
+ *    e del luogo; se richiesto, solo quelle con almeno un prodotto in
+ *    vendita nelle categorie prodotto del dominio;
+ *  - prodotti: quelli delle categorie prodotto scelte (con le
+ *    sottocategorie). Di chi: solo delle aziende delle categorie e del
+ *    luogo del dominio (companies), di tutto il marketplace (all), oppure
+ *    nessuno (none: il sito non ha lo shop);
+ *  - luogo: se il nome e' una regione filtra la regione, altrimenti la citta'.
+ *
  * Esempio, ristoranticalabria.it: categoria azienda Ristoranti, luogo
  * Calabria, categoria prodotto Voucher. Aziende: i ristoranti calabresi.
  * Prodotti: i voucher di quei ristoranti, non di altre aziende calabresi.
- *
- *  - luogo: se il nome e' una regione filtra la regione, altrimenti la citta';
- *  - aziende (company_scope): per categoria azienda (category), solo chi
- *    vende nella categoria prodotto (products), o entrambe (both);
- *  - prodotti: categoria prodotto del dominio con le sottocategorie, e solo
- *    di aziende della categoria azienda e del luogo del dominio.
  *
  * Sul dominio proprio di un'azienda il sito e' solo suo: la sua scheda e i
  * suoi prodotti, niente del resto del marketplace.
@@ -61,35 +66,54 @@ final class SiteScope
             || $this->productCategoryIds() !== null
             || $this->companyCategoryIds() !== null
             || $this->place() !== null
-            || $this->requiresProducts();
+            || $this->requiresProducts()
+            || $this->productScope() === 'none';
     }
 
     /** @return list<int>|null  null: nessun filtro */
     public function productCategoryIds(): ?array
     {
         if ($this->productCategories === false) {
-            $root = $this->domain?->filtersByCategory() ? $this->domain->product_category_id : null;
-            $this->productCategories = $root
-                ? [(int) $root, ...CategoryTree::of(ProductCategory::class)->descendants((int) $root)]
-                : null;
+            $this->productCategories = $this->branches(ProductCategory::class, $this->productCategoryRoots());
         }
 
         return $this->productCategories;
+    }
+
+    /**
+     * Le categorie prodotto scelte per il dominio, senza le sottocategorie.
+     *
+     * @return list<int>
+     */
+    public function productCategoryRoots(): array
+    {
+        return $this->existing(ProductCategory::class, (array) $this->domain?->product_category_ids);
     }
 
     /** @return list<int>|null */
     public function companyCategoryIds(): ?array
     {
         if ($this->companyCategories === false) {
-            $root = $this->domain?->filtersByCategory() && $this->domain->company_scope !== 'products'
-                ? $this->domain->company_category_id
-                : null;
-            $this->companyCategories = $root
-                ? [(int) $root, ...CategoryTree::of(CompanyCategory::class)->descendants((int) $root)]
-                : null;
+            $this->companyCategories = $this->branches(CompanyCategory::class, $this->companyCategoryRoots());
         }
 
         return $this->companyCategories;
+    }
+
+    /**
+     * Le categorie azienda scelte per il dominio, senza le sottocategorie.
+     *
+     * @return list<int>
+     */
+    public function companyCategoryRoots(): array
+    {
+        return $this->existing(CompanyCategory::class, (array) $this->domain?->company_category_ids);
+    }
+
+    /** companies: solo delle aziende del dominio; all: di tutto il marketplace; none: nessun prodotto. */
+    public function productScope(): string
+    {
+        return $this->domain?->product_scope ?: 'companies';
     }
 
     /**
@@ -99,7 +123,7 @@ final class SiteScope
      */
     public function place(): ?array
     {
-        $place = $this->domain?->filtersByCity() ? trim((string) $this->domain->city) : '';
+        $place = trim((string) $this->domain?->filter_place);
 
         if ($place === '') {
             return null;
@@ -123,13 +147,19 @@ final class SiteScope
             return $query->where("$table.company_id", $this->company->getKey());
         }
 
+        if ($this->productScope() === 'none') {
+            return $query->whereRaw('1 = 0');
+        }
+
+        $ownCompanies = $this->productScope() === 'companies' && ($this->companyCategoryIds() || $this->place());
+
         return $query
             ->when($this->productCategoryIds(), fn ($q, $ids) => $q->whereIn("$table.category_id", $ids))
             ->where(fn ($q) => $q
                 ->where(fn ($q) => $q
-                    // Solo aziende della categoria e del luogo del dominio. Non si usa companies():
-                    // con company_scope products le aziende dipendono a loro volta dai prodotti.
-                    ->when($this->companyCategoryIds() || $this->place(), fn ($q) => $q->whereIn(
+                    // Solo aziende delle categorie e del luogo del dominio. Non si usa companies():
+                    // se si chiedono aziende con prodotti, le aziende dipendono a loro volta dai prodotti.
+                    ->when($ownCompanies, fn ($q) => $q->whereIn(
                         "$table.company_id",
                         $this->byCategoryAndPlace(Company::query())->select('companies.id')
                     ))
@@ -213,7 +243,40 @@ final class SiteScope
 
     private function requiresProducts(): bool
     {
-        return in_array($this->domain?->company_scope, ['products', 'both'], true);
+        return (bool) $this->domain?->companies_with_products;
+    }
+
+    /**
+     * Le categorie scelte che esistono ancora: una categoria cancellata non filtra piu'.
+     *
+     * @param  class-string<\Illuminate\Database\Eloquent\Model>  $model
+     * @param  list<int>  $ids
+     * @return list<int>
+     */
+    private function existing(string $model, array $ids): array
+    {
+        $tree = CategoryTree::of($model);
+
+        return array_values(array_filter(array_map('intval', $ids), fn (int $id) => $tree->lineage($id) !== []));
+    }
+
+    /**
+     * Le categorie scelte con tutte le loro sottocategorie.
+     *
+     * @param  class-string<\Illuminate\Database\Eloquent\Model>  $model
+     * @param  list<int>  $roots
+     * @return list<int>|null
+     */
+    private function branches(string $model, array $roots): ?array
+    {
+        $tree = CategoryTree::of($model);
+        $ids = [];
+
+        foreach ($roots as $root) {
+            array_push($ids, $root, ...$tree->descendants($root));
+        }
+
+        return $ids ? array_values(array_unique($ids)) : null;
     }
 
     private function byCategoryAndPlace(Builder $query): Builder

@@ -48,11 +48,12 @@ final class AdContext
     {
         $tenant = app(TenantContext::class);
         $domain = $tenant->domain();
-        $categoryId ??= $domain?->company_category_id;
+        $roots = $categoryId ? [$categoryId] : $tenant->scope()->companyCategoryRoots();
 
         // Tutte le madri, non solo la prima: le categorie aziende arrivano al terzo livello.
         // Dall'albero gia' letto, senza una query per gradino a ogni banner.
-        $categoryIds = $categoryId ? CategoryTree::of(CompanyCategory::class)->lineage((int) $categoryId) : [];
+        $tree = CategoryTree::of(CompanyCategory::class);
+        $categoryIds = array_values(array_unique(array_merge([], ...array_map(fn ($id) => $tree->lineage((int) $id), $roots))));
 
         $place = $tenant->scope()->place();
         $places = [];

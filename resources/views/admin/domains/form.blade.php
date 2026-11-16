@@ -11,6 +11,8 @@
          * lasciati vuoti valgono i predefiniti, mostrati come segnaposto.
          */
         $value = fn (string $field) => old($field, $record->$field);
+        // Categorie spuntate. Dopo un errore valgono quelle appena inviate, anche se nessuna.
+        $chosen = fn (string $field) => array_map('intval', (array) (session()->hasOldInput() ? old($field, []) : $record->$field));
         $site = fn (string $key) => old('site.'.$key, data_get($record->site, $key));
         $siteOn = fn (string $key, bool $default) => (bool) old('site.'.$key, data_get($record->site, $key, $default));
         $name = fn (string $key) => 'site['.str_replace('.', '][', $key).']';
@@ -40,6 +42,16 @@
         .ksm-domain-form__switch { display: flex; gap: 8px; align-items: center; margin-bottom: 14px; font-weight: 600; }
         .ksm-domain-form__links { display: grid; grid-template-columns: 1fr 2fr; gap: 6px 10px; margin-bottom: 16px; }
         .ksm-domain-form__benefit { display: grid; grid-template-columns: 150px 1fr 1fr; gap: 10px; margin-bottom: 8px; }
+        .ksm-domain-form__block { margin: 0 0 16px; padding: 14px 16px 16px; border: 1px solid var(--ksm-line); border-radius: 10px; }
+        .ksm-domain-form__block legend { padding: 0 8px; font-weight: 700; }
+        .ksm-domain-form__block .ksm-domain-form__switch { margin: 12px 0 4px; }
+        .ksm-domain-form__search { max-width: 320px; margin-bottom: 6px; }
+        .ksm-domain-form__radio { display: flex; gap: 8px; align-items: flex-start; margin-bottom: 8px; cursor: pointer; }
+        .ksm-domain-form__radio input { margin-top: 4px; }
+        .ksm-domain-form__radio span { display: grid; gap: 1px; }
+        .ksm-domain-form__summary { display: grid; gap: 4px; margin-bottom: 16px; padding: 12px 16px; border-radius: 10px; background: var(--ksm-accent-soft); font-size: .92rem; }
+        .ksm-domain-form__summary[hidden], .ksm-domain-form__checks label[hidden] { display: none; }
+        .ksm-domain-form__checks label { display: flex; gap: 6px; align-items: center; }
         .ksm-domain-form__checks { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 6px 14px; max-height: 260px; overflow: auto; padding: 10px; border: 1px solid var(--ksm-line); border-radius: 8px; }
         .ksm-domain-form__preview { display: block; max-height: 70px; max-width: 220px; margin: 6px 0; border-radius: 6px; background: #f1f4f6; }
         .ksm-domain-form__save { position: sticky; bottom: 0; padding: 14px 0; background: linear-gradient(transparent, var(--ksm-canvas) 35%); }
@@ -127,59 +139,76 @@
             </section>
 
             {{-- Cosa mostra --}}
-            <section class="ksm-card ksm-domain-form__section" id="contenuto">
+            <section class="ksm-card ksm-domain-form__section" id="contenuto" data-domain-filter>
                 <h2>Cosa mostra</h2>
-                <p>Prodotti e aziende fuori dal filtro non si vedono sul dominio, nemmeno aprendo l'indirizzo a mano.</p>
-                <div class="ksm-formgrid">
-                    <div class="ksm-field">
-                        <label class="ksm-label" for="type">Filtro</label>
-                        <select class="ksm-select" id="type" name="type">
-                            @foreach ($types as $key => $label)
-                                <option value="{{ $key }}" @selected($value('type') === $key)>{{ $label }}</option>
-                            @endforeach
-                        </select>
-                        <small class="ksm-muted">Quali aziende e prodotti entrano nel sito. "Nessun filtro": tutto il marketplace. "Per città": usa il campo Città o regione. "Per categoria": usa le categorie qui a fianco.</small>
-                        @error('type')<span class="ksm-error">{{ $message }}</span>@enderror
-                    </div>
-                    <div class="ksm-field">
-                        <label class="ksm-label" for="product_category_id">Categoria prodotti</label>
-                        <select class="ksm-select" id="product_category_id" name="product_category_id">
-                            <option value="">Tutte</option>
-                            @foreach ($productCategories as $id => $label)
-                                <option value="{{ $id }}" @selected((string) $value('product_category_id') === (string) $id)>{{ $label }}</option>
-                            @endforeach
-                        </select>
-                        <small class="ksm-muted">Con il filtro per categoria: solo questa e le sue sottocategorie.</small>
-                        @error('product_category_id')<span class="ksm-error">{{ $message }}</span>@enderror
-                    </div>
-                    <div class="ksm-field">
-                        <label class="ksm-label" for="company_scope">Aziende mostrate</label>
-                        <select class="ksm-select" id="company_scope" name="company_scope">
-                            @foreach ($companyScopes as $key => $label)
-                                <option value="{{ $key }}" @selected($value('company_scope') === $key)>{{ $label }}</option>
-                            @endforeach
-                        </select>
-                        <small class="ksm-muted">Quali aziende compaiono in home, nell'elenco Aziende e con la loro scheda.</small>
-                        @error('company_scope')<span class="ksm-error">{{ $message }}</span>@enderror
-                    </div>
-                    <div class="ksm-field">
-                        <label class="ksm-label" for="company_category_id">Categoria aziende</label>
-                        <select class="ksm-select" id="company_category_id" name="company_category_id">
-                            <option value="">Tutte</option>
-                            @foreach ($companyCategories as $id => $label)
-                                <option value="{{ $id }}" @selected((string) $value('company_category_id') === (string) $id)>{{ $label }}</option>
-                            @endforeach
-                        </select>
-                        <small class="ksm-muted">Con il filtro per categoria limita aziende e prodotti (es. Ristoranti: solo i voucher dei ristoranti). Non usata con "Solo chi vende".</small>
-                        @error('company_category_id')<span class="ksm-error">{{ $message }}</span>@enderror
-                    </div>
-                    <div class="ksm-field">
-                        <label class="ksm-label" for="city">Città o regione</label>
-                        <input class="ksm-input" id="city" name="city" value="{{ $value('city') }}">
-                        <small class="ksm-muted">Con il filtro per città. Il nome di una regione ("Calabria") prende tutta la regione. Il nome di una città ("Ostia") prende le aziende la cui città contiene quella parola intera: Ostia, Lido di Ostia, Ostia Antica, ma non Ostiano. Vale per aziende e prodotti, e toglie dalla home il menu "Tutte le regioni".</small>
-                        @error('city')<span class="ksm-error">{{ $message }}</span>@enderror
-                    </div>
+                <p>Tre scelte indipendenti: quali aziende, quali prodotti, in quale luogo. Un campo lasciato vuoto non limita nulla. Ciò che resta fuori non si vede sul dominio, nemmeno aprendo l'indirizzo a mano.</p>
+
+                <div class="ksm-domain-form__summary" data-filter-summary aria-live="polite" hidden>
+                    <strong>Su questo sito si vedono</strong>
+                    <span data-summary-companies></span>
+                    <span data-summary-products></span>
                 </div>
+
+                <fieldset class="ksm-domain-form__block">
+                    <legend>Aziende</legend>
+                    <div class="ksm-field">
+                        <span class="ksm-label">Categorie aziende</span>
+                        <input class="ksm-input ksm-domain-form__search" type="search" placeholder="Cerca una categoria…" aria-label="Cerca tra le categorie aziende" data-check-search>
+                        <div class="ksm-domain-form__checks" data-checks="companies">
+                            @foreach ($companyCategories as $id => $label)
+                                <label><input type="checkbox" name="company_category_ids[]" value="{{ $id }}" data-label="{{ $label }}" @checked(in_array((int) $id, $chosen('company_category_ids'), true))> {{ $label }}</label>
+                            @endforeach
+                        </div>
+                        <small class="ksm-muted">Nessuna spunta: aziende di tutte le categorie. Una categoria comprende sempre le sue sottocategorie.</small>
+                        @error('company_category_ids')<span class="ksm-error">{{ $message }}</span>@enderror
+                        @error('company_category_ids.*')<span class="ksm-error">{{ $message }}</span>@enderror
+                    </div>
+                    <label class="ksm-domain-form__switch">
+                        <input type="hidden" name="companies_with_products" value="0">
+                        <input type="checkbox" name="companies_with_products" value="1" @checked($value('companies_with_products'))> Solo aziende con almeno un prodotto in vendita
+                    </label>
+                    <small class="ksm-muted">Accesa, un'azienda compare solo se vende qualcosa: nelle categorie prodotti scelte qui sotto, o in qualunque categoria se non ne scegli. Spenta, compaiono anche le aziende senza prodotti.</small>
+                </fieldset>
+
+                <fieldset class="ksm-domain-form__block">
+                    <legend>Prodotti</legend>
+                    <div class="ksm-field">
+                        <span class="ksm-label">Di chi sono i prodotti</span>
+                        @foreach ([
+                            'companies' => ['Solo delle aziende mostrate', 'I prodotti delle aziende delle categorie e del luogo scelti. Senza categorie aziende né luogo, è come tutto il marketplace.'],
+                            'all' => ['Di tutto il marketplace', 'I prodotti di qualunque azienda, anche di quelle che su questo sito non compaiono.'],
+                            'none' => ['Nessun prodotto', 'Il sito è solo una vetrina di aziende: niente shop, niente voce Prodotti nel menu.'],
+                        ] as $key => [$label, $hint])
+                            <label class="ksm-domain-form__radio">
+                                <input type="radio" name="product_scope" value="{{ $key }}" @checked(($value('product_scope') ?: 'companies') === $key)>
+                                <span><strong>{{ $label }}</strong><small class="ksm-muted">{{ $hint }}</small></span>
+                            </label>
+                        @endforeach
+                        @error('product_scope')<span class="ksm-error">{{ $message }}</span>@enderror
+                    </div>
+                    <div class="ksm-field" data-product-categories>
+                        <span class="ksm-label">Categorie prodotti</span>
+                        <input class="ksm-input ksm-domain-form__search" type="search" placeholder="Cerca una categoria…" aria-label="Cerca tra le categorie prodotti" data-check-search>
+                        <div class="ksm-domain-form__checks" data-checks="products">
+                            @foreach ($productCategories as $id => $label)
+                                <label><input type="checkbox" name="product_category_ids[]" value="{{ $id }}" data-label="{{ $label }}" @checked(in_array((int) $id, $chosen('product_category_ids'), true))> {{ $label }}</label>
+                            @endforeach
+                        </div>
+                        <small class="ksm-muted">Nessuna spunta: prodotti di tutte le categorie. Una categoria comprende sempre le sue sottocategorie.</small>
+                        @error('product_category_ids')<span class="ksm-error">{{ $message }}</span>@enderror
+                        @error('product_category_ids.*')<span class="ksm-error">{{ $message }}</span>@enderror
+                    </div>
+                </fieldset>
+
+                <fieldset class="ksm-domain-form__block">
+                    <legend>Luogo</legend>
+                    <div class="ksm-field">
+                        <label class="ksm-label" for="filter_place">Città o regione</label>
+                        <input class="ksm-input" id="filter_place" name="filter_place" value="{{ $value('filter_place') }}" placeholder="Ovunque">
+                        <small class="ksm-muted">Vuoto: nessun limite di luogo. Il nome di una regione ("Calabria") prende tutta la regione. Il nome di una città ("Ostia") prende le aziende la cui città contiene quella parola intera: Ostia, Lido di Ostia, Ostia Antica, ma non Ostiano. Vale per le aziende e per i prodotti "delle aziende mostrate", e toglie dalla home il menu "Tutte le regioni".</small>
+                        @error('filter_place')<span class="ksm-error">{{ $message }}</span>@enderror
+                    </div>
+                </fieldset>
 
                 <div class="ksm-formgrid">
                     <div class="ksm-field">
@@ -442,6 +471,7 @@
                         <div class="ksm-formgrid">
                             @foreach ([
                                 'address' => ['Indirizzo', 'Nel piede.'],
+                                'city' => ['Città', "Nel piede, accanto all'indirizzo. Non filtra nulla: il luogo del filtro è in Cosa mostra."],
                                 'phone' => ['Telefono', 'Nel piede.'],
                                 'email' => ['Email', 'Nel piede. I messaggi del modulo Contattaci arrivano a questo indirizzo.'],
                             ] as $field => [$label, $hint])
@@ -539,4 +569,82 @@
             </div>
         </form>
     </div>
+
+    {{-- Cosa mostra: ricerca tra le categorie e frase di riepilogo che segue le scelte. --}}
+    <script>
+        (function () {
+            var root = document.querySelector('[data-domain-filter]');
+            if (!root) return;
+
+            var summary = root.querySelector('[data-filter-summary]');
+            var place = root.querySelector('#filter_place');
+            var withProducts = root.querySelector('input[type="checkbox"][name="companies_with_products"]');
+            var productCategories = root.querySelector('[data-product-categories]');
+
+            function chosen(group) {
+                return Array.prototype.map.call(
+                    root.querySelectorAll('[data-checks="' + group + '"] input:checked'),
+                    function (input) { return input.dataset.label; }
+                );
+            }
+
+            function list(names) {
+                return names.length > 6 ? names.slice(0, 6).join(', ') + ' e altre ' + (names.length - 6) : names.join(', ');
+            }
+
+            function refresh() {
+                var companies = chosen('companies');
+                var products = chosen('products');
+                var where = place.value.trim();
+                var scope = (root.querySelector('input[name="product_scope"]:checked') || {}).value || 'companies';
+
+                productCategories.hidden = scope === 'none';
+
+                var a = companies.length ? 'solo delle categorie ' + list(companies) : 'di tutte le categorie';
+                if (where) a += ', solo di ' + where;
+                if (withProducts.checked) {
+                    a += ', e solo se hanno almeno un prodotto in vendita' + (products.length ? ' in ' + list(products) : '');
+                }
+
+                var p;
+                if (scope === 'none') {
+                    p = 'nessun prodotto: il sito non ha lo shop';
+                } else {
+                    p = products.length ? 'solo delle categorie ' + list(products) : 'di tutte le categorie';
+                    if (scope === 'all') {
+                        p += ', di qualunque azienda del marketplace';
+                    } else if (companies.length || where) {
+                        p += ', venduti solo dalle aziende '
+                            + [companies.length ? 'di quelle categorie' : '', where ? 'di ' + where : ''].filter(Boolean).join(' e ');
+                    } else {
+                        p += ', di qualunque azienda';
+                    }
+                }
+
+                summary.querySelector('[data-summary-companies]').textContent = 'Aziende: ' + a + '.';
+                summary.querySelector('[data-summary-products]').textContent = 'Prodotti: ' + p + '.';
+                summary.hidden = false;
+            }
+
+            root.addEventListener('change', refresh);
+            place.addEventListener('input', refresh);
+
+            Array.prototype.forEach.call(root.querySelectorAll('[data-check-search]'), function (search) {
+                var labels = search.parentNode.querySelectorAll('.ksm-domain-form__checks label');
+                search.addEventListener('input', function () {
+                    var term = search.value.trim().toLowerCase();
+                    Array.prototype.forEach.call(labels, function (label) {
+                        // Le categorie spuntate restano sempre in vista.
+                        var input = label.querySelector('input');
+                        label.hidden = term !== '' && !input.checked && input.dataset.label.toLowerCase().indexOf(term) === -1;
+                    });
+                });
+                search.addEventListener('keydown', function (event) {
+                    if (event.key === 'Enter') event.preventDefault();
+                });
+            });
+
+            refresh();
+        })();
+    </script>
 @endsection

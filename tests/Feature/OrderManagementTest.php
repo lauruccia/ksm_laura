@@ -68,8 +68,8 @@ class OrderManagementTest extends TestCase
         $this->magnum = ProductVariant::create(['product_id' => $this->wine->id, 'variant_type' => 'Formato', 'variant_value' => 'Magnum', 'variant_price' => 30, 'variant_stock' => 6]);
 
         $this->domain = Domain::create([
-            'name' => 'Sapori di Calabria', 'domain' => 'saporicalabria.test', 'type' => 'home',
-            'company_scope' => 'category', 'entry_page' => 'home', 'is_active' => true,
+            'name' => 'Sapori di Calabria', 'domain' => 'saporicalabria.test',
+            'entry_page' => 'home', 'is_active' => true,
         ]);
         $this->buyer = User::create(['name' => 'Anna Bianchi', 'email' => 'anna@example.test', 'password' => 'password', 'user_type' => 'buyer', 'is_active' => true]);
     }

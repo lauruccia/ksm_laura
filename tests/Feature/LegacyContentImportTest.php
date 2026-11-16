@@ -54,6 +54,11 @@ class LegacyContentImportTest extends TestCase
         $calabria = Domain::findOrFail(9);
         $this->assertSame(125, (int) $calabria->company_category_id);
         $this->assertNull($calabria->product_category_id);
+        // Il filtro di prima diventa quello a blocchi.
+        $this->assertSame([125], $calabria->company_category_ids);
+        $this->assertNull($calabria->product_category_ids);
+        $this->assertSame('Calabria', $calabria->filter_place);
+        $this->assertSame('Roma', Domain::findOrFail(8)->filter_place);
 
         $kmoney = Advertisement::findOrFail(13);
         $this->assertSame(2927, $kmoney->clicks);

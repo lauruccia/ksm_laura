@@ -63,14 +63,14 @@ class DomainIsolationTest extends TestCase
         $this->calzature = $this->company('Calzature Rossi', $plan, $shoemakers, $shoes);
 
         $this->network = Domain::create([
-            'name' => 'Cibo calabrese', 'domain' => 'cibocalabrese.test', 'type' => 'category',
-            'product_category_id' => $food->id, 'company_category_id' => $restaurants->id,
-            'company_scope' => 'category', 'entry_page' => 'home', 'is_active' => true, 'email' => 'info@cibocalabrese.test',
+            'name' => 'Cibo calabrese', 'domain' => 'cibocalabrese.test',
+            'product_category_ids' => [$food->id], 'company_category_ids' => [$restaurants->id],
+            'entry_page' => 'home', 'is_active' => true, 'email' => 'info@cibocalabrese.test',
         ]);
         $this->otherNetwork = Domain::create([
-            'name' => 'Scarpe', 'domain' => 'scarpe.test', 'type' => 'category',
-            'product_category_id' => $shoes->id, 'company_category_id' => $shoemakers->id,
-            'company_scope' => 'category', 'entry_page' => 'home', 'is_active' => true,
+            'name' => 'Scarpe', 'domain' => 'scarpe.test',
+            'product_category_ids' => [$shoes->id], 'company_category_ids' => [$shoemakers->id],
+            'entry_page' => 'home', 'is_active' => true,
         ]);
 
         AdminSetting::current()->update(['company_name' => 'Gruppo Kosmos', 'website_email' => 'info@ksm.test', 'vat_number' => '01234567890']);
@@ -137,7 +137,7 @@ class DomainIsolationTest extends TestCase
         $this->network->update(['is_active' => false]);
         $this->get(self::NETWORK.'/')->assertNotFound();
 
-        Domain::create(['name' => 'Nuovo', 'domain' => 'nuovo.test', 'type' => 'home', 'company_scope' => 'category', 'entry_page' => 'home', 'is_active' => true]);
+        Domain::create(['name' => 'Nuovo', 'domain' => 'nuovo.test', 'entry_page' => 'home', 'is_active' => true]);
         $this->get('http://nuovo.test/')->assertOk();
     }
 

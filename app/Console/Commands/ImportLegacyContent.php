@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Models\Domain;
 use App\Support\Legacy\MysqlDumpReader;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
@@ -74,7 +75,7 @@ class ImportLegacyContent extends Command
     /** Una categoria che non esiste piu' si perde: meglio un dominio senza filtro che un riferimento rotto. */
     private function domain(array $row, array $companyCategories, array $productCategories): array
     {
-        return [
+        $row = [
             'company_category_id' => $row['company_category_id'] !== null && isset($companyCategories[$row['company_category_id']])
                 ? $row['company_category_id']
                 : null,
@@ -82,6 +83,14 @@ class ImportLegacyContent extends Command
                 ? $row['product_category_id']
                 : null,
         ] + $row;
+
+        // Il vecchio schema aveva una categoria per tipo e il menu "Filtro": qui diventa il filtro a blocchi.
+        $filter = Domain::filterFromLegacy($row);
+
+        return [
+            'company_category_ids' => $filter['company_category_ids'] ? json_encode($filter['company_category_ids']) : null,
+            'product_category_ids' => $filter['product_category_ids'] ? json_encode($filter['product_category_ids']) : null,
+        ] + $filter + $row;
     }
 
     /** Le campagne del sito originale non avevano date ne' limiti: restano a periodo, senza scadenza. */

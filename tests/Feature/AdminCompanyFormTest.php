@@ -130,8 +130,8 @@ class AdminCompanyFormTest extends TestCase
     public function test_l_azienda_si_puo_tenere_su_alcuni_domini(): void
     {
         $company = $this->company();
-        $domain = \App\Models\Domain::create(['name' => 'Rete', 'domain' => 'rete.test', 'type' => 'home', 'company_scope' => 'category', 'entry_page' => 'home', 'is_active' => true]);
-        $other = \App\Models\Domain::create(['name' => 'Altra', 'domain' => 'altra.test', 'type' => 'home', 'company_scope' => 'category', 'entry_page' => 'home', 'is_active' => true]);
+        $domain = \App\Models\Domain::create(['name' => 'Rete', 'domain' => 'rete.test', 'entry_page' => 'home', 'is_active' => true]);
+        $other = \App\Models\Domain::create(['name' => 'Altra', 'domain' => 'altra.test', 'entry_page' => 'home', 'is_active' => true]);
 
         $this->actingAs($this->admin())->get(route('admin.companies.edit', $company))
             ->assertOk()->assertSee('rete.test')->assertSee('name="exclusive_domains[]"', false);

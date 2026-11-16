@@ -20,6 +20,7 @@ use App\Support\Domains\NoHostingPanel;
 use App\Support\Domains\WhmHostingPanel;
 use App\Support\Images\ImageStore;
 use App\Support\Sites\SiteContent;
+use App\Support\Sites\SiteScope;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -302,7 +303,7 @@ class AdminDomainController extends AdminResourceController
 
     public function create(): View
     {
-        return $this->form(new Domain(['is_active' => true, 'type' => 'home', 'entry_page' => 'home', 'company_scope' => 'category']));
+        return $this->form(new Domain(['is_active' => true, 'entry_page' => 'home', 'product_scope' => 'companies']));
     }
 
     public function edit(Request $request): View
@@ -336,15 +337,14 @@ class AdminDomainController extends AdminResourceController
             'routePrefix' => $this->routePrefix,
             // Contenuti con i predefiniti, per mostrare nei campi vuoti cosa si vedrebbe.
             'defaults' => new SiteContent($domain->exists ? $domain : new Domain(['name' => $domain->name ?: 'Nome del sito'])),
-            'types' => ['home' => 'Nessun filtro', 'category' => 'Per categoria', 'city' => 'Per città', 'category+city' => 'Per categoria e città', 'company' => 'Azienda'],
             'entryPages' => Domain::ENTRY_PAGES,
-            'companyScopes' => Domain::COMPANY_SCOPES,
+            'productScopes' => Domain::PRODUCT_SCOPES,
             'variants' => ['marketplace' => 'Marketplace blu', 'shop' => 'Shop blu', 'artisan' => 'Shop artigianale verde'],
             'companyCategories' => CategoryTree::of(CompanyCategory::class)->labels(),
             'productCategories' => $productTree->labels(),
-            // Riquadri proponibili: le sottocategorie della categoria del dominio, o tutte.
-            'railOptions' => $domain->product_category_id
-                ? array_intersect_key($productTree->labels(), array_flip([$domain->product_category_id, ...$productTree->descendants($domain->product_category_id)]))
+            // Riquadri proponibili: le categorie prodotto del dominio con le sottocategorie, o tutte.
+            'railOptions' => ($ids = (new SiteScope($domain))->productCategoryIds())
+                ? array_intersect_key($productTree->labels(), array_flip($ids))
                 : $productTree->labels(),
             // Solo le pagine del dominio: quelle di KSM non si aprono qui.
             'cmsPages' => $domain->exists
@@ -374,10 +374,14 @@ class AdminDomainController extends AdminResourceController
             'name' => ['required', 'string', 'max:255'],
             'domain' => ['required', 'string', 'max:255', Rule::unique('domains', 'domain')->ignore($record)],
             'is_active' => ['boolean'],
-            'type' => ['required', Rule::in(Domain::TYPES)],
-            'company_category_id' => ['nullable', 'exists:company_categories,id'],
-            'product_category_id' => ['nullable', 'exists:product_categories,id'],
-            'company_scope' => ['required', Rule::in(array_keys(Domain::COMPANY_SCOPES))],
+            // Cosa mostra: tre blocchi indipendenti, un campo vuoto non limita nulla.
+            'company_category_ids' => ['nullable', 'array'],
+            'company_category_ids.*' => ['integer', 'exists:company_categories,id'],
+            'companies_with_products' => ['boolean'],
+            'product_scope' => ['required', Rule::in(array_keys(Domain::PRODUCT_SCOPES))],
+            'product_category_ids' => ['nullable', 'array'],
+            'product_category_ids.*' => ['integer', 'exists:product_categories,id'],
+            'filter_place' => ['nullable', 'string', 'max:120'],
             'city' => ['nullable', 'string', 'max:120'],
             'entry_page' => ['required', Rule::in(array_keys(Domain::ENTRY_PAGES))],
             'entry_company_id' => ['nullable', 'required_if:entry_page,company', 'integer', 'exists:companies,id'],
@@ -475,6 +479,11 @@ class AdminDomainController extends AdminResourceController
         $data['domain'] = HostName::normalize($data['domain']);
         $data['is_active'] = $request->boolean('is_active');
         $data['social_links'] = array_filter($data['social_links'] ?? []) ?: null;
+
+        // Caselle tutte spente non arrivano nella richiesta: vuol dire nessuna categoria, non "lascia com'era".
+        $data['company_category_ids'] = $data['company_category_ids'] ?? [];
+        $data['product_category_ids'] = $data['product_category_ids'] ?? [];
+        $data['companies_with_products'] = $request->boolean('companies_with_products');
 
         // Chi non ha scelto quella pagina di ingresso non si porta dietro l'azienda o la pagina.
         $data['entry_company_id'] = $data['entry_page'] === 'company' ? $data['entry_company_id'] : null;

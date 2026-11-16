@@ -227,14 +227,15 @@ class ProductController extends Controller
     private function railCategories(Collection $topLevel, Collection $counts): Collection
     {
         $chosen = $this->tenant->content()->categories()['ids'];
-        $root = $this->tenant->scope()->productCategoryIds()[0] ?? null;
+        $roots = $this->tenant->scope()->productCategoryRoots();
 
-        if (! $chosen && ! $root) {
+        if (! $chosen && ! $roots) {
             return $topLevel;
         }
 
+        // Una sola categoria: i riquadri sono le sue sottocategorie. Piu' categorie: le categorie stesse.
         $tree = CategoryTree::of(ProductCategory::class);
-        $ids = $chosen ?: (array_keys($tree->children($root)) ?: [$root]);
+        $ids = $chosen ?: (count($roots) === 1 ? (array_keys($tree->children($roots[0])) ?: $roots) : $roots);
 
         return ProductCategory::query()
             ->whereKey($ids)
