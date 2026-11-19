@@ -80,6 +80,28 @@ class PlanComparisonTest extends TestCase
         );
     }
 
+    public function test_le_voci_di_tutti_i_piani_vengono_prima_e_quelle_di_uno_solo_per_ultime(): void
+    {
+        $full = $this->plan('Ecommerce', 4, ['Telefono', 'Logo', 'Orari di apertura', 'Galleria offerte', 'Ecommerce']);
+        $showcase = $this->plan('Vetrina', 3, ['Telefono', 'Logo', 'Orari', 'Galleria offerta']);
+        $card = $this->plan('Biglietto', 2, ['Logo', 'Telefono']);
+        $basic = $this->plan('Anagrafica', 1, ['Telefono']);
+
+        // "Orari" e "Galleria offerta" sono le stesse voci del piano completo.
+        $this->assertSame(
+            ['Telefono', 'Logo', 'Orari di apertura', 'Galleria offerte', 'Ecommerce'],
+            array_values(Plan::featureUnion([$basic, $card, $showcase, $full]))
+        );
+    }
+
+    public function test_una_voce_di_un_solo_piano_scende_in_fondo_anche_se_scritta_per_prima(): void
+    {
+        $full = $this->plan('Ecommerce', 2, ['Ecommerce', 'Telefono', 'Logo']);
+        $card = $this->plan('Biglietto', 1, ['Logo', 'Telefono']);
+
+        $this->assertSame(['Telefono', 'Logo', 'Ecommerce'], array_values(Plan::featureUnion([$card, $full])));
+    }
+
     public function test_il_piano_piccolo_mostra_le_voci_che_non_ha(): void
     {
         $this->plan('Base', 1, ['Telefono']);

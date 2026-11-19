@@ -24,7 +24,7 @@ class Plan extends Model
     ];
 
     /**
-     * Voci del vecchio sito, in inglese => voce italiana mostrata qui.
+     * Voci del vecchio sito, in inglese, e varianti => voce italiana mostrata qui.
      *
      * Il confronto tra piani va a testo: "Phone" e "Telefono" sarebbero due
      * voci diverse, una spuntata e una mancante. Le chiavi sono quelle di
@@ -39,6 +39,9 @@ class Plan extends Model
         'offer gallery' => 'Galleria offerte',
         'personal page' => 'Pagina Personale',
         'e-commerce' => 'Ecommerce',
+        // Stessa voce scritta in due modi nei piani: vince la forma lunga.
+        'orari' => 'Orari di apertura',
+        'galleria offerta' => 'Galleria offerte',
     ];
 
     /** Le voci si leggono sempre in italiano, anche se salvate in inglese. */
@@ -148,8 +151,9 @@ class Plan extends Model
     /**
      * Tutte le voci dei piani messi a confronto, senza doppioni.
      *
-     * Parte dal piano con piu' voci, cosi' l'ordine resta il suo; quelle che
-     * compaiono solo negli altri piani finiscono in coda.
+     * Prima le voci che hanno tutti i piani, poi via via quelle di meno piani:
+     * ogni scheda mostra lo stesso elenco, con le voci mancanti in fondo. A
+     * parita' resta l'ordine del piano con piu' voci.
      *
      * @param  iterable<Plan>  $plans
      * @return array<string, string> chiave di confronto => voce
@@ -157,14 +161,18 @@ class Plan extends Model
     public static function featureUnion(iterable $plans): array
     {
         $union = [];
+        $count = [];
 
         foreach (collect($plans)->sortByDesc(fn (Plan $plan) => count($plan->featureItems())) as $plan) {
             foreach ($plan->featureItems() as $item) {
-                $union[self::featureKey($item)] ??= $item;
+                $key = self::featureKey($item);
+                $union[$key] ??= $item;
+                $count[$key] = ($count[$key] ?? 0) + 1;
             }
         }
 
-        return $union;
+        // sortByDesc e' stabile: a parita' di piani l'ordine non cambia.
+        return collect($union)->sortByDesc(fn ($item, $key) => $count[$key])->all();
     }
 
     /** "E-Mail", "e-mail " ed "E-mail" sono la stessa voce. */
