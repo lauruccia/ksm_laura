@@ -23,6 +23,68 @@ class Plan extends Model
         'is_active' => 'boolean',
     ];
 
+    /**
+     * Voci del vecchio sito, in inglese => voce italiana mostrata qui.
+     *
+     * Il confronto tra piani va a testo: "Phone" e "Telefono" sarebbero due
+     * voci diverse, una spuntata e una mancante. Le chiavi sono quelle di
+     * featureKey().
+     */
+    private const FEATURE_TRANSLATIONS = [
+        'company name' => 'Ragione sociale',
+        'address' => 'Indirizzo',
+        'phone' => 'Telefono',
+        'e-mail' => 'Email',
+        'working hours' => 'Orari di apertura',
+        'offer gallery' => 'Galleria offerte',
+        'personal page' => 'Pagina Personale',
+        'e-commerce' => 'Ecommerce',
+    ];
+
+    /** Le voci si leggono sempre in italiano, anche se salvate in inglese. */
+    public function getFeaturesAttribute($value): array
+    {
+        return self::italianFeatures($value);
+    }
+
+    /** E in italiano si salvano, da qualunque parte arrivino. */
+    public function setFeaturesAttribute($value): void
+    {
+        $this->attributes['features'] = $value === null
+            ? null
+            : json_encode(self::italianFeatures($value), JSON_UNESCAPED_UNICODE);
+    }
+
+    /**
+     * Traduce le voci inglesi del vecchio sito, toglie il tutto maiuscolo e i doppioni.
+     *
+     * @param  array<int, string>|string|null  $items  elenco, oppure il JSON della colonna
+     * @return array<int, string>
+     */
+    public static function italianFeatures(array|string|null $items): array
+    {
+        if (is_string($items)) {
+            $items = json_decode($items, true);
+        }
+
+        $italian = [];
+
+        foreach ((array) $items as $item) {
+            $item = trim((string) $item);
+
+            if ($item === '') {
+                continue;
+            }
+
+            // "LOGO" e "BANNER" arrivano tutti maiuscoli dal vecchio sito.
+            $item = self::FEATURE_TRANSLATIONS[self::featureKey($item)]
+                ?? (mb_strtoupper($item) === $item ? Str::ucfirst(mb_strtolower($item)) : $item);
+            $italian[self::featureKey($item)] ??= $item;
+        }
+
+        return array_values($italian);
+    }
+
     public function companies(): HasMany
     {
         return $this->hasMany(Company::class);
