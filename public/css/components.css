@@ -957,8 +957,9 @@ a.ksm-pagination__page:hover {
 }
 
 /* ============ Biglietto compatto: biglietto da visita e anagrafica ============ */
-/* Senza pagina dedicata: niente banner ne' formato carta, la scheda e' alta
-   quanto il suo contenuto e non porta da nessuna parte. */
+/* Senza pagina dedicata e senza banner: niente formato carta, la scheda e'
+   alta quanto il suo contenuto e non porta da nessuna parte. Con il banner
+   concesso dal piano resta il formato carta, ma sempre senza link (--static). */
 .ksm-bizcard--compact {
     padding-top: 14px;
 }
@@ -976,13 +977,17 @@ a.ksm-pagination__page:hover {
 }
 
 /* Non e' un link: al passaggio del mouse non si solleva. */
-.ksm-bizcard--compact:hover {
+.ksm-bizcard--compact:hover,
+.ksm-card.ksm-bizcard--static:hover {
     transform: none;
     border-color: var(--ksm-line);
     box-shadow: var(--ksm-shadow-xs);
 }
 
-.ksm-card.ksm-bizcard--compact:hover .ksm-bizcard__sector {
+.ksm-card.ksm-bizcard--static:hover .ksm-bizcard__cover { filter: none; }
+
+.ksm-card.ksm-bizcard--compact:hover .ksm-bizcard__sector,
+.ksm-card.ksm-bizcard--static:hover .ksm-bizcard__sector {
     background: var(--ksm-accent-soft);
     color: var(--ksm-accent-dark);
 }

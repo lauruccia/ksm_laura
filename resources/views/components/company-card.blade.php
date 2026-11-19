@@ -6,11 +6,14 @@
 
     // Due biglietti. Chi ha la pagina (Ecommerce, Vetrina) ha il formato
     // carta di credito con banner, e tutta la scheda porta alla pagina.
-    // Biglietto e anagrafica non hanno pagina: niente link e niente banner.
+    // Biglietto e anagrafica non hanno pagina: niente link.
     $hasPage = $company->hasPage();
 
     // Cosa si vede della scheda lo decide il piano, non i file caricati.
-    $showBanner = $hasPage && $company->banner && $company->allows(PlanCapabilities::BANNER);
+    // Il banner lo concede la sua voce, anche a chi non ha la pagina.
+    $showBanner = $company->banner && $company->allows(PlanCapabilities::BANNER);
+    // Senza pagina e senza banner da mostrare il biglietto resta compatto.
+    $hasCover = $hasPage || $showBanner;
     $showLogo = $company->logo && $company->allows(PlanCapabilities::LOGO);
     $showRating = $company->allows(PlanCapabilities::REVIEWS) || $company->allows(PlanCapabilities::FEATURED);
 
@@ -28,8 +31,8 @@
     $websiteLabel = $website ? rtrim(preg_replace('#^https?://(www\.)?#i', '', $website), '/') : null;
 @endphp
 
-<article class="ksm-card ksm-bizcard @unless ($hasPage) ksm-bizcard--compact @endunless">
-    @if ($hasPage)
+<article class="ksm-card ksm-bizcard @unless ($hasCover) ksm-bizcard--compact @endunless @unless ($hasPage) ksm-bizcard--static @endunless">
+    @if ($hasCover)
         {{-- Immagini vere e non sfondi: il browser le scarica solo quando la scheda arriva a schermo. --}}
         <div class="ksm-bizcard__cover @unless ($showBanner) ksm-bizcard__cover--plain @endunless">
             @if ($showBanner)

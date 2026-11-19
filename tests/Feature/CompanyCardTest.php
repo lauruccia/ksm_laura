@@ -120,12 +120,30 @@ class CompanyCardTest extends TestCase
         $this->get(route('companies.show', $company->slug))->assertOk();
     }
 
-    public function test_biglietto_e_anagrafica_non_hanno_pagina_link_ne_banner(): void
+    public function test_il_biglietto_con_la_voce_banner_mostra_il_banner_ma_resta_senza_pagina(): void
     {
-        // Anche con la voce banner spuntata: senza pagina il banner non si mostra.
         $company = $this->companyOn([
             PlanCapabilities::DIRECTORY, PlanCapabilities::CONTACT_CARD,
             PlanCapabilities::LOGO, PlanCapabilities::BANNER,
+        ], 'Biglietto Roma');
+
+        $this->get(route('companies.index'))
+            ->assertOk()
+            ->assertSee('Biglietto Roma')
+            ->assertSee('storage/companies/banner-di-prova.jpg', false)
+            ->assertSee('ksm-bizcard--static', false)
+            ->assertDontSee('ksm-bizcard--compact', false)
+            ->assertDontSee(route('companies.show', $company->slug), false);
+
+        $this->get(route('companies.show', $company->slug))->assertNotFound();
+    }
+
+    public function test_senza_la_voce_banner_il_biglietto_non_ha_pagina_link_ne_banner(): void
+    {
+        // Il banner caricato non basta: lo mostra solo il piano che lo concede.
+        $company = $this->companyOn([
+            PlanCapabilities::DIRECTORY, PlanCapabilities::CONTACT_CARD,
+            PlanCapabilities::LOGO,
         ], 'Biglietto Roma');
 
         $this->get(route('companies.index'))

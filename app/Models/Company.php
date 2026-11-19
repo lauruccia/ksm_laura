@@ -126,7 +126,7 @@ class Company extends Model
     /**
      * Ha una pagina pubblica tutta sua? La concede la vetrina completa
      * (Ecommerce e Vetrina); biglietto e anagrafica restano solo una
-     * scheda nella directory, senza link e senza banner.
+     * scheda nella directory, senza link.
      */
     public function hasPage(): bool
     {
