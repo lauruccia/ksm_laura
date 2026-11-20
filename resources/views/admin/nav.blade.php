@@ -51,6 +51,7 @@
     <li><a href="{{ route('admin.advertisements.index') }}" @if (request()->routeIs('admin.advertisements.*')) aria-current="page" @endif><x-icon name="megaphone" :size="18" /><span>Campagne banner</span></a></li>
     <li><a href="{{ route('admin.advertisers.index') }}" @if (request()->routeIs('admin.advertisers.*')) aria-current="page" @endif><x-icon name="briefcase" :size="18" /><span>Inserzionisti</span></a></li>
     <li><a href="{{ route('admin.domains.index') }}" @if (request()->routeIs('admin.domains.*')) aria-current="page" @endif><x-icon name="globe" :size="18" /><span>Domini</span></a></li>
+    <li><a href="{{ route('admin.domain_names.index') }}" @if (request()->routeIs('admin.domain_names.*')) aria-current="page" @endif><x-icon name="list" :size="18" /><span>Nomi a dominio</span></a></li>
 @endcan
 
 <li class="ksm-panel__sep">Sistema</li>

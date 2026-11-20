@@ -11,6 +11,7 @@ use App\Http\Controllers\CartController;
 use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\ContactController;
+use App\Http\Controllers\DomainNameController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\OrderTrackingController;
@@ -44,6 +45,9 @@ Route::post('/prodotti/{product:slug}/recensioni', [ReviewController::class, 'st
 
 // I piani sono di KSM: sugli altri siti non esistono.
 Route::get('/piani', [PlanController::class, 'index'])->middleware('platform')->name('plans.index');
+
+// Il portafoglio dei nomi a dominio puntati a KSM: solo sul sito principale.
+Route::get('/nomi-a-dominio', [DomainNameController::class, 'index'])->middleware('platform')->name('domain_names.index');
 
 Route::get('/contatti', [ContactController::class, 'show'])->name('contact');
 Route::post('/contatti', [ContactController::class, 'send'])->middleware('throttle:6,60')->name('contact.send');

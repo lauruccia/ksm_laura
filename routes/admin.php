@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\AdminCompanyCategoryController;
 use App\Http\Controllers\Admin\AdminCompanyController;
 use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\Admin\AdminDomainController;
+use App\Http\Controllers\Admin\AdminDomainNameController;
 use App\Http\Controllers\Admin\AdminMenuController;
 use App\Http\Controllers\Admin\AdminOrderController;
 use App\Http\Controllers\Admin\AdminPaymentController;
@@ -200,6 +201,12 @@ Route::middleware(['auth', 'admin'])
             Route::resource('domini', AdminDomainController::class)
                 ->parameters(['domini' => 'domain'])->names('domains');
             Route::patch('/domini-in-blocco', [AdminDomainController::class, 'bulk'])->name('domains.bulk');
+            // Il portafoglio dei nomi a dominio mostrato nella pagina pubblica /nomi-a-dominio.
+            Route::get('/nomi-dominio/aggiungi', [AdminDomainNameController::class, 'import'])->name('domain_names.import');
+            Route::post('/nomi-dominio/aggiungi', [AdminDomainNameController::class, 'storeImport'])->name('domain_names.import.store');
+            Route::resource('nomi-dominio', AdminDomainNameController::class)
+                ->parameters(['nomi-dominio' => 'domain_name'])->names('domain_names');
+            Route::patch('/nomi-dominio-in-blocco', [AdminDomainNameController::class, 'bulk'])->name('domain_names.bulk');
             Route::patch('/domini/{domain}/verifica', [AdminDomainController::class, 'check'])
                 ->name('domains.check');
             // Server e pannello dell'hosting: cambiarli sposta tutti i domini, quindi servono le impostazioni.

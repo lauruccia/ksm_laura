@@ -74,6 +74,16 @@ abstract class AdminResourceController extends Controller
         return [];
     }
 
+    /**
+     * Collegamenti in testa all'elenco, accanto a "Nuovo".
+     *
+     * @return array<string, string> etichetta => indirizzo
+     */
+    protected function headerLinks(): array
+    {
+        return [];
+    }
+
     public function index(Request $request): View
     {
         $records = $this->filters($this->model::query(), $request)
@@ -180,6 +190,7 @@ abstract class AdminResourceController extends Controller
             'columns' => $this->columns(),
             'options' => $this->formData(),
             'rowActions' => $this->rowActions(),
+            'headerLinks' => $this->headerLinks(),
         ];
     }
 }

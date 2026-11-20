@@ -79,6 +79,7 @@ class AdminMenuController extends Controller
             route('products.index', [], false) => __('site.nav_products'),
             route('products.index', ['offerta' => 1], false) => __('site.shop_on_sale'),
             route('plans.index', [], false) => __('site.nav_plans'),
+            route('domain_names.index', [], false) => 'Nomi a dominio',
             route('contact', [], false) => __('site.nav_contact'),
             route('register.vendor', [], false) => __('site.register_company'),
             route('orders.track', [], false) => __('site.track_order'),

@@ -24,6 +24,9 @@
         </form>
 
         <span class="ksm-listhead__actions">
+            @foreach ($headerLinks ?? [] as $linkLabel => $linkUrl)
+                <a class="ksm-btn ksm-btn--ghost ksm-btn--sm" href="{{ $linkUrl }}">{{ $linkLabel }}</a>
+            @endforeach
             <a class="ksm-btn ksm-btn--primary ksm-btn--sm" href="{{ route($routePrefix.'.create') }}">Nuovo</a>
         </span>
     </div>
