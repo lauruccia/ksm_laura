@@ -2,11 +2,14 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Models\Domain;
 use App\Models\DomainName;
+use App\Support\BulkSelection;
 use App\Support\DomainNameList;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Collection;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -41,7 +44,67 @@ class AdminDomainNameController extends AdminResourceController
 
     protected function columns(): array
     {
-        return ['name' => __('Nome'), 'extension' => __('Estensione'), 'category' => __('Tema'), 'is_active' => __('Visibile')];
+        return ['name' => __('Nome'), 'extension' => __('Estensione'), 'category' => __('Tema'), 'pointing' => __('Puntamento'), 'is_active' => __('Visibile')];
+    }
+
+    protected function bulkActions(): array
+    {
+        return ['point' => 'Punta a KSM (crea in Domini)', 'delete' => 'Elimina'];
+    }
+
+    /** Per ogni nome, lo stato del dominio omonimo in Domini, se c'è. */
+    protected function prepareRows(Collection $records): void
+    {
+        $domains = Domain::query()->whereIn('domain', $records->pluck('name'))->get()->keyBy('domain');
+
+        foreach ($records as $record) {
+            $domain = $domains->get($record->name);
+
+            $record->pointing = $domain === null
+                ? 'Non puntato'
+                : $domain->connectionLabel().($domain->is_active ? '' : ' (non attivo)');
+        }
+    }
+
+    /**
+     * Punta a KSM i nomi scelti: per ognuno crea il dominio in Domini, che poi
+     * si verifica come gli altri (DNS e certificato). Nasce non attivo e senza
+     * filtro: finché non si sceglie la categoria, il dominio non deve aprire
+     * tutto KSM.
+     */
+    public function bulk(Request $request): RedirectResponse
+    {
+        $request->validate(BulkSelection::rules(['point', 'delete'], onlySelected: ['delete']), BulkSelection::messages());
+
+        $query = BulkSelection::query($request, DomainName::query(), $this->filters(...));
+
+        if ($request->input('action') === 'delete') {
+            $count = BulkSelection::deleteEach($query);
+
+            return back()->with('success', trans_choice(':count elemento eliminato.|:count elementi eliminati.', $count));
+        }
+
+        $created = 0;
+        $already = 0;
+
+        $query->chunkById(100, function ($names) use (&$created, &$already) {
+            $existing = Domain::query()->whereIn('domain', $names->pluck('name'))->pluck('domain')->all();
+
+            foreach ($names as $name) {
+                if (in_array($name->name, $existing, true)) {
+                    $already++;
+
+                    continue;
+                }
+
+                Domain::create(['name' => $name->name, 'domain' => $name->name, 'is_active' => false]);
+                $created++;
+            }
+        });
+
+        return back()->with('success', trans_choice(':count dominio creato in Domini|:count domini creati in Domini', $created)
+            .($created ? ' (non attivi: scegli la categoria e attivali da lì)' : '').'; '
+            .trans_choice(':count già presente|:count già presenti', $already).'.');
     }
 
     protected function rules(Request $request, ?Model $record = null): array
@@ -81,6 +144,8 @@ class AdminDomainNameController extends AdminResourceController
             ->orderBy('name')
             ->paginate(50)
             ->withQueryString();
+
+        $this->prepareRows($records->getCollection());
 
         return view('admin.resource.index', ['records' => $records] + $this->shared());
     }

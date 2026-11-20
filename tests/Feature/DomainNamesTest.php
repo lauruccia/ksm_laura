@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Domain;
 use App\Models\DomainName;
 use App\Models\Role;
 use App\Models\User;
@@ -145,5 +146,62 @@ class DomainNamesTest extends TestCase
     public function test_un_visitatore_non_entra_nell_admin(): void
     {
         $this->get(route('admin.domain_names.index'))->assertRedirect();
+    }
+
+    public function test_punta_a_ksm_crea_i_domini_non_attivi_senza_doppioni(): void
+    {
+        $this->seedNames();
+        $pub = DomainName::where('name', 'pub.it')->firstOrFail();
+        $pizzerie = DomainName::where('name', 'pizzerie.it')->firstOrFail();
+        Domain::create(['name' => 'Pizzerie', 'domain' => 'pizzerie.it']);
+
+        $this->actingAs($this->admin())->patch(route('admin.domain_names.bulk'), [
+            'action' => 'point',
+            'scope' => 'selected',
+            'ids' => [$pub->id, $pizzerie->id],
+        ])->assertRedirect()->assertSessionHas('success');
+
+        $domain = Domain::where('domain', 'pub.it')->firstOrFail();
+        $this->assertFalse($domain->is_active);
+        $this->assertSame('home', $domain->type);
+        $this->assertSame(1, Domain::where('domain', 'pizzerie.it')->count());
+        $this->assertSame(2, Domain::count());
+    }
+
+    public function test_punta_a_ksm_vale_anche_su_tutti_i_risultati(): void
+    {
+        $this->seedNames();
+
+        $this->actingAs($this->admin())->patch(route('admin.domain_names.bulk'), [
+            'action' => 'point',
+            'scope' => 'all',
+            'cerca' => 'kosher',
+        ])->assertRedirect();
+
+        $this->assertSame(['ristorantikosher.com'], Domain::pluck('domain')->all());
+    }
+
+    public function test_l_elenco_admin_mostra_lo_stato_del_puntamento(): void
+    {
+        $this->seedNames();
+        Domain::create(['name' => 'Pub', 'domain' => 'pub.it', 'is_active' => false]);
+
+        $this->actingAs($this->admin())
+            ->get(route('admin.domain_names.index'))
+            ->assertOk()
+            ->assertSee('Da verificare (non attivo)')
+            ->assertSee('Non puntato');
+    }
+
+    public function test_eliminare_in_blocco_funziona_ancora(): void
+    {
+        $this->seedNames();
+        $ids = DomainName::whereIn('name', ['pub.it', '7vie.it'])->pluck('id')->all();
+
+        $this->actingAs($this->admin())->patch(route('admin.domain_names.bulk'), [
+            'action' => 'delete', 'scope' => 'selected', 'ids' => $ids,
+        ])->assertRedirect();
+
+        $this->assertSame(3, DomainName::count());
     }
 }

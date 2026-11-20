@@ -75,6 +75,16 @@ abstract class AdminResourceController extends Controller
     }
 
     /**
+     * Azioni della barra in blocco sopra l'elenco: valore => etichetta.
+     *
+     * @return array<string, string>
+     */
+    protected function bulkActions(): array
+    {
+        return ['delete' => 'Elimina'];
+    }
+
+    /**
      * Collegamenti in testa all'elenco, accanto a "Nuovo".
      *
      * @return array<string, string> etichetta => indirizzo
@@ -191,6 +201,7 @@ abstract class AdminResourceController extends Controller
             'options' => $this->formData(),
             'rowActions' => $this->rowActions(),
             'headerLinks' => $this->headerLinks(),
+            'bulkActions' => $this->bulkActions(),
         ];
     }
 }

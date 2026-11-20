@@ -37,7 +37,7 @@
             'paginator' => $records,
             'noun' => 'elementi',
             'nounOne' => 'elemento',
-            'actions' => ['delete' => 'Elimina'],
+            'actions' => $bulkActions ?? ['delete' => 'Elimina'],
             'onlySelected' => ['delete'],
         ])
     @endif
