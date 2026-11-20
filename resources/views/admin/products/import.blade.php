@@ -66,6 +66,7 @@
                     <input type="hidden" name="azienda" value="{{ $company->id }}">
                     <input type="hidden" name="token" value="{{ $token }}">
                     <input type="hidden" name="images" value="{{ $opts['images'] ? 1 : 0 }}">
+                    <input type="hidden" name="create_categories" value="{{ $opts['create_categories'] ? 1 : 0 }}">
                     <button class="ksm-btn ksm-btn--primary" type="submit">Conferma e importa</button>
                     <a class="ksm-btn ksm-btn--ghost" href="{{ route('admin.products.import', ['azienda' => $company->id]) }}">Annulla</a>
                 </form>
@@ -121,6 +122,11 @@
             <label>
                 <input type="checkbox" name="images" value="1" checked>
                 Scarica la prima immagine di ogni prodotto dai link del file
+            </label>
+            <br>
+            <label>
+                <input type="checkbox" name="create_categories" value="1">
+                Crea le categorie che in ksm non esistono (le categorie sono condivise da tutti i domini)
             </label>
             <p><button class="ksm-btn ksm-btn--primary" type="submit">Controlla il file</button></p>
         </form>

@@ -52,7 +52,7 @@ final class WooCommerceProductImporter
     ];
 
     /**
-     * @param  array{images?: bool} $opts
+     * @param  array{images?: bool, create_categories?: bool} $opts
      * @return array{fatal: ?string, items: list<array>, counts: array<string,int>}
      */
     public function plan(string $path, Company $company, array $opts = []): array
@@ -70,6 +70,7 @@ final class WooCommerceProductImporter
             'steps'   => KMoneyShare::steps($settings),
             'inDebt'  => (bool) $settings?->kmoney_in_debt,
             'cats'    => $this->categoryMap(),
+            'create_cats' => (bool) ($opts['create_categories'] ?? false),
         ];
 
         $parents = [];
@@ -284,7 +285,8 @@ final class WooCommerceProductImporter
             $warnings[] = 'Descrizione accorciata a 20000 caratteri.';
         }
 
-        $categoryId = $this->category($row['categories'] ?? '', $ctx, $warnings);
+        $pendingCategory = null;
+        $categoryId = $this->category($row['categories'] ?? '', $ctx, $warnings, $pendingCategory);
 
         // Quota KMoney: vuota = automatica (categoria o contratto).
         $pct = null;
@@ -353,6 +355,12 @@ final class WooCommerceProductImporter
             [$diff, $changed] = $this->diff($existing, $data, $variants, $pct !== null || ! $ctx['inDebt']);
         }
 
+        // Una categoria da creare e' una modifica anche se il resto del prodotto e' uguale.
+        if ($existing && $errors === [] && $pendingCategory !== null) {
+            $diff[] = 'Categoria nuova: ' . implode(' > ', $pendingCategory);
+            $changed = true;
+        }
+
         $action = $errors !== [] ? 'error' : ($existing ? ($changed ? 'update' : 'same') : 'create');
 
         return [
@@ -364,6 +372,7 @@ final class WooCommerceProductImporter
             'warnings'    => $warnings,
             'diff'        => $diff,
             'data'        => $data,
+            'category_path' => $pendingCategory,
             'variants'    => $variants,
             'image'       => trim(explode(',', $row['images'] ?? '')[0] ?? ''),
             'existing_id' => $existing?->id,
@@ -380,8 +389,12 @@ final class WooCommerceProductImporter
         ];
     }
 
-    private function category(string $raw, array $ctx, array &$warnings): ?int
+    /**
+     * @param  ?list<string>  $pending  Se la categoria va creata (solo con l'opzione), il suo percorso: [madre] o [madre, figlia].
+     */
+    private function category(string $raw, array $ctx, array &$warnings, ?array &$pending = null): ?int
     {
+        $pending = null;
         $first = trim(explode(',', $raw)[0] ?? '');
         $parts = array_values(array_filter(array_map('trim', explode('>', $first)), 'strlen'));
         if ($parts === []) {
@@ -390,6 +403,11 @@ final class WooCommerceProductImporter
 
         $top = $ctx['cats'][mb_strtolower($parts[0])] ?? null;
         if ($top === null) {
+            if ($ctx['create_cats']) {
+                $pending = array_slice($parts, 0, 2);
+                $warnings[] = 'Categoria "' . implode(' > ', $pending) . '" non esiste: verra\' creata alla conferma.';
+                return null;
+            }
             $warnings[] = 'Categoria "' . $first . '" non trovata: il prodotto resta senza categoria.';
             return null;
         }
@@ -397,6 +415,11 @@ final class WooCommerceProductImporter
             $child = $top['children'][mb_strtolower($parts[1])] ?? null;
             if ($child !== null) {
                 return $child;
+            }
+            if ($ctx['create_cats']) {
+                $pending = [$parts[0], $parts[1]];
+                $warnings[] = 'Sotto-categoria "' . $parts[1] . '" non esiste: verra\' creata in "' . $parts[0] . '" alla conferma.';
+                return $top['id'];
             }
             $warnings[] = 'Sotto-categoria "' . $parts[1] . '" non trovata: uso solo la categoria.';
         }
@@ -528,6 +551,9 @@ final class WooCommerceProductImporter
         $d = $it['data'];
         $d['company_id'] = $company->id;
         $d['slug'] = Str::slug($d['name']) . '-' . Str::lower(Str::random(5));
+        if (! empty($it['category_path'])) {
+            $d['category_id'] = $this->ensureCategory($it['category_path']);
+        }
         if ($it['inDebt']) {
             $d['kmoney_discount_percent'] = null;
         }
@@ -551,6 +577,9 @@ final class WooCommerceProductImporter
         if ($it['inDebt'] || $d['kmoney_discount_percent'] === null) {
             unset($d['kmoney_discount_percent']);
         }
+        if (! empty($it['category_path'])) {
+            $d['category_id'] = $this->ensureCategory($it['category_path']);
+        }
         // Senza categoria nel file, quella di adesso resta.
         if ($d['category_id'] === null) {
             unset($d['category_id']);
@@ -565,6 +594,39 @@ final class WooCommerceProductImporter
         $this->syncVariants($product, $it['variants']);
 
         return $product;
+    }
+
+    /** Trova la categoria (madre ed eventuale figlia) per nome, senza badare alle maiuscole, oppure la crea. */
+    private function ensureCategory(array $path): int
+    {
+        $all = ProductCategory::query()->get(['id', 'name', 'parent_id']);
+        $named = fn ($parentId, string $name) => $all->first(
+            fn ($c) => $c->parent_id === $parentId && mb_strtolower($c->name) === mb_strtolower($name)
+        );
+
+        $top = $named(null, $path[0]) ?? ProductCategory::create([
+            'name' => mb_substr($path[0], 0, 255), 'slug' => $this->freeSlug($path[0]),
+        ]);
+        if (! isset($path[1])) {
+            return $top->id;
+        }
+
+        $child = $named($top->id, $path[1]) ?? ProductCategory::create([
+            'name' => mb_substr($path[1], 0, 255), 'slug' => $this->freeSlug($path[0] . ' ' . $path[1]), 'parent_id' => $top->id,
+        ]);
+
+        return $child->id;
+    }
+
+    private function freeSlug(string $name): string
+    {
+        $base = Str::slug($name) ?: 'categoria';
+        $slug = $base;
+        for ($i = 2; ProductCategory::where('slug', $slug)->exists(); $i++) {
+            $slug = $base . '-' . $i;
+        }
+
+        return $slug;
     }
 
     /** Aggiorna/crea le varianti del file; quelle che il file non nomina restano. */

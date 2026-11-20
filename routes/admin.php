@@ -15,6 +15,7 @@ use App\Http\Controllers\Admin\AdminPlanController;
 use App\Http\Controllers\Admin\AdminProductBrandController;
 use App\Http\Controllers\Admin\AdminProductCategoryController;
 use App\Http\Controllers\Admin\AdminProductController;
+use App\Http\Controllers\Admin\AdminProductExportController;
 use App\Http\Controllers\Admin\AdminProductImportController;
 use App\Http\Controllers\Admin\AdminProfileController;
 use App\Http\Controllers\Admin\AdminRoleController;
@@ -117,6 +118,10 @@ Route::middleware(['auth', 'admin'])
         });
 
         Route::middleware('can:'.P::CATALOG_VIEW)->group(function () {
+            // Export CSV in formato WooCommerce di un'azienda. Prima della scheda /prodotti/{product}.
+            Route::get('/prodotti-esporta', [AdminProductExportController::class, 'export'])
+                ->middleware('throttle:10,1')->name('products.export');
+
             Route::resource('prodotti', AdminProductController::class)
                 ->parameters(['prodotti' => 'product'])->names('products')
                 ->only(['index', 'show']);

@@ -10,6 +10,7 @@ use App\Http\Controllers\Vendor\VendorKMoneyController;
 use App\Http\Controllers\Vendor\VendorOrderController;
 use App\Http\Controllers\Vendor\VendorPaymentSettingController;
 use App\Http\Controllers\Vendor\VendorProductController;
+use App\Http\Controllers\Vendor\VendorProductExportController;
 use App\Http\Controllers\Vendor\VendorProductImportController;
 use App\Http\Controllers\Vendor\VendorProfileController;
 use Illuminate\Support\Facades\Route;
@@ -61,6 +62,9 @@ Route::middleware(['auth', 'vendor'])
 
             // Import da CSV in formato WooCommerce (anche quello esportato da kmoney).
             Route::get('/prodotti-importa', [VendorProductImportController::class, 'create'])->name('products.import');
+            // Export CSV in formato WooCommerce (si importa in ksm, kmoney e WooCommerce).
+            Route::get('/prodotti-esporta', [VendorProductExportController::class, 'export'])
+                ->middleware('throttle:10,1')->name('products.export');
             Route::post('/prodotti-importa/analizza', [VendorProductImportController::class, 'analyze'])
                 ->middleware('throttle:20,1')->name('products.import.analyze');
             Route::post('/prodotti-importa/conferma', [VendorProductImportController::class, 'apply'])

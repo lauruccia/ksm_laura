@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Company;
 use App\Models\Plan;
 use App\Models\Product;
+use App\Models\ProductCategory;
 use App\Models\Role;
 use App\Models\User;
 use App\Support\PlanCapabilities;
@@ -89,6 +90,67 @@ class AdminProductImportTest extends TestCase
         $p = Product::where('sku', 'KM-A1')->firstOrFail();
         $this->assertSame($this->company->id, $p->company_id);
         $this->assertEquals(100, (int) $p->kmoney_discount_percent);
+    }
+
+    private function fileWithCategory(string $sku, string $category): UploadedFile
+    {
+        return UploadedFile::fake()->createWithContent(
+            'prodotti.csv',
+            "Type,SKU,Name,Published,\"Regular price\",Categories\nsimple,{$sku},Nduja,1,10.00,\"{$category}\"\n"
+        );
+    }
+
+    public function test_senza_la_casella_le_categorie_mancanti_non_si_creano(): void
+    {
+        $response = $this->actingAs($this->admin)
+            ->post(route('admin.products.import.analyze'), ['azienda' => $this->company->id, 'csv' => $this->fileWithCategory('KM-C1', 'Mangiare e Bere')])
+            ->assertOk();
+
+        $this->post(route('admin.products.import.apply'), [
+            'azienda' => $this->company->id, 'token' => $response->viewData('token'),
+        ]);
+
+        $this->assertSame(0, ProductCategory::count());
+        $this->assertNull(Product::where('sku', 'KM-C1')->firstOrFail()->category_id);
+    }
+
+    public function test_con_la_casella_l_anteprima_non_crea_e_la_conferma_crea_madre_e_figlia(): void
+    {
+        $response = $this->actingAs($this->admin)
+            ->post(route('admin.products.import.analyze'), [
+                'azienda' => $this->company->id, 'create_categories' => 1,
+                'csv' => $this->fileWithCategory('KM-C2', 'Mangiare e Bere > Salumi'),
+            ])
+            ->assertOk()->assertSee('verra');
+
+        $this->assertSame(0, ProductCategory::count());
+        $this->assertSame(0, Product::count());
+
+        $this->post(route('admin.products.import.apply'), [
+            'azienda' => $this->company->id, 'token' => $response->viewData('token'), 'create_categories' => 1,
+        ])->assertRedirect(route('admin.products.index', ['azienda' => $this->company->id]));
+
+        $top = ProductCategory::whereNull('parent_id')->where('name', 'Mangiare e Bere')->firstOrFail();
+        $child = ProductCategory::where('parent_id', $top->id)->where('name', 'Salumi')->firstOrFail();
+        $this->assertSame($child->id, Product::where('sku', 'KM-C2')->firstOrFail()->category_id);
+    }
+
+    public function test_una_categoria_che_esiste_gia_si_riconosce_senza_badare_alle_maiuscole(): void
+    {
+        $existing = ProductCategory::create(['name' => 'Mangiare e bere', 'slug' => 'mangiare-e-bere']);
+
+        $response = $this->actingAs($this->admin)
+            ->post(route('admin.products.import.analyze'), [
+                'azienda' => $this->company->id, 'create_categories' => 1,
+                'csv' => $this->fileWithCategory('KM-C3', 'Mangiare e Bere'),
+            ])->assertOk();
+
+        $this->post(route('admin.products.import.apply'), [
+            'azienda' => $this->company->id, 'token' => $response->viewData('token'), 'create_categories' => 1,
+        ]);
+
+        $this->assertSame(1, ProductCategory::count());
+        $this->assertSame($existing->id, Product::where('sku', 'KM-C3')->firstOrFail()->category_id);
     }
 
     public function test_senza_azienda_l_analisi_e_rifiutata(): void

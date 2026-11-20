@@ -43,6 +43,7 @@ class AdminProductImportController extends Controller
             'azienda' => ['required', 'integer', 'exists:companies,id'],
             'csv' => ['required', 'file', 'max:5120', 'mimes:csv,txt'],
             'images' => ['nullable', 'boolean'],
+            'create_categories' => ['nullable', 'boolean'],
         ]);
 
         $company = Company::findOrFail($request->integer('azienda'));
@@ -52,7 +53,7 @@ class AdminProductImportController extends Controller
         $token = (string) Str::uuid();
         $request->file('csv')->storeAs($dir, $token.'.csv', 'local');
 
-        $opts = ['images' => $request->boolean('images')];
+        $opts = ['images' => $request->boolean('images'), 'create_categories' => $request->boolean('create_categories')];
         $plan = $importer->plan(Storage::disk('local')->path("$dir/$token.csv"), $company, $opts);
 
         if ($plan['fatal'] !== null) {
@@ -73,6 +74,7 @@ class AdminProductImportController extends Controller
             'azienda' => ['required', 'integer', 'exists:companies,id'],
             'token' => ['required', 'uuid'],
             'images' => ['nullable', 'boolean'],
+            'create_categories' => ['nullable', 'boolean'],
         ]);
 
         $company = Company::findOrFail($request->integer('azienda'));
@@ -83,7 +85,7 @@ class AdminProductImportController extends Controller
                 ->withErrors(['csv' => 'Il file non c\'e\' piu\': ricaricalo.']);
         }
 
-        $opts = ['images' => $request->boolean('images')];
+        $opts = ['images' => $request->boolean('images'), 'create_categories' => $request->boolean('create_categories')];
         $plan = $importer->plan(Storage::disk('local')->path($rel), $company, $opts);
 
         if ($plan['fatal'] !== null) {
