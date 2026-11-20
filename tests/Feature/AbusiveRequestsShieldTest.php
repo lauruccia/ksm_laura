@@ -2,10 +2,14 @@
 
 namespace Tests\Feature;
 
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class AbusiveRequestsShieldTest extends TestCase
 {
+    // La home legge le categorie: serve il database di prova.
+    use RefreshDatabase;
+
     protected function setUp(): void
     {
         parent::setUp();
