@@ -40,6 +40,9 @@ class AdminProductController extends Controller
         return $query
             ->when($request->string('cerca')->toString(), fn ($q, $t) => $q->where('name', 'like', "%$t%"))
             ->when($request->integer('azienda'), fn ($q, $id) => $q->where('company_id', $id))
+            ->when($request->string('nome_azienda')->toString(), fn ($q, $t) => $q->whereHas(
+                'company', fn ($c) => $c->where('name', 'like', '%'.addcslashes($t, '\\%_').'%')
+            ))
             ->when(in_array($request->input('stato'), ['active', 'inactive'], true), fn ($q) => $q->where('status', $request->input('stato')));
     }
 

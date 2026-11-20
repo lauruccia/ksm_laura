@@ -7,6 +7,7 @@ use App\Models\Plan;
 use App\Models\Product;
 use App\Models\ProductCategory;
 use App\Models\ProductVariant;
+use App\Models\Role;
 use App\Models\User;
 use App\Support\PlanCapabilities;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -188,5 +189,62 @@ class ProductExportTest extends TestCase
         $this->assertEquals(10.0, (float) $nduja->price);
         $this->assertEquals(8.0, (float) $nduja->discount_price);
         $this->assertNotNull($nduja->category_id);
+    }
+
+    private function admin(): User
+    {
+        $role = Role::firstOrCreate(['slug' => Role::SUPER_ADMIN], ['name' => 'Super amministratore', 'is_system' => true]);
+
+        return User::create([
+            'name' => 'Amministratore', 'email' => 'admin@example.test', 'password' => 'password',
+            'user_type' => 'admin', 'role_id' => $role->id, 'is_active' => true,
+        ]);
+    }
+
+    public function test_l_admin_vede_esporta_anche_senza_scegliere_un_azienda(): void
+    {
+        $this->seedCatalog();
+
+        $this->actingAs($this->admin())->get(route('admin.products.index'))
+            ->assertOk()->assertSee('Esporta CSV');
+    }
+
+    public function test_l_admin_esporta_i_prodotti_filtrati_di_tutte_le_aziende_con_la_colonna_azienda(): void
+    {
+        $this->seedCatalog();
+        [, $other] = $this->makeCompany('altro@example.test', 'Altra Srl', 'altra');
+        $this->product($other, ['name' => 'Altrui', 'sku' => 'ALTRO-1']);
+
+        $csv = $this->actingAs($this->admin())->get(route('admin.products.export'))->streamedContent();
+        $rows = collect($this->parse($csv));
+
+        $this->assertSame('Altra Srl', $rows->firstWhere('SKU', 'ALTRO-1')['Azienda']);
+        $this->assertSame('Calabria Sapori', $rows->firstWhere('SKU', 'KM-1')['Azienda']);
+        $this->assertSame('Calabria Sapori', $rows->firstWhere('SKU', 'KM-V-2')['Azienda']);
+    }
+
+    public function test_l_admin_filtra_per_nome_azienda_e_per_nome_prodotto(): void
+    {
+        $this->seedCatalog();
+        [, $other] = $this->makeCompany('altro@example.test', 'Altra Srl', 'altra');
+        $this->product($other, ['name' => 'Altrui', 'sku' => 'ALTRO-1']);
+        $admin = $this->admin();
+
+        $byCompany = $this->actingAs($admin)->get(route('admin.products.export', ['nome_azienda' => 'Altra']))->streamedContent();
+        $this->assertStringContainsString('ALTRO-1', $byCompany);
+        $this->assertStringNotContainsString('KM-1', $byCompany);
+
+        $byName = $this->get(route('admin.products.export', ['cerca' => 'Nduja']))->streamedContent();
+        $this->assertStringContainsString('KM-1', $byName);
+        $this->assertStringNotContainsString('ALTRO-1', $byName);
+    }
+
+    public function test_con_un_azienda_sola_la_colonna_azienda_non_c_e(): void
+    {
+        $this->seedCatalog();
+
+        $csv = $this->actingAs($this->admin())->get(route('admin.products.export', ['azienda' => $this->company->id]))->streamedContent();
+
+        $this->assertArrayNotHasKey('Azienda', $this->parse($csv)[0]);
     }
 }

@@ -34,25 +34,31 @@ final class WooCommerceProductExporter
     ];
 
     /**
-     * Scrive il CSV (con BOM, per Excel) su $handle.
+     * Scrive il CSV (con BOM, per Excel) su $handle. Con $withCompany aggiunge in fondo
+     * la colonna "Azienda" (WooCommerce e l'import la ignorano).
      *
      * @param  Builder<Product>  $products
      * @return array{rows: int, products: int, noSku: int}
      */
-    public function write($handle, Builder $products): array
+    public function write($handle, Builder $products, bool $withCompany = false): array
     {
         fwrite($handle, "\xEF\xBB\xBF");
-        fputcsv($handle, self::HEADER, ',', '"', '');
+        fputcsv($handle, $withCompany ? [...self::HEADER, 'Azienda'] : self::HEADER, ',', '"', '');
 
         $out = ['rows' => 0, 'products' => 0, 'noSku' => 0];
 
-        $products->with(['category.parent', 'variants'])->chunkById(200, function ($chunk) use ($handle, &$out) {
+        $with = $withCompany ? ['category.parent', 'variants', 'company'] : ['category.parent', 'variants'];
+
+        $products->with($with)->chunkById(200, function ($chunk) use ($handle, $withCompany, &$out) {
             foreach ($chunk as $product) {
                 $out['products']++;
                 if (blank($product->sku)) {
                     $out['noSku']++;
                 }
                 foreach ($this->rows($product) as $row) {
+                    if ($withCompany) {
+                        $row['Azienda'] = (string) $product->company?->name;
+                    }
                     fputcsv($handle, $row, ',', '"', '');
                     $out['rows']++;
                 }

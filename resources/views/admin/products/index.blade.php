@@ -25,6 +25,10 @@
                 <x-icon name="search" :size="16" />
                 <input class="ksm-input" type="search" name="cerca" value="{{ request('cerca') }}" placeholder="Cerca per nome" aria-label="Cerca per nome">
             </span>
+            <span class="ksm-listhead__search">
+                <x-icon name="search" :size="16" />
+                <input class="ksm-input" type="search" name="nome_azienda" value="{{ request('nome_azienda') }}" placeholder="Azienda" aria-label="Cerca per azienda">
+            </span>
             <select class="ksm-select" name="stato" aria-label="Stato" onchange="this.form.submit()">
                 <option value="">Tutti gli stati</option>
                 <option value="active" @selected(request('stato') === 'active')>Attivi</option>
@@ -34,7 +38,7 @@
                 <input type="hidden" name="azienda" value="{{ $company->id }}">
             @endif
             <button class="ksm-btn ksm-btn--ghost ksm-btn--sm" type="submit">Cerca</button>
-            @if (request()->hasAny(['cerca', 'stato']))
+            @if (request()->hasAny(['cerca', 'stato', 'nome_azienda']))
                 <a class="ksm-btn ksm-btn--ghost ksm-btn--sm" href="{{ route('admin.products.index', array_filter(['azienda' => $company?->id])) }}">Azzera</a>
             @endif
         </form>
@@ -43,9 +47,7 @@
             {{-- Filtrato per azienda, il prodotto nuovo e' gia' suo. --}}
             <span class="ksm-listhead__actions">
                 <a class="ksm-btn ksm-btn--ghost ksm-btn--sm" href="{{ route('admin.products.import', array_filter(['azienda' => $company?->id])) }}">Importa CSV</a>
-                @if ($company)
-                    <a class="ksm-btn ksm-btn--ghost ksm-btn--sm" href="{{ route('admin.products.export', array_filter(['azienda' => $company->id, 'cerca' => request('cerca'), 'stato' => request('stato')])) }}">Esporta CSV</a>
-                @endif
+                <a class="ksm-btn ksm-btn--ghost ksm-btn--sm" href="{{ route('admin.products.export', array_filter(request()->only(['azienda', 'cerca', 'stato', 'nome_azienda']))) }}">Esporta CSV</a>
                 <a class="ksm-btn ksm-btn--primary ksm-btn--sm" href="{{ route('admin.products.create', array_filter(['azienda' => $company?->id])) }}">Nuovo prodotto</a>
             </span>
         @endif
