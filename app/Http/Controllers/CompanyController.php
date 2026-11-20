@@ -22,6 +22,9 @@ class CompanyController extends Controller
     /** Secondi di validita' delle categorie usate dalle aziende della directory. */
     private const SCOPED_CATEGORIES_TTL = 300;
 
+    /** Fino a quante categorie principali il menu laterale arriva con i rami gia' aperti. */
+    private const NAV_OPEN_MAX_ROOTS = 3;
+
     public function __construct(private readonly CompanyDirectory $directory)
     {
     }
@@ -83,8 +86,12 @@ class CompanyController extends Controller
                 $tree,
                 null,
                 (int) ($filters['category'] ?? 0),
-                // La categoria scelta e le sue madri: nel menu laterale restano aperte.
-                ($filters['category'] ?? null) ? $tree->lineage((int) $filters['category']) : [],
+                // La categoria scelta e le sue madri restano aperte nel menu laterale.
+                // Senza una scelta, con poche categorie principali (un dominio tematico)
+                // si aprono tutti i rami: le sottocategorie si vedono gia' all'arrivo.
+                ($filters['category'] ?? null)
+                    ? $tree->lineage((int) $filters['category'])
+                    : (count($tree->children()) <= self::NAV_OPEN_MAX_ROOTS ? array_keys($tree->labels()) : []),
                 $request->only(['cerca', 'regione', 'citta']),
             ),
             'filters' => $filters,
