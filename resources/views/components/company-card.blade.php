@@ -14,7 +14,9 @@
     $showBanner = $company->banner && $company->allows(PlanCapabilities::BANNER);
     // Senza pagina e senza banner da mostrare il biglietto resta compatto.
     $hasCover = $hasPage || $showBanner;
-    $showLogo = $company->logo && $company->allows(PlanCapabilities::LOGO);
+    // Il tondo del logo c'e' solo se il piano lo concede: senza, nemmeno l'iniziale.
+    $logoAllowed = $company->allows(PlanCapabilities::LOGO);
+    $showLogo = $company->logo && $logoAllowed;
     $showRating = $company->allows(PlanCapabilities::REVIEWS) || $company->allows(PlanCapabilities::FEATURED);
 
     // Nei dati importati i campi vuoti a volte valgono "-": si trattano come assenti.
@@ -42,13 +44,14 @@
         </div>
     @endif
 
+    @if ($logoAllowed || $showRating)
     <div class="ksm-bizcard__top">
         @if ($showLogo)
             <span class="ksm-bizcard__logo">
                 <img src="{{ asset('storage/'.\App\Support\Images\ImageStore::thumb($company->logo)) }}"
                      alt="" loading="lazy" decoding="async" width="56" height="56">
             </span>
-        @else
+        @elseif ($logoAllowed)
             <span class="ksm-bizcard__logo ksm-bizcard__logo--empty" aria-hidden="true">{{ mb_strtoupper(mb_substr($company->name, 0, 1)) }}</span>
         @endif
 
@@ -59,6 +62,7 @@
             </span>
         @endif
     </div>
+    @endif
 
     <div class="ksm-bizcard__id">
         <h3 class="ksm-bizcard__name">

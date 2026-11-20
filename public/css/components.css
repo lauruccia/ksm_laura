@@ -109,6 +109,13 @@
     padding-bottom: 16px;
 }
 
+/* Schede di piano diverso nella stessa riga: ognuna alta quanto il suo
+   contenuto, non allungata alla piu' alta, e tutte appoggiate sul fondo. */
+.ksm-grid:has(> .ksm-bizcard) { align-items: end; }
+
+/* Senza il tondo del logo (piano base) la valutazione resta a destra. */
+.ksm-bizcard__rating { margin-left: auto; }
+
 /* Angolo un filo piu' morbido delle altre schede e ombra a due strati:
    una riga stretta che appoggia il biglietto, un alone largo e leggero. */
 .ksm-card.ksm-bizcard {

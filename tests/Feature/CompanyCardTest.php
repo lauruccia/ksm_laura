@@ -158,4 +158,28 @@ class CompanyCardTest extends TestCase
         $this->post(route('companies.contact', $company->slug), [])->assertNotFound();
         $this->post(route('companies.reviews.store', $company->slug), [])->assertNotFound();
     }
+
+    public function test_l_anagrafica_base_senza_logo_non_mostra_nemmeno_l_iniziale(): void
+    {
+        $this->companyOn([
+            PlanCapabilities::DIRECTORY, PlanCapabilities::CONTACT_CARD,
+        ], 'Zeta Anagrafica');
+
+        $this->get(route('companies.index'))
+            ->assertOk()
+            ->assertSee('Zeta Anagrafica')
+            ->assertDontSee('ksm-bizcard__logo', false);
+    }
+
+    public function test_con_la_voce_logo_senza_file_resta_l_iniziale(): void
+    {
+        $this->companyOn([
+            PlanCapabilities::DIRECTORY, PlanCapabilities::CONTACT_CARD,
+            PlanCapabilities::LOGO,
+        ], 'Zeta Logo');
+
+        $this->get(route('companies.index'))
+            ->assertOk()
+            ->assertSee('ksm-bizcard__logo--empty', false);
+    }
 }
