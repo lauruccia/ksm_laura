@@ -27,16 +27,13 @@
             </span>
             <span class="ksm-listhead__search">
                 <x-icon name="search" :size="16" />
-                <input class="ksm-input" type="search" name="nome_azienda" value="{{ request('nome_azienda') }}" placeholder="Azienda" aria-label="Cerca per azienda">
+                <x-company-picker :id="$company?->id" :text="$company?->name ?? request('nome_azienda')" submit />
             </span>
             <select class="ksm-select" name="stato" aria-label="Stato" onchange="this.form.submit()">
                 <option value="">Tutti gli stati</option>
                 <option value="active" @selected(request('stato') === 'active')>Attivi</option>
                 <option value="inactive" @selected(request('stato') === 'inactive')>Non attivi</option>
             </select>
-            @if ($company)
-                <input type="hidden" name="azienda" value="{{ $company->id }}">
-            @endif
             <button class="ksm-btn ksm-btn--ghost ksm-btn--sm" type="submit">Cerca</button>
             @if (request()->hasAny(['cerca', 'stato', 'nome_azienda']))
                 <a class="ksm-btn ksm-btn--ghost ksm-btn--sm" href="{{ route('admin.products.index', array_filter(['azienda' => $company?->id])) }}">Azzera</a>

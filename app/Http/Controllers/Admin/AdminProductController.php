@@ -14,6 +14,7 @@ use App\Support\PlanCapabilities;
 use App\Support\ProductForm;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -32,6 +33,26 @@ class AdminProductController extends Controller
             'categories' => ProductCategory::orderBy('name')->pluck('name', 'id'),
             'brands' => ProductBrand::orderBy('name')->pluck('name', 'id'),
         ]);
+    }
+
+    /** Le aziende che contengono il testo (almeno due lettere), per il campo con ricerca. */
+    public function companySearch(Request $request): JsonResponse
+    {
+        $term = trim($request->string('q')->toString());
+
+        if (mb_strlen($term) < 2) {
+            return response()->json([]);
+        }
+
+        return response()->json(
+            Company::query()
+                ->where('name', 'like', '%'.addcslashes($term, '\\%_').'%')
+                ->orderBy('name')
+                ->limit(15)
+                ->get(['id', 'name', 'city'])
+                ->map(fn (Company $c) => ['id' => $c->id, 'name' => $c->name, 'city' => $c->city])
+                ->values()
+        );
     }
 
     /** I filtri dell'elenco, gli stessi per la pagina e per "tutti i risultati". */

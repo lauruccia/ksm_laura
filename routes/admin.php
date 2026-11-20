@@ -119,6 +119,9 @@ Route::middleware(['auth', 'admin'])
 
         Route::middleware('can:'.P::CATALOG_VIEW)->group(function () {
             // Export CSV in formato WooCommerce di un'azienda. Prima della scheda /prodotti/{product}.
+            // Le aziende che contengono il testo, per i campi con ricerca (<x-company-picker>).
+            Route::get('/prodotti-aziende', [AdminProductController::class, 'companySearch'])
+                ->middleware('throttle:60,1')->name('products.companies');
             Route::get('/prodotti-esporta', [AdminProductExportController::class, 'export'])
                 ->middleware('throttle:10,1')->name('products.export');
 

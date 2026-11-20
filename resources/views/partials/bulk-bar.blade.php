@@ -89,9 +89,9 @@
 
             @isset($actions['company'])
                 <label class="ksm-sr-only" for="bulk_company">Azienda</label>
-                {{-- Per nome: con migliaia di aziende un menu renderebbe la pagina lentissima. --}}
-                <input class="ksm-input" id="bulk_company" name="company_name" type="text" maxlength="255" autocomplete="off"
-                       placeholder="Nome dell'azienda" data-bulk-extra="company">
+                {{-- Con ricerca: con migliaia di aziende un menu renderebbe la pagina lentissima. --}}
+                <x-company-picker id-name="company_id" text-name="company_name" placeholder="Scegli l'azienda…"
+                                  label="Azienda a cui spostare i prodotti" data-bulk-extra="company" />
             @endisset
 
             <button class="ksm-btn ksm-btn--primary ksm-btn--sm" type="submit" data-bulk-submit>Applica</button>
