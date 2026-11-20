@@ -5,8 +5,8 @@
     $noun e $nounOne (per esempio "prodotti" e "prodotto"). Facoltativi:
     $feminine (true per aziende, pagine: "Nessuna azienda selezionata"),
     $percentSteps (quote KMoney, se c'e' l'azione "kmoney"), $statuses
-    (valore => etichetta, se c'e' l'azione "status"), $categories, $brands e
-    $companies (id => nome, se ci sono le azioni "category", "brand" e "company"), $onlySelected (azioni
+    (valore => etichetta, se c'e' l'azione "status"), $categories e $brands
+    (id => nome, se ci sono le azioni "category" e "brand"; "company" ha un campo col nome), $onlySelected (azioni
     che non valgono su "tutti i risultati", come eliminare). Le caselle delle righe si
     legano con form="bulk" name="ids[]" data-bulk-item; quella in testa
     alla tabella ha data-bulk-page. Vedi public/js/bulk.js.
@@ -89,12 +89,9 @@
 
             @isset($actions['company'])
                 <label class="ksm-sr-only" for="bulk_company">Azienda</label>
-                <select class="ksm-select" id="bulk_company" name="company_id" data-bulk-extra="company">
-                    <option value="">Scegli l'azienda…</option>
-                    @foreach ($companies as $id => $name)
-                        <option value="{{ $id }}">{{ $name }}</option>
-                    @endforeach
-                </select>
+                {{-- Per nome: con migliaia di aziende un menu renderebbe la pagina lentissima. --}}
+                <input class="ksm-input" id="bulk_company" name="company_name" type="text" maxlength="255" autocomplete="off"
+                       placeholder="Nome dell'azienda" data-bulk-extra="company">
             @endisset
 
             <button class="ksm-btn ksm-btn--primary ksm-btn--sm" type="submit" data-bulk-submit>Applica</button>
@@ -107,6 +104,7 @@
     </p>
 
     @error('ids')<p class="ksm-bulk__error">{{ $message }}</p>@enderror
+    @error('company_id')<p class="ksm-bulk__error">{{ $message }}</p>@enderror
     {{-- Dentro il modulo: fuori starebbe fra la barra e la tabella e la staccherebbe. --}}
     <script src="{{ asset('js/bulk.js') }}?v={{ filemtime(public_path('js/bulk.js')) }}" defer></script>
 </form>

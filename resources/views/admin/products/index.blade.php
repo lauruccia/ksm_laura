@@ -71,7 +71,6 @@
             'percentSteps' => \App\Payments\KMoney\KMoneyShare::STEPS,
             'categories' => $categories,
             'brands' => $brands,
-            'companies' => $companies,
         ])
     @endif
 

@@ -17,6 +17,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class AdminProductController extends Controller
 {
@@ -30,7 +31,6 @@ class AdminProductController extends Controller
             'company' => $request->integer('azienda') ? Company::find($request->integer('azienda')) : null,
             'categories' => ProductCategory::orderBy('name')->pluck('name', 'id'),
             'brands' => ProductBrand::orderBy('name')->pluck('name', 'id'),
-            'companies' => Company::orderBy('name')->pluck('name', 'id'),
         ]);
     }
 
@@ -56,6 +56,11 @@ class AdminProductController extends Controller
      */
     public function bulk(Request $request, KMoneyPercentages $percentages): RedirectResponse
     {
+        // L'azienda di destinazione si scrive per nome: un menu con tutte le aziende pesa troppo.
+        if ($request->input('action') === 'company' && blank($request->input('company_id')) && filled($request->input('company_name'))) {
+            $request->merge(['company_id' => $this->companyByName($request->string('company_name')->toString())->id]);
+        }
+
         $request->validate(BulkSelection::rules(self::BULK_ACTIONS) + [
             'percent' => ['required_if:action,kmoney', 'nullable', Rule::in(array_merge(['auto'], KMoneyShare::STEPS))],
             // Vuoto toglie la categoria o la marca.
@@ -81,6 +86,28 @@ class AdminProductController extends Controller
         };
 
         return back()->with('success', $message);
+    }
+
+    /** L'azienda col nome scritto (maiuscole a parte); se non e' una sola, errore con qualche suggerimento. */
+    private function companyByName(string $name): Company
+    {
+        $name = trim($name);
+        $exact = Company::query()->whereRaw('LOWER(name) = ?', [mb_strtolower($name)])->limit(2)->get(['id', 'name']);
+
+        if ($exact->count() === 1) {
+            return $exact->first();
+        }
+
+        $message = $exact->count() > 1
+            ? __('Ci sono più aziende con questo nome: scegli un nome unico.')
+            : __('Non trovo un\'azienda con questo nome.');
+
+        $similar = Company::query()->where('name', 'like', '%'.addcslashes($name, '\\%_').'%')->orderBy('name')->limit(5)->pluck('name');
+        if ($exact->isEmpty() && $similar->isNotEmpty()) {
+            $message .= ' '.__('Forse intendi:').' '.$similar->implode(', ').'.';
+        }
+
+        throw ValidationException::withMessages(['company_id' => $message]);
     }
 
     /**

@@ -139,6 +139,18 @@ class ProductBulkActionsTest extends TestCase
         $this->assertSame($to->id, $a->fresh()->company_id);
         $this->assertSame($from->id, $c->fresh()->company_id);
 
+        // L'azienda si puo' anche scrivere per nome, maiuscole a parte.
+        $this->patch(route('admin.products.bulk'), ['action' => 'company', 'company_name' => 'salumificio', 'ids' => [$c->id]])
+            ->assertSessionHasNoErrors()
+            ->assertSessionHas('success', '1 prodotto spostato a Salumificio.');
+        $this->assertSame($to->id, $c->fresh()->company_id);
+        $c->fresh()->update(['company_id' => $from->id]);
+
+        // Un nome che non c'e' non sposta nulla.
+        $this->patch(route('admin.products.bulk'), ['action' => 'company', 'company_name' => 'Inesistente', 'ids' => [$c->id]])
+            ->assertSessionHasErrors('company_id');
+        $this->assertSame($from->id, $c->fresh()->company_id);
+
         // Senza azienda di destinazione non si sposta nulla.
         $this->patch(route('admin.products.bulk'), ['action' => 'company', 'ids' => [$c->id]])
             ->assertSessionHasErrors('company_id');
