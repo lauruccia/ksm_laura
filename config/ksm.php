@@ -20,6 +20,8 @@ return [
         'respect_dnt' => (bool) env('KSM_ANALYTICS_RESPECT_DNT', true),
         // Dopo quanti giorni le visite si cancellano (giro notturno analytics:prune).
         'retention_days' => (int) env('KSM_ANALYTICS_RETENTION_DAYS', 400),
+        // Per quanti minuti la pagina Statistiche riusa i numeri gia' calcolati (le query sulle visite sono pesanti). 0 = mai.
+        'cache_minutes' => (int) env('KSM_ANALYTICS_CACHE_MINUTES', 15),
         // Per il paese di chi visita: intestazioni messe da un servizio davanti al sito...
         'country_headers' => ['CF-IPCountry', 'CloudFront-Viewer-Country', 'X-Vercel-IP-Country', 'X-Country-Code'],
         // ...oppure un archivio .mmdb (DB-IP City Lite o MaxMind GeoLite2): da' anche regione e citta'.

@@ -9,6 +9,8 @@ use App\Support\Analytics\Period;
 use App\Support\Analytics\Report;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
@@ -26,53 +28,100 @@ class AdminAnalyticsController extends Controller
         $humans = $request->boolean('umani');
         $report = new Report($period, $this->host($request), $humans);
 
-        $deep = new Insights($period, $report->host, $humans);
-        $empty = $report->isEmpty();
-        $none = collect();
+        // Ogni vista e' una scansione di decine di migliaia di righe: i numeri di un periodo si calcolano una volta ogni quarto d'ora.
+        $key = 'admin:analytics:'.sha1($period->from->toDateString().'|'.$period->to->toDateString().'|'.$report->host.'|'.(int) $humans);
 
-        return view('admin.analytics.index', [
+        if ($request->boolean('aggiorna')) {
+            Cache::forget($key);
+        }
+
+        // Quanti minuti restano buoni i numeri gia' calcolati (?aggiorna=1 li ricalcola); 0 = sempre freschi.
+        $minutes = (int) config('ksm.analytics.cache_minutes');
+        $data = $minutes > 0
+            ? Cache::remember($key, now()->addMinutes($minutes), fn () => $this->compute($period, $report, $humans))
+            : $this->compute($period, $report, $humans);
+
+        return view('admin.analytics.index', $data + [
             'period' => $period,
             'humans' => $humans,
-            'humanInfo' => Humans::summary($period, $report->host),
             'report' => $report,
             'host' => $report->host,
             'hosts' => $this->hostOptions($report->host),
-            'empty' => $empty,
             'live' => $report->live(),
-            'summary' => $report->summary(),
-            'series' => $empty ? [] : $report->series(),
             'granularity' => $period->granularity(),
-            'pages' => $empty ? collect() : $report->pages(15),
-            'entryPages' => $empty ? collect() : $report->entryPages(10),
-            'channels' => $empty ? collect() : $report->channels(),
-            'sources' => $empty ? collect() : $report->sources(12),
-            'campaigns' => $empty ? collect() : $report->campaigns(10),
-            'countries' => $empty ? collect() : $report->countries(10),
-            'devices' => $empty ? collect() : $report->devices(),
-            'browsers' => $empty ? collect() : $report->browsers(6),
-            'systems' => $empty ? collect() : $report->systems(6),
-            'heatmap' => $empty ? null : $report->heatmap(),
-            'sites' => $report->host === null && ! $empty ? $report->sites(20) : collect(),
+        ]);
+    }
+
+    /**
+     * Tutti i numeri della pagina. Ogni blocco che supera il secondo finisce
+     * nel log (storage/logs) con il suo nome: dice dove si perde il tempo.
+     *
+     * @return array<string, mixed>
+     */
+    private function compute(Period $period, Report $report, bool $humans): array
+    {
+        $deep = new Insights($period, $report->host, $humans);
+        $none = collect();
+        $slow = [];
+
+        $run = function (string $name, callable $query) use (&$slow) {
+            $start = microtime(true);
+            $result = $query();
+            $ms = (int) round((microtime(true) - $start) * 1000);
+
+            if ($ms >= 1000) {
+                $slow[$name] = $ms;
+            }
+
+            return $result;
+        };
+
+        $empty = $report->isEmpty();
+        $skip = fn ($fallback, string $name, callable $query) => $empty ? $fallback : $run($name, $query);
+
+        $data = [
+            'humanInfo' => $run('umani', fn () => Humans::summary($period, $report->host)),
+            'empty' => $empty,
+            'summary' => $run('schede', fn () => $report->summary()),
+            'series' => $skip([], 'andamento', fn () => $report->series()),
+            'pages' => $skip($none, 'pagine', fn () => $report->pages(15)),
+            'entryPages' => $skip($none, 'pagine-ingresso', fn () => $report->entryPages(10)),
+            'channels' => $skip($none, 'canali', fn () => $report->channels()),
+            'sources' => $skip($none, 'fonti', fn () => $report->sources(12)),
+            'campaigns' => $skip($none, 'campagne', fn () => $report->campaigns(10)),
+            'countries' => $skip($none, 'paesi', fn () => $report->countries(10)),
+            'devices' => $skip($none, 'dispositivi', fn () => $report->devices()),
+            'browsers' => $skip($none, 'browser', fn () => $report->browsers(6)),
+            'systems' => $skip($none, 'sistemi', fn () => $report->systems(6)),
+            'heatmap' => $skip(null, 'mappa-oraria', fn () => $report->heatmap()),
+            'sites' => $report->host === null && ! $empty ? $run('siti', fn () => $report->sites(20)) : $none,
 
             // Piu' a fondo.
-            'goals' => $deep->goals(),
-            'funnel' => $empty ? [] : $deep->funnel(),
-            'conversionSources' => $empty ? $none : $deep->conversionSources(),
+            'goals' => $run('obiettivi', fn () => $deep->goals()),
+            'funnel' => $skip([], 'percorso', fn () => $deep->funnel()),
+            'conversionSources' => $skip($none, 'obiettivi-per-fonte', fn () => $deep->conversionSources()),
             'returningEnabled' => $deep->returningEnabled(),
-            'audience' => $empty ? null : $deep->audience(),
-            'behaviour' => $empty ? [] : $deep->audienceBehaviour(),
+            'audience' => $skip(null, 'pubblico', fn () => $deep->audience()),
+            'behaviour' => $skip([], 'comportamento', fn () => $deep->audienceBehaviour()),
             // Le coorti rileggono otto settimane di visite: senza il cookie dei visitatori di ritorno sarebbero sempre vuote.
-            'cohorts' => $empty || ! $deep->returningEnabled() ? [] : $deep->cohorts(),
-            'companies' => $empty ? $none : $deep->companies(),
-            'products' => $empty ? $none : $deep->products(),
-            'storefronts' => $empty ? $none : $deep->storefronts(),
-            'searches' => $empty ? $none : $deep->searches(),
-            'keywords' => $empty ? $none : $deep->keywords(),
-            'exitPages' => $empty ? $none : $deep->exitPages(),
-            'regions' => $empty ? $none : $deep->regions(),
-            'cities' => $empty ? $none : $deep->cities(),
-            'hasPlaces' => $empty ? false : $deep->hasPlaces(),
-        ]);
+            'cohorts' => $empty || ! $deep->returningEnabled() ? [] : $run('coorti', fn () => $deep->cohorts()),
+            'companies' => $skip($none, 'aziende', fn () => $deep->companies()),
+            'products' => $skip($none, 'prodotti', fn () => $deep->products()),
+            'storefronts' => $skip($none, 'vetrine', fn () => $deep->storefronts()),
+            'searches' => $skip($none, 'ricerche', fn () => $deep->searches()),
+            'keywords' => $skip($none, 'parole-chiave', fn () => $deep->keywords()),
+            'exitPages' => $skip($none, 'uscite', fn () => $deep->exitPages()),
+            'regions' => $skip($none, 'regioni', fn () => $deep->regions()),
+            'cities' => $skip($none, 'citta', fn () => $deep->cities()),
+            'hasPlaces' => $empty ? false : $run('luoghi', fn () => $deep->hasPlaces()),
+        ];
+
+        if ($slow !== []) {
+            arsort($slow);
+            Log::info('Statistiche: blocchi lenti (millisecondi)', ['sito' => $report->host, 'dal' => $period->from->toDateString(), 'al' => $period->to->toDateString(), 'umani' => $humans] + $slow);
+        }
+
+        return $data;
     }
 
     /** Tutto su una pagina sola: da dove si arriva, dove si va dopo, quanto ci si ferma. */
