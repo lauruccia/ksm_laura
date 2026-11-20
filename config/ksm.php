@@ -32,6 +32,18 @@ return [
         'returning_visitors' => (bool) env('KSM_ANALYTICS_RETURNING', false),
     ],
 
+    /*
+     * Scudo contro scansioni e traffico automatico (middleware BlockAbusiveRequests).
+     * KSM_SHIELD=false lo spegne del tutto.
+     */
+    'shield' => [
+        'enabled' => (bool) env('KSM_SHIELD', true),
+        // Pagine al minuto da un solo IP prima di rispondere 429. 0 = nessun limite.
+        'rate_per_minute' => (int) env('KSM_SHIELD_RATE', 120),
+        // Dove si contano le richieste: a file, per non scrivere sul database a ogni pagina.
+        'store' => env('KSM_SHIELD_STORE', 'file'),
+    ],
+
     /* Lingue disponibili nel selettore di intestazione. */
     'locales' => [
         'it' => 'Italiano',

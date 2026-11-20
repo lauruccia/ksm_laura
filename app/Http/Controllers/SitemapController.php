@@ -84,6 +84,17 @@ class SitemapController extends Controller
             'Disallow: /carrello',
             'Disallow: /pagamento',
             '',
+            // Scansioni di marketing e SEO commerciali: nessuna visita vera, solo carico (lo scudo le respinge comunque).
+            'User-agent: AhrefsBot',
+            'User-agent: SemrushBot',
+            'User-agent: MJ12bot',
+            'User-agent: DotBot',
+            'User-agent: PetalBot',
+            'User-agent: Bytespider',
+            'User-agent: DataForSeoBot',
+            'User-agent: BLEXBot',
+            'Disallow: /',
+            '',
             'Sitemap: '.route('sitemap'),
         ];
 

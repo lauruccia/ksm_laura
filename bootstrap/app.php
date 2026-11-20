@@ -32,6 +32,9 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->replace(TrustProxies::class, App\Http\Middleware\TrustPlatformProxies::class);
 
         // Prima della sessione: www.dominio passa subito all'indirizzo senza www.
+        // Lo scudo e' il primo di tutti: una richiesta respinta non apre sessioni ne' tocca il database.
+        $middleware->prepend(App\Http\Middleware\BlockAbusiveRequests::class);
+
         $middleware->web(prepend: [
             App\Http\Middleware\RedirectWww::class,
         ]);
