@@ -61,7 +61,8 @@ class AdminAnalyticsController extends Controller
             'returningEnabled' => $deep->returningEnabled(),
             'audience' => $empty ? null : $deep->audience(),
             'behaviour' => $empty ? [] : $deep->audienceBehaviour(),
-            'cohorts' => $empty ? [] : $deep->cohorts(),
+            // Le coorti rileggono otto settimane di visite: senza il cookie dei visitatori di ritorno sarebbero sempre vuote.
+            'cohorts' => $empty || ! $deep->returningEnabled() ? [] : $deep->cohorts(),
             'companies' => $empty ? $none : $deep->companies(),
             'products' => $empty ? $none : $deep->products(),
             'storefronts' => $empty ? $none : $deep->storefronts(),
