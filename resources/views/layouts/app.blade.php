@@ -28,6 +28,9 @@
     <meta name="description" content="{!! $pageDescription !!}">
     {{-- Indirizzo di riferimento: senza www (lo toglie RedirectWww), senza filtri e ordinamenti, con categoria e pagina. --}}
     <link rel="canonical" href="@yield('canonical', rtrim(url()->current().'?'.http_build_query(request()->only(['categoria', 'page'])), '?'))">
+    @hasSection('robots')
+        <meta name="robots" content="@yield('robots')">
+    @endif
 
     @if ($tenant->isNetworkSite())
         <meta property="og:site_name" content="{{ $tenant->brandName() }}">

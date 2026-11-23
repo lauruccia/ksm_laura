@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Company;
 use App\Models\CompanyCategory;
 use App\Models\Product;
+use App\Support\CategoryLanding;
 use App\Support\CategoryTree;
 use App\Support\CompanyDirectory;
 use App\Support\PlanCapabilities;
@@ -79,7 +80,16 @@ class CompanyController extends Controller
                 ->header('Vary', 'X-Requested-With');
         }
 
+        // Una sola categoria scelta, senza altri filtri: la pagina pulita /categorie/... e' quella da indicizzare.
+        $landingUrl = null;
+
+        if ($tenant->isPlatformSite() && array_keys($filters) === ['category'] && $request->integer('page', 1) <= 1 && $companies->total() > 0) {
+            $slug = CompanyCategory::query()->whereKey($filters['category'])->value('slug');
+            $landingUrl = $slug ? CategoryLanding::url($slug) : null;
+        }
+
         return view('pages.companies.index', [
+            'landingUrl' => $landingUrl,
             'companies' => $companies,
             'categories' => $tree->labels(),
             'categoryNav' => $this->categoryNav(

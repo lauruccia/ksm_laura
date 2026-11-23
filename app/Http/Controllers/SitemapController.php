@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\CmsPage;
 use App\Models\Company;
 use App\Models\Product;
+use App\Support\CategoryLanding;
 use App\Support\PlanCapabilities;
 use App\Support\TenantContext;
 use Illuminate\Database\Eloquent\Builder;
@@ -46,6 +47,14 @@ class SitemapController extends Controller
                 }
             }
 
+            // Categoria e categoria + luogo: pagine solo del sito principale.
+            $landings = $this->landings();
+            $pages = (int) ceil(count($landings) / self::PER_FILE);
+
+            for ($page = 1; $page <= $pages; $page++) {
+                $files[] = route('sitemap.section', ['section' => 'categorie', 'page' => $page]);
+            }
+
             return view('sitemap-index', ['files' => $files])->render();
         });
 
@@ -59,6 +68,7 @@ class SitemapController extends Controller
                 'pagine' => $page === 1 ? $this->pages() : [],
                 'aziende' => $this->slice($this->companies(), $page, 'companies.show', '0.8'),
                 'prodotti' => $this->slice($this->products(), $page, 'products.show', '0.6'),
+                'categorie' => array_slice($this->landings(), ($page - 1) * self::PER_FILE, self::PER_FILE),
                 default => [],
             };
 
@@ -152,6 +162,12 @@ class SitemapController extends Controller
                 'priority' => $priority,
             ])
             ->all();
+    }
+
+    /** Pagine categoria e categoria + luogo: ci sono solo sul sito principale. */
+    private function landings(): array
+    {
+        return app(TenantContext::class)->isPlatformSite() ? app(CategoryLanding::class)->sitemapEntries() : [];
     }
 
     private function companies(): Builder

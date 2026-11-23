@@ -8,6 +8,7 @@ use App\Http\Controllers\Auth\PasswordResetController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\VerificationController;
 use App\Http\Controllers\CartController;
+use App\Http\Controllers\CategoryLandingController;
 use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\ContactController;
@@ -38,6 +39,12 @@ Route::post('/aziende/{company:slug}/recensioni', [ReviewController::class, 'sto
 Route::post('/aziende/{company:slug}/contatto', [ContactController::class, 'sendToCompany'])
     ->middleware('throttle:6,60')->name('companies.contact');
 
+// Pagine per i motori di ricerca: categoria e categoria + citta' o regione. Solo sul sito principale.
+Route::get('/categorie/{category}/{place?}', [CategoryLandingController::class, 'show'])
+    ->middleware('platform')
+    ->where(['category' => '[a-z0-9-]+', 'place' => '[a-z0-9-]+'])
+    ->name('categories.show');
+
 Route::get('/prodotti', [ProductController::class, 'index'])->name('products.index');
 Route::get('/prodotti/{product:slug}', [ProductController::class, 'show'])->name('products.show');
 Route::post('/prodotti/{product:slug}/recensioni', [ReviewController::class, 'storeForProduct'])
@@ -60,7 +67,7 @@ Route::get('/banner/{advertisement}/click', AdvertisementClickController::class)
 // Motori di ricerca: mappa del sito e istruzioni, generate per il dominio corrente.
 Route::get('/sitemap.xml', [SitemapController::class, 'index'])->name('sitemap');
 Route::get('/sitemap-{section}-{page}.xml', [SitemapController::class, 'section'])
-    ->where(['section' => 'pagine|aziende|prodotti', 'page' => '[1-9][0-9]*'])
+    ->where(['section' => 'pagine|aziende|prodotti|categorie', 'page' => '[1-9][0-9]*'])
     ->name('sitemap.section');
 Route::get('/robots.txt', [SitemapController::class, 'robots'])->name('robots');
 
