@@ -71,6 +71,7 @@
     @if ($analyticsUid)
         <script src="{{ asset('js/analytics.js') }}?v={{ filemtime(public_path('js/analytics.js')) }}" defer></script>
     @endif
+    @include('partials.consent-banner')
     @stack('scripts')
 </body>
 </html>

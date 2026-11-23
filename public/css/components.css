@@ -1424,3 +1424,32 @@ a.ksm-pagination__page:hover {
     clip-path: inset(50%);
     white-space: nowrap;
 }
+
+/* ============ Consenso cookie ============ */
+.ksm-consent {
+    position: fixed;
+    left: 16px;
+    right: 16px;
+    bottom: 16px;
+    z-index: 1000;
+    max-width: 760px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    padding: 16px 20px;
+    background: var(--ksm-surface);
+    border: 1px solid var(--ksm-line);
+    border-radius: var(--ksm-radius-lg);
+    box-shadow: var(--ksm-shadow-lg);
+}
+
+.ksm-consent[hidden] { display: none; }
+.ksm-consent__text { margin: 0; font-size: .9rem; color: var(--ksm-body); }
+.ksm-consent__actions { display: flex; gap: 10px; flex-shrink: 0; }
+.ksm-consent .ksm-btn { padding: 10px 18px; }
+
+@media (max-width: 640px) {
+    .ksm-consent { flex-direction: column; align-items: stretch; }
+    .ksm-consent__actions .ksm-btn { flex: 1; }
+}

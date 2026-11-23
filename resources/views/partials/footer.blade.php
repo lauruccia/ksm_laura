@@ -99,6 +99,9 @@
     <div class="ksm-footer__bottom">
         <div class="ksm-container ksm-footer__bottom-inner">
             <p>&copy; {{ date('Y') }} {{ $siteName }}. {{ __('site.rights_reserved') }}</p>
+            @if (config('services.google_tag.id'))
+                <p><a href="#" data-ksm-consent-open>Gestisci cookie</a></p>
+            @endif
 
             @if ($social)
                 <div class="ksm-footer__social">
