@@ -520,3 +520,5 @@
 .ksm-landing__links a { display: inline-block; padding: .35rem .8rem; border: 1px solid currentColor; border-radius: 999px; font-size: .9rem; text-decoration: none; opacity: .85; }
 .ksm-landing__links a:hover { opacity: 1; }
 .ksm-landing__body { max-width: 70ch; margin: 0 0 1.75rem; }
+.ksm-landing__more { margin: 0 0 1.75rem; }
+.ksm-landing__more > summary { cursor: pointer; font-weight: 600; padding: .5rem 0; }

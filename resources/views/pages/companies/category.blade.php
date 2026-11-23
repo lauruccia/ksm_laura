@@ -83,6 +83,38 @@
                 </ul>
             @endif
 
+            @if ($content['body'] && $companies->currentPage() === 1)
+                <div class="ksm-landing__body">
+                    @foreach (preg_split('/\R{2,}/', trim($content['body'])) as $paragraph)
+                        <p>{!! nl2br(e($paragraph)) !!}</p>
+                    @endforeach
+                </div>
+            @endif
+
+            @if ($otherCities->isNotEmpty() || $otherRegions->isNotEmpty())
+                {{-- In alto e non in fondo: con il caricamento continuo il fondo non si raggiunge mai, e questi link servono a chi cerca e a chi indicizza. --}}
+                <details class="ksm-landing__more">
+                    <summary>{{ __('site.landing_other_cities') }} · {{ __('site.landing_other_regions') }}</summary>
+                @if ($otherCities->isNotEmpty())
+                <h2>{{ __('site.landing_other_cities') }}</h2>
+                <ul class="ksm-landing__links">
+                    @foreach ($otherCities as $city)
+                        <li><a href="{{ $city['url'] }}">{{ $city['name'] }}</a></li>
+                    @endforeach
+                </ul>
+                @endif
+
+                @if ($otherRegions->isNotEmpty())
+                <h2>{{ __('site.landing_other_regions') }}</h2>
+                <ul class="ksm-landing__links">
+                    @foreach ($otherRegions as $region)
+                        <li><a href="{{ $region['url'] }}">{{ $region['name'] }}</a></li>
+                    @endforeach
+                </ul>
+                @endif
+                </details>
+            @endif
+
             <div class="ksm-grid ksm-directory__grid" data-directory-grid>
                 @include('pages.companies.partials.cards')
             </div>
@@ -101,31 +133,6 @@
                 </div>
             @endif
 
-            @if ($content['body'] && $companies->currentPage() === 1)
-                <div class="ksm-landing__body">
-                    @foreach (preg_split('/\R{2,}/', trim($content['body'])) as $paragraph)
-                        <p>{!! nl2br(e($paragraph)) !!}</p>
-                    @endforeach
-                </div>
-            @endif
-
-            @if ($otherCities->isNotEmpty())
-                <h2>{{ __('site.landing_other_cities') }}</h2>
-                <ul class="ksm-landing__links">
-                    @foreach ($otherCities as $city)
-                        <li><a href="{{ $city['url'] }}">{{ $city['name'] }}</a></li>
-                    @endforeach
-                </ul>
-            @endif
-
-            @if ($otherRegions->isNotEmpty())
-                <h2>{{ __('site.landing_other_regions') }}</h2>
-                <ul class="ksm-landing__links">
-                    @foreach ($otherRegions as $region)
-                        <li><a href="{{ $region['url'] }}">{{ $region['name'] }}</a></li>
-                    @endforeach
-                </ul>
-            @endif
         </div>
     </section>
 @endsection
