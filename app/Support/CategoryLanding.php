@@ -2,6 +2,7 @@
 
 namespace App\Support;
 
+use App\Models\CategoryLandingText;
 use App\Models\Company;
 use App\Models\CompanyCategory;
 use Illuminate\Database\Eloquent\Builder;
@@ -212,16 +213,18 @@ class CategoryLanding
     }
 
     /**
-     * Tutti gli indirizzi da mettere in mappa: categorie e categorie + luogo
-     * con abbastanza aziende. Le aziende contano anche nelle categorie madri.
+     * Le pagine che meritano di esistere: categorie e categorie + luogo con
+     * abbastanza aziende. Le aziende contano anche nelle categorie madri.
+     * `place` e' vuoto per la pagina della categoria.
      *
-     * @return list<array{loc: string, priority: string}>
+     * @return list<array{category_id: int, category: string, slug: string, place: string, place_name: string, type: string, count: int}>
      */
-    public function sitemapEntries(): array
+    public function pages(): array
     {
-        return Cache::remember('landing:sitemap', now()->addHours(self::SITEMAP_TTL_HOURS), function () {
+        return Cache::remember('landing:pages', now()->addMinutes(self::PLACES_TTL_MINUTES), function () {
             $tree = CategoryTree::of(CompanyCategory::class);
-            $slugs = CompanyCategory::query()->pluck('slug', 'id');
+            $categories = CompanyCategory::query()->get(['id', 'name', 'slug'])->keyBy('id');
+            $regions = self::regionNames();
 
             $rows = $this->tenant->scope()
                 ->companies(Company::query()->active()->inDirectory())
@@ -232,6 +235,7 @@ class CategoryLanding
                 ->get();
 
             $counts = [];
+            $variants = [];
 
             foreach ($rows as $row) {
                 if (! $row->category_id) {
@@ -240,6 +244,12 @@ class CategoryLanding
 
                 $keys = array_filter($this->placeKeys($row->city, $row->region));
                 $n = (int) $row->n;
+
+                foreach ($keys as $kind => [$slug, $raw]) {
+                    if ($kind === 'city') {
+                        $variants[$slug][$raw] = ($variants[$slug][$raw] ?? 0) + $n;
+                    }
+                }
 
                 foreach ($tree->lineage((int) $row->category_id) as $id) {
                     $counts[$id][''] = ($counts[$id][''] ?? 0) + $n;
@@ -251,29 +261,166 @@ class CategoryLanding
             }
 
             ksort($counts);
-            $entries = [];
+            $pages = [];
 
             foreach ($counts as $id => $places) {
-                if (! isset($slugs[$id])) {
+                if (! $categories->has($id)) {
                     continue;
                 }
 
                 ksort($places);
 
                 foreach ($places as $place => $n) {
+                    $place = (string) $place;
+
                     if ($n < self::MIN_INDEXABLE) {
                         continue;
                     }
 
-                    $entries[] = [
-                        'loc' => self::url($slugs[$id], (string) $place),
-                        'priority' => (string) $place === '' ? '0.7' : '0.6',
+                    if ($place === '') {
+                        $type = 'category';
+                        $name = '';
+                    } elseif (isset($regions[$place])) {
+                        $type = 'region';
+                        $name = $regions[$place];
+                    } else {
+                        $type = 'city';
+                        arsort($variants[$place]);
+                        $name = $this->tidy((string) array_key_first($variants[$place]));
+                    }
+
+                    $pages[] = [
+                        'category_id' => (int) $id,
+                        'category' => $categories[$id]->name,
+                        'slug' => $categories[$id]->slug,
+                        'place' => $place,
+                        'place_name' => $name,
+                        'type' => $type,
+                        'count' => $n,
                     ];
                 }
             }
 
-            return $entries;
+            return $pages;
         });
+    }
+
+    /**
+     * Tutti gli indirizzi da mettere in mappa.
+     *
+     * @return list<array{loc: string, priority: string}>
+     */
+    public function sitemapEntries(): array
+    {
+        return Cache::remember('landing:sitemap', now()->addHours(self::SITEMAP_TTL_HOURS), fn () => array_map(
+            fn (array $page) => [
+                'loc' => self::url($page['slug'], $page['place']),
+                'priority' => $page['place'] === '' ? '0.7' : '0.6',
+            ],
+            $this->pages()
+        ));
+    }
+
+    /**
+     * Titolo, titolo e descrizione per i motori e testo introduttivo che il
+     * sito scrive da solo quando nessuno li ha scritti a mano.
+     *
+     * @param  array{type: string, name: string}|null  $place
+     * @return array{heading: string, meta_title: string, meta_description: string, intro: string}
+     */
+    public function defaults(CompanyCategory $category, ?array $place, int $count): array
+    {
+        $brand = $this->tenant->brandName();
+
+        $heading = match ($place['type'] ?? null) {
+            'city' => __('site.landing_h1_city', ['category' => $category->name, 'place' => $place['name']]),
+            'region' => __('site.landing_h1_region', ['category' => $category->name, 'place' => $place['name']]),
+            default => $category->name,
+        };
+
+        return [
+            'heading' => $heading,
+            'meta_title' => __('site.landing_title', ['heading' => $heading, 'brand' => $brand]),
+            'meta_description' => __('site.landing_description', ['heading' => $heading, 'brand' => $brand]),
+            'intro' => trans_choice('site.landing_intro', $count, [
+                'brand' => $brand,
+                'count' => number_format($count, 0, ',', '.'),
+                'heading' => $heading,
+            ]),
+        ];
+    }
+
+    /**
+     * I testi che la pagina mostra davvero: quelli scritti a mano (della pagina
+     * stessa, altrimenti del modello della categoria) con i segnaposto
+     * sostituiti, e per il resto quelli automatici. `body` e' vuoto se nessuno
+     * ha scritto l'approfondimento.
+     *
+     * @param  array{type: string, name: string, slug: string}|null  $place
+     * @return array{heading: string, meta_title: string, meta_description: string, intro: string, body: ?string}
+     */
+    public function content(CompanyCategory $category, ?array $place, int $count): array
+    {
+        $defaults = $this->defaults($category, $place, $count) + ['body' => null];
+        $custom = $this->customTexts($category->id, $place['slug'] ?? null);
+        $variables = self::placeholders($category, $place, $count, $this->tenant->brandName());
+
+        $content = [];
+
+        foreach (CategoryLandingText::FIELDS as $field) {
+            $text = trim((string) ($custom[$field] ?? ''));
+            $content[$field] = $text !== '' ? strtr($text, $variables) : $defaults[$field];
+        }
+
+        return $content;
+    }
+
+    /**
+     * I segnaposto da usare nei testi, con il valore che hanno su questa pagina.
+     *
+     * @param  array{name: string}|null  $place
+     * @return array<string, string>
+     */
+    public static function placeholders(CompanyCategory $category, ?array $place, int $count, string $brand): array
+    {
+        return [
+            '{categoria}' => $category->name,
+            '{luogo}' => $place['name'] ?? 'Italia',
+            '{numero}' => number_format($count, 0, ',', '.'),
+            '{sito}' => $brand,
+        ];
+    }
+
+    /**
+     * I testi scritti a mano per una pagina, campo per campo: vale quello della
+     * pagina e, dove manca, quello del modello della categoria.
+     *
+     * @return array<string, ?string>
+     */
+    public function customTexts(int $categoryId, ?string $placeSlug): array
+    {
+        $keys = $placeSlug === null ? [''] : [$placeSlug, CategoryLandingText::ALL_PLACES];
+
+        $rows = CategoryLandingText::query()
+            ->where('company_category_id', $categoryId)
+            ->whereIn('place_key', $keys)
+            ->get()
+            ->keyBy('place_key');
+
+        $texts = [];
+
+        foreach (CategoryLandingText::FIELDS as $field) {
+            foreach ($keys as $key) {
+                $value = trim((string) ($rows[$key]->{$field} ?? ''));
+
+                if ($value !== '') {
+                    $texts[$field] = $value;
+                    break;
+                }
+            }
+        }
+
+        return $texts;
     }
 
     /**

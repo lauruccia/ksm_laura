@@ -47,6 +47,7 @@
 @can(P::CONTENT_MANAGE)
     <li class="ksm-panel__sep">Contenuti</li>
     <li><a href="{{ route('admin.cms.index') }}" @if (request()->routeIs('admin.cms.*')) aria-current="page" @endif><x-icon name="file" :size="18" /><span>Pagine</span></a></li>
+    <li><a href="{{ route('admin.landing_texts.index') }}" @if (request()->routeIs('admin.landing_texts.*')) aria-current="page" @endif><x-icon name="file" :size="18" /><span>Testi pagine categoria</span></a></li>
     <li><a href="{{ route('admin.menus.edit') }}" @if (request()->routeIs('admin.menus.*')) aria-current="page" @endif><x-icon name="menu" :size="18" /><span>Menu</span></a></li>
     <li><a href="{{ route('admin.advertisements.index') }}" @if (request()->routeIs('admin.advertisements.*')) aria-current="page" @endif><x-icon name="megaphone" :size="18" /><span>Campagne banner</span></a></li>
     <li><a href="{{ route('admin.advertisers.index') }}" @if (request()->routeIs('admin.advertisers.*')) aria-current="page" @endif><x-icon name="briefcase" :size="18" /><span>Inserzionisti</span></a></li>

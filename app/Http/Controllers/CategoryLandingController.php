@@ -76,6 +76,7 @@ class CategoryLandingController extends Controller
 
         return view('pages.companies.category', [
             'category' => $categoryModel,
+            'content' => $this->landing->content($categoryModel, $resolved, $companies->total()),
             'place' => $resolved,
             'companies' => $companies,
             'total' => $companies->total(),

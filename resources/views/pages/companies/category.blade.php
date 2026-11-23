@@ -2,11 +2,7 @@
 
 @php
     $brand = $tenant->brandName();
-    $heading = match ($place['type'] ?? null) {
-        'city' => __('site.landing_h1_city', ['category' => $category->name, 'place' => $place['name']]),
-        'region' => __('site.landing_h1_region', ['category' => $category->name, 'place' => $place['name']]),
-        default => $category->name,
-    };
+    $heading = $content['heading'];
     $crumbs = array_merge(
         [['name' => __('site.landing_home'), 'url' => route('home')], ['name' => __('site.nav_companies'), 'url' => route('companies.index')]],
         $trail,
@@ -43,8 +39,8 @@
     ];
 @endphp
 
-@section('title', __('site.landing_title', ['heading' => $heading, 'brand' => $brand]))
-@section('meta_description', __('site.landing_description', ['heading' => $heading, 'brand' => $brand]))
+@section('title', $content['meta_title'])
+@section('meta_description', $content['meta_description'])
 @section('canonical', $canonical)
 @unless ($indexable)
     @section('robots', 'noindex,follow')
@@ -69,9 +65,10 @@
 
             <h1>{{ $heading }}</h1>
 
-            <p class="ksm-landing__intro">
-                {{ trans_choice('site.landing_intro', $total, ['brand' => $brand, 'count' => number_format($total, 0, ',', '.'), 'heading' => $heading]) }}
-            </p>
+            {{-- Testi scritti in amministrazione (Testi pagine categoria): semplice testo, i paragrafi si separano con una riga vuota. --}}
+            @foreach (preg_split('/\R{2,}/', trim($content['intro'])) as $paragraph)
+                <p class="ksm-landing__intro">{!! nl2br(e($paragraph)) !!}</p>
+            @endforeach
 
             @if ($place)
                 <p><a href="{{ $categoryUrl }}">{{ __('site.landing_all_italy', ['category' => $category->name]) }}</a></p>
@@ -101,6 +98,14 @@
                         {{ __('site.directory_retry') }}
                     </button>
                     <div data-directory-pager>{{ $companies->links() }}</div>
+                </div>
+            @endif
+
+            @if ($content['body'] && $companies->currentPage() === 1)
+                <div class="ksm-landing__body">
+                    @foreach (preg_split('/\R{2,}/', trim($content['body'])) as $paragraph)
+                        <p>{!! nl2br(e($paragraph)) !!}</p>
+                    @endforeach
                 </div>
             @endif
 

@@ -1904,3 +1904,14 @@ body:not(:has([data-bulk])) [data-bulk-page] { visibility: hidden; }
 .ksm-cpick__option small { color: var(--ksm-muted); }
 .ksm-cpick__option:hover, .ksm-cpick__option.is-active { background: var(--ksm-canvas); }
 .ksm-cpick__empty { padding: 8px 10px; color: var(--ksm-muted); font-size: .9rem; }
+
+/* Testi pagine categoria (amministrazione) */
+.ksm-snippet { max-width: 640px; padding: 14px 16px; border: 1px solid var(--ksm-line, #e3e8ee); border-radius: 10px; background: #fff; font-family: Arial, sans-serif; }
+.ksm-snippet__url { color: #202124; font-size: .8rem; margin-bottom: 2px; }
+.ksm-snippet__title { color: #1a0dab; font-size: 1.15rem; line-height: 1.3; margin-bottom: 3px; }
+.ksm-snippet__desc { color: #4d5156; font-size: .88rem; line-height: 1.5; }
+.ksm-chips { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 6px; }
+.ksm-fieldhead { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+.ksm-counter { color: var(--ksm-muted, #6b7785); }
+.ksm-counter.is-ok { color: #1e7e43; }
+.ksm-counter.is-warn { color: #b25e00; }

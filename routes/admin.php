@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\AdminAdvertisementController;
 use App\Http\Controllers\Admin\AdminAdvertiserController;
 use App\Http\Controllers\Admin\AdminAnalyticsController;
+use App\Http\Controllers\Admin\AdminCategoryLandingTextController;
 use App\Http\Controllers\Admin\AdminCmsPageController;
 use App\Http\Controllers\Admin\AdminCompanyCategoryController;
 use App\Http\Controllers\Admin\AdminCompanyController;
@@ -215,6 +216,11 @@ Route::middleware(['auth', 'admin'])
                 Route::put('/domini-server', [AdminDomainController::class, 'updateHosting'])->name('domains.hosting.update');
                 Route::patch('/domini-server/prova', [AdminDomainController::class, 'testHosting'])->name('domains.hosting.test');
             });
+            // I testi delle pagine pubbliche /categorie/...: elenco delle pagine e modulo per scriverli.
+            Route::get('/testi-pagine', [AdminCategoryLandingTextController::class, 'index'])->name('landing_texts.index');
+            Route::get('/testi-pagine/modifica', [AdminCategoryLandingTextController::class, 'edit'])->name('landing_texts.edit');
+            Route::put('/testi-pagine', [AdminCategoryLandingTextController::class, 'update'])->name('landing_texts.update');
+            Route::delete('/testi-pagine', [AdminCategoryLandingTextController::class, 'destroy'])->name('landing_texts.destroy');
             Route::resource('pagine', AdminCmsPageController::class)
                 ->parameters(['pagine' => 'page'])->names('cms');
             Route::patch('/pagine-in-blocco', [AdminCmsPageController::class, 'bulk'])->name('cms.bulk');

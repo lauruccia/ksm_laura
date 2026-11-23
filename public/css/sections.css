@@ -519,3 +519,4 @@
 .ksm-landing__links { display: flex; flex-wrap: wrap; gap: .5rem; list-style: none; margin: 0 0 1.75rem; padding: 0; }
 .ksm-landing__links a { display: inline-block; padding: .35rem .8rem; border: 1px solid currentColor; border-radius: 999px; font-size: .9rem; text-decoration: none; opacity: .85; }
 .ksm-landing__links a:hover { opacity: 1; }
+.ksm-landing__body { max-width: 70ch; margin: 0 0 1.75rem; }
