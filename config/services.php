@@ -14,6 +14,10 @@ return [
     |
     */
 
+    'google_tag' => [
+        'id' => env('GOOGLE_TAG_ID'),
+    ],
+
     'postmark' => [
         'key' => env('POSTMARK_API_KEY'),
     ],
