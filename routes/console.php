@@ -64,6 +64,13 @@ Schedule::call(function () {
 $inProcess('analytics:prune')->dailyAt('04:45');
 
 /*
+ * Ogni ora si contrassegnano le visite che sembrano di programmi (analytics:classify):
+ * le statistiche le nascondono di serie e le leggono da quel contrassegno.
+ * A ogni giro si recupera anche un tratto di storico, finche' non e' tutto esaminato.
+ */
+$inProcess('analytics:classify')->hourlyAt(7)->withoutOverlapping(30);
+
+/*
  * La coda: notifiche di pagamento e stato KMoney arrivano dai webhook e si
  * elaborano qui. Non c'e' un processo sempre acceso, quindi ogni minuto si
  * svuota la coda e ci si ferma prima del giro dopo. Sta per ultima: puo'

@@ -3,6 +3,9 @@
 namespace Tests\Feature;
 
 use App\Models\PageView;
+use App\Support\Analytics\Humans;
+use App\Support\Analytics\Period;
+use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Artisan;
@@ -65,6 +68,8 @@ class NonHumanTrafficTest extends TestCase
         $this->visit($old, 1, 0);          // nessun tempo di lettura
         $this->visit($old, 41, 10);        // scansione del sito
         $this->visit($recent, 1, 0);       // non umana ma recente
+
+        Humans::classify(new Period(CarbonImmutable::parse($old), CarbonImmutable::parse($recent), 'prova'), null);
 
         Artisan::call('analytics:prune', ['--bots-days' => 7]);
 

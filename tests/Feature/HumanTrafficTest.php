@@ -33,6 +33,13 @@ class HumanTrafficTest extends TestCase
         return new Period(CarbonImmutable::parse('2026-10-01'), CarbonImmutable::parse('2026-10-07'), 'prova');
     }
 
+    /** Il giro che contrassegna le visite non umane, come lo fa analytics:classify. */
+    private function classify(?Period $period = null): void
+    {
+        Humans::forget();
+        Humans::classify($period ?? $this->period(), null);
+    }
+
     /** Una visita: la prima riga e' d'ingresso, le altre seguono. */
     private function visit(int $pages, int $seconds, ?string $country = 'IT', array $extra = []): string
     {
@@ -58,6 +65,7 @@ class HumanTrafficTest extends TestCase
         $this->visit(1, 0);                // nessun tempo
         $this->visit(Humans::MAX_PAGES + 1, 10); // scansione del sito
 
+        $this->classify();
         $all = new Report($this->period());
         $human = new Report($this->period(), null, true);
 
@@ -76,6 +84,7 @@ class HumanTrafficTest extends TestCase
         $this->visit(1, 20, 'IT');
         $this->visit(2, 20, 'DE');
 
+        $this->classify();
         $countries = Humans::suspectCountries($this->period(), null);
         $this->assertSame(['US'], $countries);
 
@@ -102,6 +111,7 @@ class HumanTrafficTest extends TestCase
         Conversion::create($base + ['goal' => 'contact', 'session_id' => $bot]);
         Conversion::create($base + ['goal' => 'contact', 'session_id' => null]);
 
+        $this->classify();
         $all = collect((new Insights($this->period()))->goals())->keyBy('goal');
         $only = collect((new Insights($this->period(), null, true))->goals())->keyBy('goal');
 
@@ -117,6 +127,7 @@ class HumanTrafficTest extends TestCase
         $this->visit(1, 0);
         $this->visit(1, 0);
 
+        $this->classify();
         $summary = Humans::summary($this->period(), null);
 
         $this->assertSame(4, $summary['total']);
@@ -124,21 +135,38 @@ class HumanTrafficTest extends TestCase
         $this->assertEquals(0.75, $summary['share']);
     }
 
-    public function test_la_pagina_con_l_interruttore(): void
+    public function test_la_pagina_mostra_di_serie_solo_il_traffico_umano_e_l_interruttore_li_mostra_tutti(): void
     {
-        $this->visit(1, 0, 'US', ['day' => now(config('ksm.analytics.timezone'))->toDateString()]);
-        $this->visit(2, 30, 'IT', ['day' => now(config('ksm.analytics.timezone'))->toDateString()]);
+        $today = now(config('ksm.analytics.timezone'))->toDateString();
+        $this->visit(1, 0, 'US', ['day' => $today]);
+        $this->visit(2, 30, 'IT', ['day' => $today]);
+        $this->classify(new Period(CarbonImmutable::parse($today)->subDays(7), CarbonImmutable::parse($today), 'prova'));
 
         $role = Role::firstOrCreate(['slug' => Role::SUPER_ADMIN], ['name' => 'Super amministratore', 'is_system' => true]);
         $admin = User::create(['name' => 'A', 'email' => 'a@example.test', 'password' => 'password', 'user_type' => 'admin', 'is_active' => true, 'role_id' => $role->id]);
 
         $this->actingAs($admin)->get('/amministrazione/statistiche?periodo=7')
-            ->assertOk()->assertSee('Solo traffico probabilmente umano')->assertSee('delle visite sembra automatico');
+            ->assertOk()->assertSee('Solo traffico probabilmente umano')->assertSee('Nascoste 1 visite su 2');
 
-        $this->actingAs($admin)->get('/amministrazione/statistiche?periodo=7&umani=1')
-            ->assertOk()->assertSee('Nascoste 1 visite su 2')->assertSee('umani=1', false);
+        $this->actingAs($admin)->get('/amministrazione/statistiche?periodo=7&umani=no')
+            ->assertOk()->assertSee('delle visite sembra automatico')->assertSee('umani=no', false);
 
-        $this->actingAs($admin)->get('/amministrazione/statistiche/pagina?path=/&periodo=7&umani=1')->assertOk();
-        $this->actingAs($admin)->get('/amministrazione/statistiche/esporta/pagine?periodo=7&umani=1')->assertOk();
+        $this->actingAs($admin)->get('/amministrazione/statistiche/pagina?path=/&periodo=7')->assertOk();
+        $this->actingAs($admin)->get('/amministrazione/statistiche/esporta/pagine?periodo=7')->assertOk();
+    }
+
+    public function test_il_giro_non_giudica_le_visite_ancora_aperte(): void
+    {
+        $today = now(config('ksm.analytics.timezone'))->toDateString();
+        $this->visit(1, 0, 'IT', ['day' => $today]); // appena arrivata: il tempo di lettura puo' ancora arrivare
+
+        \Illuminate\Support\Facades\Artisan::call('analytics:classify', ['--no-backlog' => true]);
+
+        $this->assertSame(0, PageView::where('is_bot', true)->count());
+
+        $this->travel(3)->hours();
+        \Illuminate\Support\Facades\Artisan::call('analytics:classify', ['--no-backlog' => true]);
+
+        $this->assertSame(1, PageView::where('is_bot', true)->count());
     }
 }

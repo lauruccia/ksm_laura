@@ -18,6 +18,7 @@ class PageView extends Model
     protected $casts = [
         'is_entry' => 'boolean',
         'is_returning' => 'boolean',
+        'is_bot' => 'boolean',
         'duration' => 'integer',
         'created_at' => 'datetime',
     ];

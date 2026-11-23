@@ -2,9 +2,7 @@
 
 namespace App\Console\Commands;
 
-use App\Support\Analytics\Humans;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -42,34 +40,23 @@ class PruneAnalytics extends Command
     }
 
     /**
-     * Cancella le visite che sembrano di programmi (nessun tempo di lettura
-     * in tutta la visita, o oltre MAX_PAGES pagine in un giorno) piu' vecchie
-     * di $days giorni. Sono la gran parte delle righe e rallentano ogni
-     * conteggio. Un giorno alla volta, e un tot di giorni a ogni giro:
-     * il punto raggiunto resta in cache.
+     * Cancella le visite contrassegnate come non umane (analytics:classify)
+     * piu' vecchie di $days giorni. Sono la gran parte delle righe e rallentano
+     * ogni conteggio. Un giorno alla volta e un tot di giorni a ogni giro: i
+     * giorni gia' puliti non compaiono piu', il resto si recupera nelle notti dopo.
      */
     private function pruneBots(int $days): int
     {
         $limit = now(config('ksm.analytics.timezone'))->subDays($days)->toDateString();
-        $done = Cache::get('analytics:bots-pruned-until');
 
         $dates = DB::table('page_views')
-            ->where('day', '<', $limit)
-            ->when($done, fn ($query) => $query->where('day', '>', $done))
+            ->where('day', '<', $limit)->where('is_bot', true)
             ->distinct()->orderBy('day')->limit(self::BOT_DAYS_PER_RUN)->pluck('day');
 
         $deleted = 0;
 
         foreach ($dates as $day) {
-            $bots = DB::table('page_views')->where('day', $day)->select('session_id')->groupBy('session_id')
-                ->havingRaw('sum(duration) = 0 or count(*) > ?', [Humans::MAX_PAGES])
-                ->pluck('session_id');
-
-            foreach ($bots->chunk(500) as $chunk) {
-                $deleted += DB::table('page_views')->where('day', $day)->whereIn('session_id', $chunk->all())->delete();
-            }
-
-            Cache::forever('analytics:bots-pruned-until', (string) $day);
+            $deleted += DB::table('page_views')->where('day', $day)->where('is_bot', true)->delete();
         }
 
         return $deleted;

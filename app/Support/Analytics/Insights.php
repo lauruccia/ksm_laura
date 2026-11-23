@@ -29,7 +29,7 @@ final class Insights
         return DB::table('page_views')
             ->whereBetween('day', [$period->from->toDateString(), $period->to->toDateString()])
             ->when($this->host, fn (Builder $query) => $query->where('host', $this->host))
-            ->when($this->humans, fn (Builder $query) => $query->whereIn('page_views.session_id', Humans::sessions($period, $this->host)));
+            ->when($this->humans, fn (Builder $query) => $query->where('page_views.is_bot', false));
     }
 
     private function entries(?Period $period = null): Builder
@@ -45,7 +45,8 @@ final class Insights
             ->whereBetween('day', [$period->from->toDateString(), $period->to->toDateString()])
             ->when($this->host, fn (Builder $query) => $query->where('host', $this->host))
             // Gli obiettivi senza visita (un invio diretto del modulo, senza aver aperto pagine) non hanno chi li giustifichi.
-            ->when($this->humans, fn (Builder $query) => $query->whereIn('conversions.session_id', Humans::sessions($period, $this->host)));
+            ->when($this->humans, fn (Builder $query) => $query->whereExists(fn ($visit) => $visit->selectRaw('1')->from('page_views')
+                ->whereColumn('page_views.session_id', 'conversions.session_id')->where('page_views.is_bot', false)));
     }
 
     /* Obiettivi ---------------------------------------------------------- */
@@ -247,12 +248,10 @@ final class Insights
         $start = $thisWeek->subWeeks($weeks - 1);
 
         // Solo visite probabilmente umane: un programma senza cookie ne riceve uno nuovo a ogni richiesta e gonfierebbe le persone.
-        $window = new Period($start, $thisWeek->endOfWeek()->startOfDay(), 'coorti');
-
         $active = [];
 
         DB::table('page_views')->whereNotNull('vid')->where('day', '>=', $start->toDateString())
-            ->whereIn('session_id', Humans::sessions($window, $this->host))
+            ->where('is_bot', false)
             ->when($this->host, fn (Builder $query) => $query->where('host', $this->host))
             ->select('vid', 'day')->distinct()->get()
             ->each(function ($row) use (&$active) {
@@ -528,7 +527,7 @@ final class Insights
             ->where('p.path', $path)
             ->whereBetween('p.day', [$this->period->from->toDateString(), $this->period->to->toDateString()])
             ->when($this->host, fn (Builder $q) => $q->where('p.host', $this->host))
-            ->when($this->humans, fn (Builder $q) => $q->whereIn('p.session_id', Humans::sessions($this->period, $this->host)))
+            ->when($this->humans, fn (Builder $q) => $q->where('p.is_bot', false))
             ->selectRaw('n.path as path, count(*) as total')
             ->groupBy('n.path')->orderByDesc('total')->orderBy('n.path')->limit($limit);
 

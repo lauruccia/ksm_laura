@@ -2,6 +2,7 @@
 
 namespace App\Support\Analytics;
 
+use Carbon\CarbonInterface;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\DB;
 
@@ -18,6 +19,9 @@ use Illuminate\Support\Facades\DB;
  *    MIN_ENGAGED_SHARE, con almeno MIN_SESSIONS visite): tipico dei data
  *    center. L'elenco si ricava dai dati del periodo, non e' fisso, e l'Italia
  *    non vi entra mai.
+ *
+ * Il giudizio si scrive una volta sola sulle righe (colonna is_bot), con il giro
+ * `analytics:classify`: i conteggi poi filtrano su un valore gia' scritto.
  *
  * Il prezzo: una persona con un browser che non comunica la durata (alcuni
  * blocchi di script, chiusure brusche su telefono) viene nascosta anche lei.
@@ -75,37 +79,67 @@ final class Humans
             ->pluck('country')->values()->all();
     }
 
-    /** Le visite (session_id) da tenere nel periodo, come sottoquery per un whereIn. */
-    public static function sessions(Period $period, ?string $host): Builder
+    /**
+     * Contrassegna come non umane (is_bot) le visite del periodo che lo
+     * sembrano: senza tempo di lettura, con troppe pagine, o da un paese in cui
+     * quasi nessuno legge. Le righe contrassegnate non si riesaminano.
+     *
+     * Con $settledBefore si guardano solo le visite il cui ultimo movimento e'
+     * precedente a quell'ora: il tempo di lettura arriva quando si lascia la
+     * pagina, una visita ancora aperta non si puo' giudicare.
+     *
+     * @return int righe contrassegnate
+     */
+    public static function classify(Period $window, ?CarbonInterface $settledBefore = null): int
     {
-        $query = self::scope($period, $host)->select('session_id')->groupBy('session_id')
-            ->havingRaw('sum(duration) > 0')
-            ->havingRaw('count(*) <= ?', [self::MAX_PAGES]);
+        $bad = self::scope($window, null)->where('is_bot', false)->select('session_id')->groupBy('session_id')
+            ->havingRaw('(sum(duration) = 0 or count(*) > ?)', [self::MAX_PAGES]);
 
-        if ($countries = self::suspectCountries($period, $host)) {
-            $marks = implode(',', array_fill(0, count($countries), '?'));
-            $query->havingRaw("coalesce(max(case when is_entry = 1 then country end), '') not in ($marks)", $countries);
+        if ($settledBefore) {
+            $bad->havingRaw('max(created_at) < ?', [$settledBefore->format('Y-m-d H:i:s')]);
         }
 
-        return $query;
+        $ids = $bad->pluck('session_id');
+
+        if ($countries = self::suspectCountries($window, null)) {
+            $fromCountries = self::scope($window, null)->where('is_bot', false)->where('is_entry', true)->whereIn('country', $countries)
+                ->when($settledBefore, fn (Builder $query) => $query->where('created_at', '<', $settledBefore->format('Y-m-d H:i:s')))
+                ->pluck('session_id');
+
+            $ids = $ids->merge($fromCountries)->unique()->values();
+        }
+
+        $marked = 0;
+
+        foreach ($ids->chunk(500) as $chunk) {
+            $marked += self::scope($window, null)->where('is_bot', false)->whereIn('session_id', $chunk->all())->update(['is_bot' => true]);
+        }
+
+        return $marked;
     }
 
     /**
-     * Quante visite ci sono e quante verrebbero nascoste, per dirlo in pagina.
+     * Quante visite ci sono e quante sono contrassegnate come non umane,
+     * per dirlo in pagina.
      *
      * @return array{total: int, hidden: int, share: float, countries: list<string>}
      */
     public static function summary(Period $period, ?string $host): array
     {
         $total = (int) self::scope($period, $host)->where('is_entry', true)->count();
-        $kept = $total > 0 ? (int) DB::query()->fromSub(self::sessions($period, $host), 'h')->count() : 0;
-        $hidden = max(0, $total - $kept);
+        $hidden = $total > 0 ? (int) self::scope($period, $host)->where('is_entry', true)->where('is_bot', true)->count() : 0;
+
+        // I paesi da cui arrivano piu' visite non umane, per dirlo in pagina.
+        $countries = $hidden > 0
+            ? self::scope($period, $host)->where('is_entry', true)->where('is_bot', true)->whereNotNull('country')
+                ->selectRaw('country, count(*) as total')->groupBy('country')->orderByDesc('total')->orderBy('country')->limit(3)->pluck('country')->all()
+            : [];
 
         return [
             'total' => $total,
             'hidden' => $hidden,
             'share' => $total > 0 ? $hidden / $total : 0.0,
-            'countries' => self::suspectCountries($period, $host),
+            'countries' => $countries,
         ];
     }
 }

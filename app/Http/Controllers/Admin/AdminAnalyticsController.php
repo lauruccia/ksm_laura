@@ -25,7 +25,7 @@ class AdminAnalyticsController extends Controller
     public function index(Request $request): View
     {
         $period = Period::fromRequest($request);
-        $humans = $request->boolean('umani');
+        $humans = $this->humans($request);
         $report = new Report($period, $this->host($request), $humans);
 
         // Ogni vista e' una scansione di decine di migliaia di righe: i numeri di un periodo si calcolano una volta ogni quarto d'ora.
@@ -132,7 +132,7 @@ class AdminAnalyticsController extends Controller
     {
         $period = Period::fromRequest($request);
         $path = '/'.ltrim(mb_substr((string) $request->query('path', '/'), 0, 255), '/');
-        $humans = $request->boolean('umani');
+        $humans = $this->humans($request);
         $insights = new Insights($period, $this->host($request), $humans);
 
         return view('admin.analytics.page', [
@@ -151,7 +151,7 @@ class AdminAnalyticsController extends Controller
     public function export(Request $request, string $type): StreamedResponse
     {
         $period = Period::fromRequest($request);
-        $report = new Report($period, $this->host($request), $request->boolean('umani'));
+        $report = new Report($period, $this->host($request), $this->humans($request));
         $name = 'statistiche-'.$type.'-'.$period->from->format('Ymd').'-'.$period->to->format('Ymd').'.csv';
 
         return response()->streamDownload(function () use ($report, $type) {
@@ -194,6 +194,12 @@ class AdminAnalyticsController extends Controller
         foreach ($report->sources(1000) as $source) {
             $put([$source->channel_label, $source->source, $source->count]);
         }
+    }
+
+    /** Di serie solo il traffico probabilmente umano; ?umani=no mostra tutto. */
+    private function humans(Request $request): bool
+    {
+        return ! in_array(strtolower((string) $request->query('umani')), ['no', '0', 'false', 'tutto'], true);
     }
 
     /** Il sito scelto, solo se l'indirizzo e' fatto come un host. */

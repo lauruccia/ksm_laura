@@ -38,7 +38,7 @@ final class Report
         return DB::table('page_views')
             ->whereBetween('day', [$period->from->toDateString(), $period->to->toDateString()])
             ->when($this->host && ! $allSites, fn (Builder $query) => $query->where('host', $this->host))
-            ->when($this->humans, fn (Builder $query) => $query->whereIn('page_views.session_id', Humans::sessions($period, $allSites ? null : $this->host)));
+            ->when($this->humans, fn (Builder $query) => $query->where('page_views.is_bot', false));
     }
 
     private function entries(): Builder
