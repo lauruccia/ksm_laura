@@ -6,28 +6,21 @@ use App\Models\Company;
 use App\Models\CompanyCategory;
 use App\Models\Product;
 use App\Support\CategoryLanding;
-use App\Support\CategoryTree;
 use App\Support\CompanyDirectory;
+use App\Support\DirectoryMenu;
 use App\Support\PlanCapabilities;
 use App\Support\TenantContext;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 
 class CompanyController extends Controller
 {
-    /** Secondi di validita' delle categorie usate dalle aziende della directory. */
-    private const SCOPED_CATEGORIES_TTL = 300;
-
-    /** Fino a quante categorie principali il menu laterale arriva con i rami gia' aperti. */
-    private const NAV_OPEN_MAX_ROOTS = 3;
-
-    public function __construct(private readonly CompanyDirectory $directory)
-    {
+    public function __construct(
+        private readonly CompanyDirectory $directory,
+        private readonly DirectoryMenu $menu,
+    ) {
     }
 
     public function index(Request $request, TenantContext $tenant): View|Response|RedirectResponse
@@ -50,7 +43,7 @@ class CompanyController extends Controller
 
         // Il menu mostra solo le categorie che hanno aziende (con le loro madri),
         // a ogni livello: quelle vuote e le sottocategorie vuote restano fuori.
-        $tree = new CategoryTree($this->scopedCategories($tenant, $scope->companies(Company::query()->active()->inDirectory())));
+        $tree = $this->menu->tree();
 
         // Colonne sempre qualificate: la directory unisce anche `plans`,
         // che ha a sua volta una colonna `name`.
@@ -80,57 +73,21 @@ class CompanyController extends Controller
                 ->header('Vary', 'X-Requested-With');
         }
 
-        // Una sola categoria scelta, senza altri filtri: la pagina pulita /categorie/... e' quella da indicizzare.
-        $landingUrl = null;
-
+        // Una sola categoria scelta, senza altri filtri: l'indirizzo giusto e' la pagina pulita /categorie/...
         if ($tenant->isPlatformSite() && array_keys($filters) === ['category'] && $request->integer('page', 1) <= 1 && $companies->total() > 0) {
             $slug = CompanyCategory::query()->whereKey($filters['category'])->value('slug');
-            $landingUrl = $slug ? CategoryLanding::url($slug) : null;
+
+            if ($slug) {
+                return redirect(CategoryLanding::url($slug), 301);
+            }
         }
 
         return view('pages.companies.index', [
-            'landingUrl' => $landingUrl,
             'companies' => $companies,
             'categories' => $tree->labels(),
-            'categoryNav' => $this->categoryNav(
-                $tree,
-                null,
-                (int) ($filters['category'] ?? 0),
-                // La categoria scelta e le sue madri restano aperte nel menu laterale.
-                // Senza una scelta, con poche categorie principali (un dominio tematico)
-                // si aprono tutti i rami: le sottocategorie si vedono gia' all'arrivo.
-                ($filters['category'] ?? null)
-                    ? $tree->lineage((int) $filters['category'])
-                    : (count($tree->children()) <= self::NAV_OPEN_MAX_ROOTS ? array_keys($tree->labels()) : []),
-                $request->only(['cerca', 'regione', 'citta']),
-            ),
+            'categoryNav' => $this->menu->nodes($tree, (int) ($filters['category'] ?? 0), $request->only(['cerca', 'regione', 'citta'])),
             'filters' => $filters,
         ]);
-    }
-
-    /**
-     * Voci del menu laterale da un livello in giu'. Ricerca e luogo restano
-     * quelli scelti: il link cambia solo la categoria.
-     *
-     * @param  list<int>  $open
-     * @return list<array{id: int, name: string, url: string, current: bool, open: bool, children: array}>
-     */
-    private function categoryNav(CategoryTree $tree, ?int $parent, int $current, array $open, array $keep): array
-    {
-        $nodes = [];
-
-        foreach ($tree->children($parent) as $id => $name) {
-            $nodes[] = [
-                'id' => $id,
-                'name' => $name,
-                'url' => route('companies.index', $keep + ['categoria' => $id]),
-                'current' => $current === $id,
-                'open' => in_array($id, $open, true),
-                'children' => $this->categoryNav($tree, $id, $current, $open, $keep),
-            ];
-        }
-
-        return $nodes;
     }
 
     /**
@@ -151,29 +108,6 @@ class CompanyController extends Controller
                 ->orWhereIn('companies.category_id', CompanyCategory::query()->where('name', 'like', $like)->select('id'))
                 ->orWhereIn('companies.id', Product::query()->active()->where('name', 'like', $like)->select('company_id'));
         });
-    }
-
-    /**
-     * Le categorie usate dalle aziende della query, con tutte le madri.
-     *
-     * @return Collection<int, CompanyCategory>
-     */
-    private function scopedCategories(TenantContext $tenant, Builder $companies): Collection
-    {
-        $full = CategoryTree::of(CompanyCategory::class);
-        $domain = $tenant->domain();
-
-        // Scorrere le aziende del dominio (migliaia su un dominio di regione) a ogni
-        // visita non serve: le categorie usate cambiano di rado, bastano per un'ora.
-        $used = Cache::remember(
-            'directory:categories:'.($domain ? $domain->id.'-'.$domain->updated_at?->timestamp : 0),
-            self::SCOPED_CATEGORIES_TTL,
-            fn () => $companies->distinct()->pluck('companies.category_id')->filter()->map(fn ($id) => (int) $id)->values()->all()
-        );
-
-        $keep = collect($used)->flatMap(fn (int $id) => $full->lineage($id))->unique()->all();
-
-        return CompanyCategory::query()->whereKey($keep)->get(['id', 'name', 'parent_id']);
     }
 
     public function show(Company $company, TenantContext $tenant): View|RedirectResponse

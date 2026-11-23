@@ -1,9 +1,6 @@
 @extends('layouts.app')
 
 @section('title', __('site.nav_companies').' · '.$tenant->brandName())
-@if ($landingUrl)
-    @section('canonical', $landingUrl)
-@endif
 
 @section('content')
     <section class="ksm-section">
@@ -51,10 +48,6 @@
                             {{ __('site.search_submit') }}
                         </button>
                     </form>
-
-                    @if ($landingUrl)
-                        <p><a href="{{ $landingUrl }}">{{ __('site.landing_see_page', ['category' => $categories[$filters['category']] ?? '']) }}</a></p>
-                    @endif
 
                     <x-ad-slot placement="store_list_above_stores"
                                :city="request('citta')" :category="request()->integer('categoria') ?: null" />

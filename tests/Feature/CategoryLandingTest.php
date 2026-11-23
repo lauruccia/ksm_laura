@@ -175,11 +175,12 @@ class CategoryLandingTest extends TestCase
 
         $landing = route('categories.show', ['category' => 'centri-estetici']);
 
+        // Il vecchio indirizzo con l'id resta valido: rimanda in modo permanente a quello con il nome.
         $this->get(route('companies.index', ['categoria' => $this->estetica->id]))
-            ->assertOk()
-            ->assertSee('<link rel="canonical" href="'.$landing.'">', false);
+            ->assertStatus(301)
+            ->assertRedirect($landing);
 
-        // Con un altro filtro il canonical resta quello di sempre.
+        // Con un altro filtro resta l'elenco, senza rimando.
         $this->get(route('companies.index', ['categoria' => $this->estetica->id, 'citta' => 'Roma']))
             ->assertOk()
             ->assertDontSee('<link rel="canonical" href="'.$landing.'">', false);

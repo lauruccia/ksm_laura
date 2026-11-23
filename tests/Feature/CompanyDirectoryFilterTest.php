@@ -65,14 +65,15 @@ class CompanyDirectoryFilterTest extends TestCase
         $this->company('Bonifiche Sicure', $leaf);
         $this->company('Trattoria da Mario', $other);
 
-        $this->get(route('companies.index', ['categoria' => $root->id]))
+        // La sola categoria porta alla pagina pulita /categorie/..., che elenca le stesse aziende.
+        $this->followingRedirects()->get(route('companies.index', ['categoria' => $root->id]))
             ->assertOk()
             ->assertSee('Edilnord Costruzioni')
             ->assertSee('Bonifiche Sicure')
             ->assertDontSee('Trattoria da Mario')
             ->assertSee('Costruire e Abitare › Imprese Edili › Amianto');
 
-        $this->get(route('companies.index', ['categoria' => $leaf->id]))
+        $this->followingRedirects()->get(route('companies.index', ['categoria' => $leaf->id]))
             ->assertOk()
             ->assertSee('Bonifiche Sicure')
             ->assertDontSee('Edilnord Costruzioni');
@@ -118,5 +119,26 @@ class CompanyDirectoryFilterTest extends TestCase
             ->assertSeeInOrder(['Costruire e Abitare', 'Imprese Edili'])
             ->assertDontSee('Amianto')
             ->assertDontSee('Ristoranti');
+    }
+
+    public function test_il_menu_laterale_usa_gli_indirizzi_puliti_se_non_c_e_nulla_da_conservare(): void
+    {
+        $root = CompanyCategory::create(['name' => 'Costruire e Abitare', 'slug' => 'costruire-e-abitare']);
+        $leaf = CompanyCategory::create(['name' => 'Imprese Edili', 'slug' => 'imprese-edili', 'parent_id' => $root->id]);
+        $other = CompanyCategory::create(['name' => 'Ristoranti', 'slug' => 'ristoranti']);
+
+        $this->company('Edilnord Costruzioni', $leaf);
+        $this->company('Trattoria da Mario', $other);
+
+        // Senza ricerca, i link portano a /categorie/{slug}...
+        $html = $this->get(route('companies.index'))->assertOk()->getContent();
+        $this->assertStringContainsString(e(route('categories.show', ['category' => 'imprese-edili'])), $html);
+        $this->assertStringContainsString(e(route('categories.show', ['category' => 'ristoranti'])), $html);
+        $this->assertStringNotContainsString('categoria=', $html);
+
+        // ...e anche la pagina pulita ha il menu, con la categoria in corso segnata.
+        $page = $this->get(route('categories.show', ['category' => 'ristoranti']))->assertOk()->getContent();
+        $this->assertStringContainsString('ksm-dirnav', $page);
+        $this->assertStringContainsString(e(route('categories.show', ['category' => 'imprese-edili'])), $page);
     }
 }

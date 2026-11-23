@@ -52,7 +52,18 @@
 
 @section('content')
     <section class="ksm-section">
-        <div class="ksm-container">
+        <div class="ksm-container ksm-directory__container">
+            <div class="ksm-directory">
+                {{-- Stesso menu dell'elenco aziende: si passa da una categoria all'altra senza perderlo. --}}
+                <aside class="ksm-dirnav" aria-labelledby="ksm-dirnav-title">
+                    <h2 class="ksm-dirnav__title" id="ksm-dirnav-title">{{ __('site.directory_categories') }}</h2>
+                    <nav>
+                        <a class="ksm-dirnav__item ksm-dirnav__all" href="{{ route('companies.index') }}">{{ __('site.search_all_categories') }}</a>
+                        @include('partials.category-nav', ['nodes' => $categoryNav])
+                    </nav>
+                </aside>
+
+                <div class="ksm-directory__main">
             <nav class="ksm-landing__crumbs" aria-label="breadcrumb">
                 @foreach ($crumbs as $crumb)
                     @if (! $loop->last)
@@ -133,6 +144,8 @@
                 </div>
             @endif
 
+                </div>
+            </div>
         </div>
     </section>
 @endsection

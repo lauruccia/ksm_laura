@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\CompanyCategory;
 use App\Support\CategoryLanding;
 use App\Support\CompanyDirectory;
+use App\Support\DirectoryMenu;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -21,6 +22,7 @@ class CategoryLandingController extends Controller
     public function __construct(
         private readonly CompanyDirectory $directory,
         private readonly CategoryLanding $landing,
+        private readonly DirectoryMenu $menu,
     ) {
     }
 
@@ -87,6 +89,7 @@ class CategoryLandingController extends Controller
             'otherCities' => $otherCities,
             'otherRegions' => $otherRegions,
             'categoryUrl' => CategoryLanding::url($categoryModel->slug),
+            'categoryNav' => $this->menu->nodes($this->menu->tree(), $categoryModel->id),
         ]);
     }
 }
