@@ -396,6 +396,17 @@
         @endif
     @endif
 
+    @isset($computed)
+        <p class="ksm-muted" style="font-size: 0.8125rem;" data-analytics-computed>
+            Numeri calcolati alle {{ \Illuminate\Support\Carbon::parse($computed['at'])->timezone(config('ksm.analytics.timezone'))->format('H:i') }} in {{ str_replace('.', ',', (string) $computed['seconds']) }} s
+            e tenuti per {{ config('ksm.analytics.cache_minutes') }} minuti.
+            @if ($computed['slow'])
+                Blocchi lenti: {{ collect($computed['slow'])->map(fn ($ms, $name) => $name.' '.number_format($ms / 1000, 1, ',', '').' s')->implode(', ') }}.
+            @endif
+            <a href="{{ route('admin.analytics.index', request()->query() + ['aggiorna' => 1]) }}">Ricalcola ora</a>
+        </p>
+    @endisset
+
     {{-- Come si contano ---------------------------------------------------------------- --}}
     <details class="ksm-box ksm-howto">
         <summary>Come si contano questi numeri</summary>

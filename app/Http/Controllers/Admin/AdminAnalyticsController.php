@@ -63,6 +63,7 @@ class AdminAnalyticsController extends Controller
         $deep = new Insights($period, $report->host, $humans);
         $none = collect();
         $slow = [];
+        $started = microtime(true);
 
         $run = function (string $name, callable $query) use (&$slow) {
             $start = microtime(true);
@@ -116,8 +117,10 @@ class AdminAnalyticsController extends Controller
             'hasPlaces' => $empty ? false : $run('luoghi', fn () => $deep->hasPlaces()),
         ];
 
+        arsort($slow);
+        $data['computed'] = ['at' => now()->toIso8601String(), 'seconds' => round(microtime(true) - $started, 1), 'slow' => $slow];
+
         if ($slow !== []) {
-            arsort($slow);
             Log::info('Statistiche: blocchi lenti (millisecondi)', ['sito' => $report->host, 'dal' => $period->from->toDateString(), 'al' => $period->to->toDateString(), 'umani' => $humans] + $slow);
         }
 

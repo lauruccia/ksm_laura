@@ -22,6 +22,10 @@ return [
         'retention_days' => (int) env('KSM_ANALYTICS_RETENTION_DAYS', 400),
         // Per quanti minuti la pagina Statistiche riusa i numeri gia' calcolati (le query sulle visite sono pesanti). 0 = mai.
         'cache_minutes' => (int) env('KSM_ANALYTICS_CACHE_MINUTES', 15),
+        // Non si contano le richieste senza l'intestazione Accept-Language, che ogni browser vero manda.
+        'require_browser_headers' => (bool) env('KSM_ANALYTICS_REQUIRE_HEADERS', true),
+        // Dopo quanti giorni si cancellano le visite "non umane" (nessun tempo di lettura o scansioni del sito); 0 = mai, restano fino a retention_days.
+        'bot_retention_days' => (int) env('KSM_ANALYTICS_BOT_RETENTION_DAYS', 0),
         // Per il paese di chi visita: intestazioni messe da un servizio davanti al sito...
         'country_headers' => ['CF-IPCountry', 'CloudFront-Viewer-Country', 'X-Vercel-IP-Country', 'X-Country-Code'],
         // ...oppure un archivio .mmdb (DB-IP City Lite o MaxMind GeoLite2): da' anche regione e citta'.

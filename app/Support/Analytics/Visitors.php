@@ -37,6 +37,11 @@ final class Visitors
             return false;
         }
 
+        // Ogni browser manda la lingua: chi si finge Chrome senza e' quasi sempre un programma.
+        if (config('ksm.analytics.require_browser_headers') && trim((string) $request->headers->get('Accept-Language')) === '') {
+            return false;
+        }
+
         // Chi amministra il sito lo guarda spesso: le sue visite falserebbero i numeri.
         return ! $request->user()?->isAdmin();
     }
