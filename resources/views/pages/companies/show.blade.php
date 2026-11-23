@@ -53,11 +53,27 @@
         'contatti' => $canWrite ? 'Contatti' : null,
     ]);
 
+    // Titolo e descrizione per i motori di ricerca: nome, categoria e citta' stanno sempre in pagina,
+    // cosi' chi cerca "nome + citta'" o "categoria + citta'" li trova anche quando manca il testo dell'azienda.
+    $seoCity = $filled($company->city);
+    $seoCategory = $company->category?->name;
+    $seoWhere = $seoCity ? ' a '.$seoCity : '';
+    $seoTitle = $company->name.($seoCategory ? ' – '.$seoCategory.$seoWhere : ($seoCity ? ' – '.$seoCity : ''));
+    $seoTitle = \Illuminate\Support\Str::limit($seoTitle, 52, '').' | '.$tenant->brandName();
+    $seoText = trim(preg_replace('/\s+/', ' ', strip_tags((string) $company->company_description)));
+    $seoDescription = \Illuminate\Support\Str::limit(
+        $seoText !== ''
+            ? $seoText
+            : $company->name.($seoCategory ? ', '.mb_strtolower($seoCategory) : '').$seoWhere.'. Indirizzo, contatti e informazioni su '.$tenant->brandName().'.',
+        155
+    );
+
     // Scheda per i motori di ricerca: gli stessi dati che si leggono in pagina.
     $schema = array_filter([
         '@context' => 'https://schema.org',
         '@type' => 'LocalBusiness',
         'name' => $company->name,
+        'description' => $seoText !== '' ? \Illuminate\Support\Str::limit($seoText, 300) : null,
         'url' => route('companies.show', $company->slug),
         'image' => $showLogo ? asset('storage/'.$company->logo) : null,
         'telephone' => $phone,
@@ -88,8 +104,8 @@
     ]);
 @endphp
 
-@section('title', $company->name.' · '.$tenant->brandName())
-@section('meta_description', \Illuminate\Support\Str::limit(strip_tags((string) $company->company_description) ?: $company->name.($place ? ", $place" : ''), 155))
+@section('title', $seoTitle)
+@section('meta_description', $seoDescription)
 
 @push('styles')
     @if ($canSell && $products && $products->total())
