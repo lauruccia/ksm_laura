@@ -131,6 +131,7 @@ return [
     'landing_title' => ':heading · elenco aziende | :brand',
     'landing_description' => 'Elenco di :heading su :brand: aziende con indirizzo, telefono e contatti, vetrine e prodotti. Scegli quella giusta per te.',
     'landing_intro' => '{1} Su :brand trovi un\'azienda per «:heading», con indirizzo e contatti.|[2,*] Su :brand trovi :count aziende per «:heading», con indirizzo, contatti e, dove ci sono, vetrina e prodotti.',
+    'landing_read_more' => 'Leggi l\'approfondimento',
     'landing_subcategories' => 'Sottocategorie',
     'landing_other_cities' => 'Cerca in altre città',
     'landing_other_regions' => 'Cerca per regione',

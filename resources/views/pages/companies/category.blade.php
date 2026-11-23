@@ -74,7 +74,7 @@
                 @endforeach
             </nav>
 
-            <h1>{{ $heading }}</h1>
+            <h1 class="ksm-landing__title">{{ $heading }}</h1>
 
             {{-- Testi scritti in amministrazione (Testi pagine categoria): semplice testo, i paragrafi si separano con una riga vuota. --}}
             @foreach (preg_split('/\R{2,}/', trim($content['intro'])) as $paragraph)
@@ -86,7 +86,7 @@
             @endif
 
             @if ($subcategories)
-                <h2>{{ __('site.landing_subcategories') }}</h2>
+                <h2 class="ksm-landing__subtitle">{{ __('site.landing_subcategories') }}</h2>
                 <ul class="ksm-landing__links">
                     @foreach ($subcategories as $sub)
                         <li><a href="{{ $sub['url'] }}">{{ $sub['name'] }} ({{ number_format($sub['count'], 0, ',', '.') }})</a></li>
@@ -95,11 +95,15 @@
             @endif
 
             @if ($content['body'] && $companies->currentPage() === 1)
-                <div class="ksm-landing__body">
-                    @foreach (preg_split('/\R{2,}/', trim($content['body'])) as $paragraph)
-                        <p>{!! nl2br(e($paragraph)) !!}</p>
-                    @endforeach
-                </div>
+                {{-- Chiuso: le aziende restano subito sotto gli occhi, il testo e' nella pagina e si apre con un clic. --}}
+                <details class="ksm-landing__more">
+                    <summary>{{ __('site.landing_read_more') }}</summary>
+                    <div class="ksm-landing__body">
+                        @foreach (preg_split('/\R{2,}/', trim($content['body'])) as $paragraph)
+                            <p>{!! nl2br(e($paragraph)) !!}</p>
+                        @endforeach
+                    </div>
+                </details>
             @endif
 
             @if ($otherCities->isNotEmpty() || $otherRegions->isNotEmpty())

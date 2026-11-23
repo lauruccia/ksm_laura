@@ -131,6 +131,7 @@ return [
     'landing_title' => ':heading · business directory | :brand',
     'landing_description' => 'Directory of :heading on :brand: businesses with address, phone and contacts, showcases and products. Pick the right one.',
     'landing_intro' => '{1} On :brand you will find one business for «:heading», with address and contacts.|[2,*] On :brand you will find :count businesses for «:heading», with address, contacts and, where available, showcase and products.',
+    'landing_read_more' => 'Read more',
     'landing_subcategories' => 'Subcategories',
     'landing_other_cities' => 'Search other cities',
     'landing_other_regions' => 'Search by region',

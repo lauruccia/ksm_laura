@@ -515,8 +515,10 @@
 
 /* Pagine categoria e categoria + luogo (/categorie/...) */
 .ksm-landing__crumbs { font-size: .9rem; margin-bottom: 1rem; opacity: .85; }
+.ksm-landing__title { font-size: clamp(1.7rem, 2.6vw, 2.3rem); margin: 0 0 .75rem; }
+.ksm-landing__subtitle { font-size: 1rem; margin: 0 0 .5rem; }
 .ksm-landing__intro { max-width: 70ch; margin: 0 0 1.25rem; }
-.ksm-landing__links { display: flex; flex-wrap: wrap; gap: .5rem; list-style: none; margin: 0 0 1.75rem; padding: 0; }
+.ksm-landing__links { display: flex; flex-wrap: wrap; gap: .5rem; list-style: none; margin: 0 0 1.25rem; padding: 0; }
 .ksm-landing__links a { display: inline-block; padding: .35rem .8rem; border: 1px solid currentColor; border-radius: 999px; font-size: .9rem; text-decoration: none; opacity: .85; }
 .ksm-landing__links a:hover { opacity: 1; }
 .ksm-landing__body { max-width: 70ch; margin: 0 0 1.75rem; }
