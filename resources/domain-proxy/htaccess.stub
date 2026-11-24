@@ -8,5 +8,28 @@ RewriteCond %{HTTP_USER_AGENT} (GPTBot|ClaudeBot|SemrushBot|AhrefsBot|MJ12bot|Do
 RewriteCond %{HTTP_USER_AGENT} ^-?$
 RewriteRule ^ - [F,L]
 
+# Scanner di vulnerabilita': 403 subito, senza avviare PHP. Cercano file che su
+# questo dominio non esistono e che l'app KSM non serve mai (.env, .git, wp-admin,
+# xmlrpc, *.aspx, *.php diversi da index.php, ../). ModSecurity li respinge comunque,
+# ma solo dopo che la richiesta e' passata dal proxy PHP e da ksm.it: due slot a testa.
+# File e cartelle nascosti (.env, .env.backup, .git, .htaccess...), tranne .well-known
+# che serve a AutoSSL per il certificato.
+RewriteCond %{REQUEST_URI} !^/\.well-known/ [NC]
+RewriteCond %{REQUEST_URI} /\.
+RewriteRule ^ - [F,L]
+
+# WordPress e simili
+RewriteCond %{REQUEST_URI} (^|/)(wp-admin|wp-login|wp-content|wp-includes|wp-json|wp-config|wp-cron|xmlrpc|phpmyadmin|pma|cgi-bin|actuator|boaform|HNAP1)([./]|$) [NC]
+RewriteRule ^ - [F,L]
+
+# Estensioni che l'app non serve: script di altri linguaggi, backup e dump
+RewriteCond %{REQUEST_URI} \.(aspx?|jsp|cgi|sql|bak|backup|old|orig|save|swp|ini|phtml|php[0-9]?)$ [NC]
+RewriteCond %{REQUEST_URI} !^/index\.php$
+RewriteRule ^ - [F,L]
+
+# Percorsi con ../ (anche codificato)
+RewriteCond %{THE_REQUEST} (\.\./|%2e%2e|\.\.%2f|\.\.\\) [NC]
+RewriteRule ^ - [F,L]
+
 RewriteCond %{REQUEST_URI} !^/index\.php$
 RewriteRule ^ index.php [L,QSA]
