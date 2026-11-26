@@ -7,6 +7,7 @@ use App\Models\CompanyCategory;
 use App\Models\Product;
 use App\Support\CategoryLanding;
 use App\Support\CompanyDirectory;
+use App\Support\CompanySeo;
 use App\Support\DirectoryMenu;
 use App\Support\PlanCapabilities;
 use App\Support\TenantContext;
@@ -110,7 +111,7 @@ class CompanyController extends Controller
         });
     }
 
-    public function show(Company $company, TenantContext $tenant): View|RedirectResponse
+    public function show(Company $company, TenantContext $tenant, CompanySeo $seo): View|RedirectResponse
     {
         // Sul suo dominio la pagina dell'azienda e' l'indirizzo principale: un solo indirizzo per pagina.
         if ($tenant->company()?->is($company) && ! request()->routeIs('home')) {
@@ -130,8 +131,14 @@ class CompanyController extends Controller
             $products->getCollection()->each(fn ($product) => $product->setRelation('company', $company));
         }
 
+        $city = trim((string) $company->city, " \t-–—./");
+
         return view('pages.companies.show', [
             'company' => $company,
+            'noindex' => $seo->noindex($company),
+            'schemaType' => $seo->schemaType($company),
+            'landingUrls' => $seo->landingUrls($company, $city !== '' ? $city : null),
+            'related' => $seo->related($company),
             'products' => $products,
             'reviews' => $company->allows(PlanCapabilities::REVIEWS)
                 ? $company->reviews()->latest()->take(10)->get()

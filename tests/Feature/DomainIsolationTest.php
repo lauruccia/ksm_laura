@@ -258,6 +258,24 @@ class DomainIsolationTest extends TestCase
 
     // Aziende esclusive di un dominio
 
+    public function test_sui_domini_della_rete_la_scheda_e_noindex_salvo_per_le_esclusive(): void
+    {
+        $this->trattoria->exclusiveDomains()->sync([$this->network->id]);
+
+        // L'esclusiva su ksm.it non c'e': sul suo dominio deve poter posizionare, ed e' in mappa.
+        $this->get(self::NETWORK.'/aziende/trattoria-mario')->assertOk()->assertDontSee('noindex', false);
+        $this->assertStringContainsString('trattoria-mario', $this->get(self::NETWORK.'/sitemap-aziende-1.xml')->getContent());
+
+        // Una scheda presente anche su ksm.it, vista sul dominio della rete, e' noindex e fuori mappa.
+        $this->trattoria->exclusiveDomains()->sync([]);
+        \Illuminate\Support\Facades\Cache::flush();
+        $this->get(self::NETWORK.'/aziende/trattoria-mario')->assertOk()->assertSee('<meta name="robots" content="noindex,follow">', false);
+        $this->get(self::NETWORK.'/sitemap-aziende-1.xml')->assertNotFound();
+
+        // Su ksm.it la stessa scheda si indicizza.
+        $this->get(self::MAIN.'/aziende/trattoria-mario')->assertOk()->assertDontSee('noindex', false);
+    }
+
     public function test_un_azienda_esclusiva_si_vede_solo_sul_suo_dominio(): void
     {
         $this->trattoria->exclusiveDomains()->sync([$this->network->id]);

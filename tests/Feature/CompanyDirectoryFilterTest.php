@@ -71,7 +71,8 @@ class CompanyDirectoryFilterTest extends TestCase
             ->assertSee('Edilnord Costruzioni')
             ->assertSee('Bonifiche Sicure')
             ->assertDontSee('Trattoria da Mario')
-            ->assertSee('Costruire e Abitare › Imprese Edili › Amianto');
+            // La pagina categoria elenca la sottocategoria diretta con il numero di aziende (comprese quelle dei livelli sotto).
+            ->assertSee('Imprese Edili (2)');
 
         $this->followingRedirects()->get(route('companies.index', ['categoria' => $leaf->id]))
             ->assertOk()

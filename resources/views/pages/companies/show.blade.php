@@ -58,7 +58,7 @@
     $seoCity = $filled($company->city);
     $seoCategory = $company->category?->name;
     $seoWhere = $seoCity ? ' a '.$seoCity : '';
-    $seoTitle = $company->name.($seoCategory ? ' – '.$seoCategory.$seoWhere : ($seoCity ? ' – '.$seoCity : ''));
+    $seoTitle = $company->name.($seoCategory ? ' · '.$seoCategory.$seoWhere : ($seoCity ? ' · '.$seoCity : ''));
     $seoTitle = \Illuminate\Support\Str::limit($seoTitle, 52, '').' | '.$tenant->brandName();
     $seoText = trim(preg_replace('/\s+/', ' ', strip_tags((string) $company->company_description)));
     $seoDescription = \Illuminate\Support\Str::limit(
@@ -71,7 +71,7 @@
     // Scheda per i motori di ricerca: gli stessi dati che si leggono in pagina.
     $schema = array_filter([
         '@context' => 'https://schema.org',
-        '@type' => 'LocalBusiness',
+        '@type' => $schemaType,
         'name' => $company->name,
         'description' => $seoText !== '' ? \Illuminate\Support\Str::limit($seoText, 300) : null,
         'url' => route('companies.show', $company->slug),
@@ -106,6 +106,10 @@
 
 @section('title', $seoTitle)
 @section('meta_description', $seoDescription)
+{{-- Su un dominio della rete la scheda resta aperta ma non si indicizza se la stessa c'e' su ksm.it, dove posiziona. --}}
+@if ($noindex)
+    @section('robots', 'noindex,follow')
+@endif
 
 @push('styles')
     @if ($canSell && $products && $products->total())
@@ -131,7 +135,10 @@
                 @if ($showBanner) style="--ksm-hero-image: url('{{ asset('storage/'.$company->banner) }}')" @endif>
             <div class="ksm-container ksm-mini__crumbs">
                 <a href="{{ route('companies.index') }}">{{ __('site.nav_companies') }}</a>
-                @if ($company->category) · {{ $company->category->name }} @endif
+                @if ($company->category)
+                    · @if ($landingUrls) <a href="{{ $landingUrls['category'] }}">{{ $company->category->name }}</a> @else {{ $company->category->name }} @endif
+                    @if ($landingUrls['place'] ?? null) · <a href="{{ $landingUrls['place'] }}">{{ $seoCity }}</a> @endif
+                @endif
             </div>
 
             <div class="ksm-container ksm-mini__heroinner">
@@ -336,6 +343,27 @@
                         </form>
                     </section>
                 @endif
+
+                {{-- Aziende simili: stessa categoria e stessa citta'. Linkano la scheda e la pagina categoria. --}}
+                @if ($related->isNotEmpty())
+                    <section class="ksm-card ksm-mini__block" id="simili" aria-labelledby="simili-titolo">
+                        <h2 id="simili-titolo">
+                            {{ $seoCategory ?: __('site.nav_companies') }}@if ($seoCity) a {{ $seoCity }}@endif
+                        </h2>
+                        <ul>
+                            @foreach ($related as $other)
+                                <li><a href="{{ route('companies.show', $other->slug) }}">{{ $other->name }}</a></li>
+                            @endforeach
+                        </ul>
+                        @if ($landingUrls)
+                            <p>
+                                <a href="{{ $landingUrls['place'] ?? $landingUrls['category'] }}">
+                                    {{ __('site.landing_see_page', ['category' => $seoCategory.($landingUrls['place'] ? ' a '.$seoCity : '')]) }}
+                                </a>
+                            </p>
+                        @endif
+                    </section>
+                @endif
             </div>
 
             <aside class="ksm-mini__side">
@@ -410,4 +438,25 @@
 
     {{-- JSON_HEX_TAG: un nome che contiene </script> non chiude il blocco. --}}
     <script type="application/ld+json">@json($schema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG)</script>
+
+    @php
+        $crumbs = array_values(array_filter([
+            ['name' => __('site.landing_home'), 'url' => route('home')],
+            $tenant->isCompanySite() ? null : ['name' => __('site.nav_companies'), 'url' => route('companies.index')],
+            $landingUrls ? ['name' => $seoCategory, 'url' => $landingUrls['category']] : null,
+            ($landingUrls['place'] ?? null) ? ['name' => $seoCity, 'url' => $landingUrls['place']] : null,
+            ['name' => $company->name, 'url' => route('companies.show', $company->slug)],
+        ]));
+        $breadcrumbSchema = [
+            '@context' => 'https://schema.org',
+            '@type' => 'BreadcrumbList',
+            'itemListElement' => collect($crumbs)->map(fn (array $crumb, int $i) => [
+                '@type' => 'ListItem',
+                'position' => $i + 1,
+                'name' => $crumb['name'],
+                'item' => $crumb['url'],
+            ])->all(),
+        ];
+    @endphp
+    <script type="application/ld+json">@json($breadcrumbSchema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG)</script>
 @endsection

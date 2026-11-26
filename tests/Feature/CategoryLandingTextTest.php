@@ -127,7 +127,7 @@ class CategoryLandingTextTest extends TestCase
 
         $this->get(route('categories.show', ['category' => 'centri-estetici', 'place' => 'roma']))
             ->assertOk()
-            ->assertSee('<h1>I migliori Centri Estetici di Roma</h1>', false)
+            ->assertSee('<h1 class="ksm-landing__title">I migliori Centri Estetici di Roma</h1>', false)
             ->assertSee('<title>Centri estetici a Roma: 4 indirizzi</title>', false)
             ->assertSee('Primo paragrafo su Roma.')
             ->assertSee('Secondo paragrafo.')
@@ -135,7 +135,7 @@ class CategoryLandingTextTest extends TestCase
 
         // Gli altri campi restano quelli automatici.
         $this->get(route('categories.show', ['category' => 'centri-estetici', 'place' => 'roma']))
-            ->assertSee('Elenco di I migliori Centri Estetici di Roma', false);
+            ->assertSee('"@type":"CollectionPage","name":"I migliori Centri Estetici di Roma"', false);
     }
 
     public function test_il_testo_e_solo_testo_senza_html(): void

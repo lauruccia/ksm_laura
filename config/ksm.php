@@ -57,6 +57,13 @@ return [
     /* Valuta di default del marketplace. */
     'currency' => env('KSM_CURRENCY', 'EUR'),
 
+    // SEO: le schede delle aziende (/aziende/{slug}) si indicizzano solo su ksm.it e sui domini propri
+    // delle aziende. Sui domini della rete restano visibili ma noindex e fuori dalla mappa, cosi' non
+    // fanno concorrenza alla stessa scheda su ksm.it. Con false tornano indicizzabili.
+    'seo' => [
+        'noindex_network_company_pages' => env('KSM_NOINDEX_NETWORK_COMPANY_PAGES', true),
+    ],
+
     /* Regioni italiane del filtro di ricerca, nell'ordine alfabetico mostrato. */
     'regions' => [
         'Abruzzo', 'Basilicata', 'Calabria', 'Campania', 'Emilia-Romagna',

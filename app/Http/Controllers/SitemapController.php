@@ -178,10 +178,18 @@ class SitemapController extends Controller
         }
 
         // Solo chi ha una pagina: biglietto e anagrafica stanno nella directory.
-        return app(TenantContext::class)->scope()->companies(Company::query()
+        $query = app(TenantContext::class)->scope()->companies(Company::query()
             ->active()
             ->inDirectory()
             ->withPage());
+
+        // Sui domini della rete le schede presenti anche su ksm.it sono noindex (config ksm.seo):
+        // in mappa restano solo le aziende esclusive del dominio.
+        if (app(TenantContext::class)->isNetworkSite() && config('ksm.seo.noindex_network_company_pages')) {
+            $query->whereHas('exclusiveDomains');
+        }
+
+        return $query;
     }
 
     private function products(): Builder

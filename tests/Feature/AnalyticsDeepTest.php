@@ -395,9 +395,10 @@ class AnalyticsDeepTest extends TestCase
             $this->row(['vid' => str_repeat($v, 40), 'day' => $monday->toDateString(), 'duration' => 8]);
         }
         $this->row(['vid' => str_repeat('a', 40), 'day' => $monday->addWeek()->toDateString(), 'duration' => 8]);
-        // Un programma senza cookie: un identificativo nuovo a ogni richiesta, mai tempo di lettura. Non conta.
+        // Un programma senza cookie: un identificativo nuovo a ogni richiesta, mai tempo di lettura. Non conta:
+        // il giro analytics:classify lo ha gia' contrassegnato come non umano (is_bot).
         foreach (range(1, 20) as $i) {
-            $this->row(['vid' => sha1("bot$i"), 'day' => $monday->toDateString()]);
+            $this->row(['vid' => sha1("bot$i"), 'day' => $monday->toDateString(), 'is_bot' => true]);
         }
 
         $cohorts = $this->insights()->cohorts();

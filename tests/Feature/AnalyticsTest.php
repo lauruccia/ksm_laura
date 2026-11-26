@@ -377,6 +377,11 @@ class AnalyticsTest extends TestCase
         $this->actingAs($admin)->get(route('admin.analytics.index'))
             ->assertOk()
             ->assertSee('Statistiche visite')
+            // Di serie si vede solo il traffico probabilmente umano; con umani=no, tutto.
+            ->assertSee('Nessuna visita probabilmente umana in questo periodo');
+
+        $this->actingAs($admin)->get(route('admin.analytics.index', ['umani' => 'no']))
+            ->assertOk()
             ->assertSee('Nessuna visita in questo periodo');
 
         $this->seedSessions();

@@ -26,7 +26,8 @@ class NonHumanTrafficTest extends TestCase
     {
         config(['ksm.analytics.require_browser_headers' => true]);
 
-        $this->withHeaders(['User-Agent' => self::CHROME])->get('/contatti');
+        // Il client di test aggiunge da solo una lingua: per simulare chi non la manda va svuotata.
+        $this->withHeaders(['User-Agent' => self::CHROME, 'Accept-Language' => ''])->get('/contatti');
         $this->assertSame(0, PageView::count());
 
         $this->withHeaders(['User-Agent' => self::CHROME, 'Accept-Language' => 'it-IT,it;q=0.9'])->get('/contatti');

@@ -79,7 +79,7 @@ class CategoryLandingTest extends TestCase
 
         $this->get(route('categories.show', ['category' => 'centri-estetici']))
             ->assertOk()
-            ->assertSee('<h1>Centri Estetici</h1>', false)
+            ->assertSee('<h1 class="ksm-landing__title">Centri Estetici</h1>', false)
             ->assertSee('<title>Centri Estetici · elenco aziende | ', false)
             ->assertSee('Bellezza Roma Uno')
             ->assertSee('Bellezza Milano')
@@ -94,7 +94,7 @@ class CategoryLandingTest extends TestCase
 
         $this->get(route('categories.show', ['category' => 'centri-estetici', 'place' => 'roma']))
             ->assertOk()
-            ->assertSee('<h1>Centri Estetici a Roma</h1>', false)
+            ->assertSee('<h1 class="ksm-landing__title">Centri Estetici a Roma</h1>', false)
             ->assertSee('Bellezza Roma Uno')
             ->assertDontSee('Bellezza Milano')
             ->assertSee('<link rel="canonical" href="'.route('categories.show', ['category' => 'centri-estetici', 'place' => 'roma']).'">', false)
@@ -110,7 +110,7 @@ class CategoryLandingTest extends TestCase
 
         $this->get(route('categories.show', ['category' => 'centri-estetici', 'place' => 'lazio']))
             ->assertOk()
-            ->assertSee('<h1>Centri Estetici Lazio</h1>', false)
+            ->assertSee('<h1 class="ksm-landing__title">Centri Estetici Lazio</h1>', false)
             ->assertSee('Estetica Lazio Uno')
             ->assertSee('Estetica Lazio Due')
             ->assertDontSee('Estetica Lombarda');
